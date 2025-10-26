@@ -1,0 +1,48 @@
+
+
+	.word $a000
+ 1060 ;
+ 1070 va      =$01
+ 1080 vb      =$45
+ 1090 ;
+ 1100 prg     =0
+ 1110 bflagof =0
+ 1120 ;
+ 1130 prganf  =$a000
+ 1140 bufanf  =$1800
+ 1150 varanf  =$1100
+ 1160 anzdrv  =4
+ 1170 fpbanz  =2
+ 1180 bufanz  =4
+ 1190 buflen  =1024
+ 1200 ;
+ 1210 ;
+ 1220 bufend =buflen*bufanz+bufanf
+ 1230 ;* =prganf
+ 1250 .include "bdk 1.41.s17"
+ 1260 .include "bds 1.44.s24"
+ 1270 .include "bdj 1.45.s31"
+ 1280 .include "bdb 1.41.s37"
+ 1290 .include "bdu 1.3 .s2 "
+ 1300 .include "bdc 1.35.s15"
+ 1310 .include "bd1 1.45.s60"
+ 1320 .include "bd2 1.43.s07"
+ 1330 .include "bd3 1.42.s42"
+ 1340 .include "bd4 1.42.s72"
+ 1350 .include "bd5 1.45.s16"
+ 1360 .include "bde 1.45.s15"
+ 1370 .include "bdr 1.45.s33"
+	.bss
+ 1390 ;*=varanf
+ 1400 .include "bddj1.45.s06"
+ 1410 .include "bddu1.4 .s8 "
+ 1420 .include "bddp1.45.s15"
+ 1430 .include "bdds1.41.s4 "
+ 1440 varend =*
+	.text
+ 1470 .word varanf
+ 1480 .word varend
+ 1490 .word bufanf
+ 1500 .word bufend
+ 1510 .end
+

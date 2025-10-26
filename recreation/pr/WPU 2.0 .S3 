@@ -1,0 +1,29 @@
+
+
+;WPU 2.0 .S3  ==0801==
+//   10 .if mix :.goto 230
+#if 1-mix
+  100 ;****** int1 / a/x = a/x rest int1
+  110 ddiv stx int2+1:sta int2:sty abuf:ldx #1:lda #0:sta int3:sta int3+1
+  120 ddiv1 lda int2:asl:tay:lda int2+1:rol:bcs ddiv3
+  130 cmp int1+1:bcc ddiv2:bne ddiv3
+  140 cpy int1:bcc ddiv2:bne ddiv3
+  150 ddiv2 sta int2+1:sty int2:inx:bne ddiv1
+  160 ddiv3 dex:bpl ddiv6:ldy abuf:lda int3:ldx int3+1:rts
+  170 ddiv6 lda int1+1:cmp int2+1:bcc ddiv4:bne ddiv5
+  180 lda int1:cmp int2:bcc ddiv4
+  190 ddiv5 lda int1:sec:sbc int2:sta int1
+  200 lda int1+1:sbc int2+1:sta int1+1
+  210 sec:.byt $24:ddiv4 clc:rol int3:rol int3+1
+  220 lsr int2+1:ror int2:jmp ddiv3
+#endif
+  230 ;******** int1 * a,x = a,x
+  240 mult sta int2
+  250 lda #0:sta int3:sta int3+1
+  260 mul1 txa:lsr:tax:ror int2:ora int2:bcs mul2:beq multe
+  270 bcc mul3
+  280 mul2 lda int3:clc:adc int1:sta int3:lda int3+1:adc int1+1:sta int3+1
+  290 mul3 asl int1:rol int1+1:jmp mul1
+  300 multe lda int3:ldx int3+1
+  310 sta int1:stx int1+1:rts
+

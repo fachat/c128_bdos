@@ -1,0 +1,108 @@
+
+
+;BDB 1.41.S37 ==0801==
+  100 ;****
+  110 psfrbuf sty bfyr:sta bfxr
+  120 ldx #0
+  130 sfrb2 ldy bfdindex,x
+  140 lda bf1val,y:and #255-$40:bmi sfrb2a
+  150 cmp bfyr:bne sfrb2a
+  160 lda bf1drv,y:cmp bfxr:beq sbfok
+  170 sfrb2a inx:cpx #bufanz:bne sfrb2
+  180 ldx #0
+  190 sfrb3 ldy bfdindex,x
+  200 lda bf1val,y:and #$c0:beq sbfok
+  220 sfrb3a inx:cpx #bufanz:bne sfrb3
+  230 ldx #0
+  240 sfrb4 ldy bfdindex,x
+  250 lda bf1val,y:bpl sbfok
+  260 inx:cpx #bufanz:bne sfrb4
+  270 sfrerr ldx #0:jmp nobffre
+  280 sbfok lda bf1val,y:and #$40:ora bfyr:ora #$80:sta bf1val,y
+  290 lda #0:rts; x=buffer-nr
+  300 ;****
+  310 prlbuf cpx #bufanz:bcs sfrerr:ldy bfdindex,x
+  320 lda bf1val,y:and #127:sta bf1val,y:lda #0:rts
+  330 ;****
+  340 bfzsr sty int1:lda #0:sta int1+1
+  350 lda #<buflen:ldx #>buflen
+  360 jsr mult:clc:adc #<bufanf:tay:txa:adc #>bufanf:tax:tya:rts
+  370 pbfzset sty bfyr:pha:txa:pha:jsr bfzsr
+  380 sta bf1z:stx bf1z+1:pla:sta int1+1:tax:pla:sta int1
+  390 clc:adc bf1z:sta bf1z:txa:adc bf1z+1:sta bf1z+1
+  400 lda bpb+bprecsiz:ldx bpb+bprecsiz+1:jsr sub
+  410 pha:ldy bfyr:lda bfdindex,y:sta bfbfo:tay:pla
+  420 sta bf1r,y:txa:sta bf1r+1,y:lda bf1z:ldx bf1z+1:rts
+  430 ;****
+  440 pbfset sty bfyr:ldy #0:sta (bf1z),y:ldy bfyr
+  450 pbfget sty bfyr:ldy #0:lda (bf1z),y
+  460 inc bf1z:bne bf1get1:inc bf1z+1
+  470 bf1get1 stx bfxr:ldx bfbfo:ldy bf1r,x:bne bf1get2
+  480 dec bf1r+1,x:bf1get2 dec bf1r,x:bne bf1gok
+  490 ldy bf1r+1,x:bne bf1gok:sec:.byt $24:bf1gok clc:ldy bfyr:ldx bfxr:rts
+  500 ;*****
+  510 pbufabs php:pha:txa:pha:sty bfyr:jsr bfzsr
+  520 sta abspar+apbuffer:stx abspar+apbuffer+1
+  530 pla:sta abspar+aprecord+1:pla:sta abspar+aprecord
+  540 lda #0:plp:bcc bufa1:lda #1:bufa1 sta abspar+aprwflag
+  550 lda #prgbank:sta abspar+apbank
+  560 ldx bfyr:bfcfabs stx bfyr:clc:jsr sgdrive:sta abspar+apdrive
+  570 lda #1:sta abspar+apanz:lda #0:sta abspar+apanz+1
+  580 ldx bfyr; buffer-nr:ldy bfdindex,x
+  590 lda bf1val,y:and #$40:beq bufaexe
+  600 lda abspar+aprwflag:bne bufaexe
+  610 lda abspar+apdrive:cmp bf1drv,y:bne bufaexe
+  620 lda abspar+aprecord:cmp bf1logs,y:bne bufaexe
+  630 lda abspar+aprecord+1:cmp bf1logs+1,y:bne bufaexe
+  640 lda #0:rts
+  650 bufaexe lda abspar+aprecord:sta bf1logs,y
+  660 lda abspar+aprecord+1:sta bf1logs+1,y
+  670 lda abspar+apdrive:sta bf1drv,y
+  680 lda bf1val,y:sta bfxr:sty bfyr:and #$ff-$40:sta bf1val,y
+  690 lda #<abspar:ldy #>abspar:jsr rwabs
+  700 bne bufaerr:ldy bfyr
+  710 lda bfxr:ora #$40:sta bf1val,y
+  720 lda #0:bufaerr rts
+  999 ;*****
+ 1000 pwritfat
+ 1010 lda bpb+bpbflag:and #dfwrit
+ 1020 beq pfwrit1
+ 1030 ldy bpb+bpbfat
+ 1040 lda bfdindex,y:tax
+ 1045 lda bf1val,x:and #$40:beq pfwrit1
+ 1050 lda bf1logs,x:sta pwfrec:lda bf1logs+1,x:sta pwfrec+1
+ 1052 pwf1 lda pwfrec:ldx pwfrec+1
+ 1053 ldy bpb+bpbfat:jsr wbufabs
+ 1054 lda pwfrec:sec:sbc bpb+bpfsiz:sta pwfrec
+ 1055 lda pwfrec+1:sbc bpb+bpfsiz+1:sta pwfrec+1:bcc pfwrit1
+ 1056 ora pwfrec:bne pwf1
+ 1080 pfwrit1
+ 1090 lda bpb+bpbflag:and #ff-dfwrit:sta bpb+bpbflag:lda #0:rts
+ 1099 ;****
+ 1100 wbufabs sta abspar+aprecord:stx abspar+aprecord+1
+ 1105 ldx #1:stx abspar+aprwflag
+ 1110 stx abspar+apanz:dex:stx abspar+apanz+1
+ 1115 lda #prgbank:sta abspar+apbank
+ 1120 txa:jsr bfzset
+ 1125 sta abspar+apbuffer:stx abspar+apbuffer+1
+ 1130 lda #<abspar:ldy #>abspar:jmp rwabs
+ 1199 ;*****
+ 1200 preadfat
+ 1210 ldy bpb+bpbfat
+ 1220 preadbuf sta rbrec:stx rbrec+1:sty bfyr
+ 1230 ldx bfdindex,y
+ 1240 lda bf1val,x:and #$40:beq prbread
+ 1250 lda bf1logs,x:cmp rbrec:bne prbwr
+ 1260 lda bf1logs+1,x:cmp rbrec+1
+ 1270 beq prbend
+ 1280 prbwr jsr writfat
+ 1300 ldy bfyr:ldx bfdindex,y
+ 1310 lda bf1val,x:and #ff-$40:sta bf1val,x
+ 1320 prbread lda rbrec:ldx rbrec+1:ldy bfyr
+ 1330 clc:jmp bufabs
+ 1340 prbend lda #0:rts
+ 1399 ;*****
+ 1400 pwritbuf ldx bfdindex,y
+ 1410 lda bf1logs,x:pha:lda bf1logs+1,x
+ 1420 tax:pla:sec:jmp bufabs
+

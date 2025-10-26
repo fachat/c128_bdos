@@ -1,0 +1,64 @@
+
+
+	.word $2800
+
+;PRA 2.4 .S50 ==0801==
+  120 ;****
+  130 ;fmn =0 ; 1 falls ohne menu
+  140 ;fci =0 ; 1 falls ohne cli
+  145 ;eng =0 ; 1 falls englisch
+  150 ;****
+  160 mix    =(1-fmn)*(1-fci)
+  170 prg    =1
+  180 c128   =1
+  185 bdos   =$a000
+  187 rs232  =0 ; 1 falls rs232 im menue
+  190 ;****
+#if mix
+  200 bufanf =$6c00   ;a-version
+  201 buflen =$0400
+#else
+#if 1-fmn
+  204 bufanf =$5c00   ;b-version
+  205 buflen =$0400
+#else
+  207 bufanf =$4400   ;c-version
+  208 buflen =$0400
+#endif
+#endif
+  210 ;****
+  220 keystp =3
+//  230 .if # :.goto 300
+  240 .include "bdk 1.41.s17"
+  250 .include "bdj 1.45.s31"
+  260 .include "bds 1.44.s24"
+  270 .include "bde 1.4 .s14"
+  280 .include "wpk 2.0 .s4 "
+  300 .include "pr1 2.4 .s63"
+  310 .include "pr2 2.4 .s60"
+  320 .include "pr3 2.4 .s26"
+  330 .include "pr4 2.4 .s22"
+#if 1-fmn
+  350 .include "wp1 2.4 .s96"
+  370 .include "wp4 2.4 .s47"
+  380 .include "wpu 2.0 .s3 "
+#endif
+  385 .include "wp2 2.1 .s60"
+  387 .include "wp3 2.4 .s17"
+  390 .include "wpw 2.1 .s64"
+#if 1-eng
+  400 .include "prr 2.4 .s30"
+#else
+  402 .include "prre2.4 .s30"
+#endif
+	.bss
+  410 varanf =*
+  419 .include "prd 2.4 .s28"
+  420 varend =*
+	.text
+  423 .word varend;=listanf
+  424 .word bufanf;=listend
+#print varend
+#print bufanf
+  430 .end
+

@@ -1,0 +1,108 @@
+<HTML>
+<title> BDOS+ - convert files from PC-Disks to CBM-Disks and vice versa</title>
+<body>
+<h2>
+<p> The term "BDOS+" refers to both the english and the german version of
+the programm.</p>
+<p><em>"BDOS+" is Copyright by A.Fachat, "BDOS+" is not covered by the GNU 
+Public License</em>, instead it is really copyrighted, see the file
+<a href="http:MYCOPYING.ASC">"MYCOPYING.ASC"</a></p>
+<p> The package "BDOS+" is provided _as_is_, i.e. no support is guaranteed,
+no warranty is taken for this package or its use in any kind.</p>
+<p> You may freely copy and distribute this Package as long as it is not 
+changed in any way, i.e. no file is changed, ommitted or added to the
+package.</p>
+<p> This package is for non-commercial use only.</p>
+<p> If you want to distribute changed versions, or you have bugfixes or
+if you want to use it for commercial purposes, feel free to contact me.
+</p>
+<p> A previous version of this programm has been published by the
+german magazin "64er", which is still alive and reachable by email.
+</p>
+<p> A basic introduction is in the archive, but especially the menu version
+should be quite self-explanatory. The original programm is in german, and
+this version is still included. The translated version may suffer from
+this translation, sorry about that.</p>
+<p> I have some documentation to download (<a href="http:bdos+doc.cpk.gz">
+"bdos+doc.cpk.gz"</a>, but unfortunately it is in german. 
+I will only translate it if some of you want me to, but you only need
+it to really dig into the system (hey man, it works, you don't need to 
+dig...).</p>
+<p> The programm runs on a C128 with VC1571 or a C64 with VC1571. It does not
+run on a C128 in C64 mode!  The only
+problem with the C64 is the hardware modification you have to apply to your
+C64 to use the burst commands of the 1571. I haven't found out a way how to 
+do it without, but maybe someone else knows this? The Modification is
+described in the 64er magazin 6/89, but attention! The one printed has a
+small error. The on/off switch puts +5V to the PA2 pin instead of the
+NOR-input! (It was my fault, but unfortunately passed all checks... The
+correct diagram must be in one of the following issues. The on/off
+switch should switch the NOR-input between +5V (off) and CA2 (on).) </p>
+<p> If you want to use other hardware, see what is being done in CD* or
+VD*, these are the disk drivers for C64 and C128 respectively. The drivers
+in CB* or VB* make the RAM-Disk and the window interface routines, esp.
+for the C64.</p>
+</h2><hr>
+<h3>Info: Andre Fachat, fachat@galileo.rhein-neckar.de</h3>
+<p>
+"*.cpk"</a> is a kind of archive built with my own 
+C64 tool. This was to
+keep the long filenames when I backed up on my old Atari. You can either
+use the tool "uncpk" or the original C64 programm to unpack. (see directory
+<a href="http:../packing/">"packing"</a>
+</p>
+<h3> Archive descriptions </h3>
+<p>
+All files with a ".S??" at the end are source files for my selfwritten
+6502 Assembler for the C64 (see directory "assembler"). They can be edited 
+as a BASIC file and a RUN
+makes them assemble, if you have my assembler in the computer's memory.
+</p>
+<hr> 
+<h3> <a href="http:bdos+bin.cpk.gz">"bdos+bin.cpk.gz"</a> </h3><pre>
+"README1ST.ASC"
+        A small introduction to BDOS+
+"MYCOPYING.ASC"
+        My copying policy
+"INSTALL ME"/"INSTALL MICH"
+	These programms are the english and german versions of the 
+	installation programm for BDOS+. They are quite easy to use 
+	and should not need further explanation. They produce
+	a small file called "AUTOLOAD", that contains all necessary
+	configuration information.
+"RUN ME"/"RUN MICH"
+	These programms start up BDOS+
+"LOADER 1.1A8"
+	... is the machine programm loader for BDOS+. Basically this one
+	is started by the BASIC programm "RUN ME". 
+"BD+ 1.45HA"
+	This is the kernel, that does most of the stuff for BDOS+. It holds
+	all the Routines to handle the logical disk structure for PC disks.
+	BD+ has a jump table that is being described in BDJ* that starts
+	at $a000 in memory. 
+"CB  1.2C9/A"
+        The RAM disk and screen driver for the C64
+"CD  2.0D88/A"
+        The VC1571 driver for C64 with Hardware modification
+"VB  1.2B9/A"
+        The RAM disk and screen driver for the C128
+"VD  1.5D88/A"
+        The VC1571 driver for the C128
+"PE  2.4A28/A", "PE  2.4B28/A", "PE  2.4C28/A"
+"PR  2.4A28/A",	"PR  2.4B28/A", "PR  2.4C28/A"
+        The command shells ("PE" in english, "PR" in german), with 
+        Command Line Interface (CLI) and Menu Interface (MENU), with MENU
+        only and with CLI only, resp.
+"PRG1/A" and "PRG1.S4" (source)
+        A small programm to demonstrate the use of the Directory functions
+"PRG2/A" and "PRG2.S4" (source)
+        A small programm to demonstrate how to pass parameters to a programm.
+"S-FLOPRW 7E/A" and "S-FLOPRW.S5" (source)
+        A small programm to show how to link into the jump table. It prints
+        all accesses via the FLOPRW vector on the screen and waits for a
+        keypress.
+"S-RWABS 7F/A" and "S-RWABD.S5" (source)
+        Same as S-FLOPRW, just prints all accesses via RWABS.
+"index.html"
+        This html document.
+</pre>

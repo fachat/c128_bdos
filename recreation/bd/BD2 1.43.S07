@@ -1,0 +1,340 @@
+
+
+;BD2 1.43.S07 ==0801==
+  100 ;**********
+  110 psgdta bcc pgetdta:sta dtadr:sty dtadr+1
+  120 pgetdta lda dtadr:ldy dtadr+1:rts
+  130 ;*********
+  140 psgdrive bcs psetdrv
+  150 pgetdrv lda actdrv:rts
+  160 psetdrv cmp #anzdrv:bcc psd1:jmp illdrv
+  170 psd1 sta newdrv
+  181 lda actdrv:cmp newdrv:beq psdv2
+  190 ;ac=drv:jsr psdabs:ldy #0
+  200 psd1a lda bpb,y:sta (abszei),y:iny:cpy #bpplen:bne psd1a
+  210 lda newdrv:sta actdrv
+  211 lda newdrv:jsr psdabs:ldy #0
+  212 psdv4 lda (abszei),y:sta bpb,y:iny:cpy #bpplen:bne psdv4
+  220 psdv2 ldy #bpbval:lda bpb,y:beq psdv3
+  240 lda newdrv:jsr mediach:bne psdv3:rts
+  247 psdv3 ldy #bpbval:lda #0
+  248 sta bpb,y
+  250 lda newdrv:jsr query
+  260 beq psdga:jmp diskerr
+  270 psdga
+  275 lda newdrv:jsr getbpb:stx rwbzei
+  280 sty rwbzei+1:beq psd2:jmp dnotrdy
+  290 psd2 ldy #0:psd2a lda (rwbzei),y:sta bpb,y:iny:cpy #bpplen:bne psd2a
+  300 lda #0:sta path:sta dirclus:sta dirclus+1
+  350 ldy #0:psdd1 ldx bfdindex,y
+  360 lda bf1drv,x:cmp actdrv
+  370 bne psdd3:lda bf1val,x:and #255-$40:sta bf1val,x
+  380 psdd3 iny:cpy #bufanz:bne psdd1
+  400 lda bpb+bpbflag:and #dfval:bne psdx1
+  410 lda actdrv:ldy #1:jsr sfrbuf:stx bpb+bpbfat
+  420 lda bpb+bpbflag:ora #dfval:and #ff-dfwrit:sta bpb+bpbflag:psdx1 jmp error0
+  430 psdabs sta int1:lda #0:sta int1+1
+  440 lda #<bpplen:ldx #>bpplen:jsr mult
+  450 lda #<drvbpb:ldx #>drvbpb:jsr add
+  460 sta abszei:stx abszei+1:rts
+  470 ;**********
+  480 pgtpath lda #<dirclus:ldy #>dirclus:rts
+  490 ;**********
+  500 ;psfirse lda #<-1:;.byt $2c
+  510 psfirst ldy #0:lda dirclus:ldx dirclus+1
+  520 psfirso sty sfirsfe:ldy #dtclus
+  530 sta (dtadr),y:pha:iny:txa:sta (dtadr),y
+  540 ldy #dtstart+1:sta (dtadr),y:pla
+  550 dey:sta (dtadr),y
+  560 ldy #dtflag:lda sfirsfe:sta (dtadr),y
+  570 lda bpb+bprecsiz:sta int1:lda bpb+bprecsiz+1
+  580 sta int1+1:lda #32:ldx #0:jsr div
+  590 ldy #dtanz:sta (dtadr),y
+  600 ldy #dtdrv:lda actdrv:sta (dtadr),y
+  610 ldy #dtpos:lda #0:sta (dtadr),y
+  620 ldy #dtsec:sta (dtadr),y
+  630 iny:sta (dtadr),y
+  640 jmp sload
+  650 ;********
+  660 psnext ldy #dtflag:lda (dtadr),y:sta sfirsfe
+  670 ldy #dtpos:lda (dtadr),y:clc:adc #1:sta (dtadr),y
+  680 ldy #dtanz:cmp (dtadr),y:bcc slok
+  690 lda #0:ldy #dtpos:sta (dtadr),y
+  700 ldy #dtsec:lda (dtadr),y:clc:adc #1:sta (dtadr),y:tax
+  710 iny:lda (dtadr),y:adc #0:sta (dtadr),y:pha
+  720 ldy #dtclus:lda (dtadr),y:iny:ora (dtadr),y:beq slmain
+  730 pla:cmp bpb+bpclsiz+1:bcc slok:bne slnclus
+  740 cpx bpb+bpclsiz:bcc slok
+  750 slnclus lda #0:ldy #dtsec:sta (dtadr),y:iny:sta (dtadr),y
+  760 ldy #dtclus+1:lda (dtadr),y:tax:dey:lda (dtadr),y
+  770 clc:jsr sgnexcl:bne clnotfnd
+  780 tya:ldy #dtclus+1:sta (dtadr),y:dey:txa:sta (dtadr),y:slok jmp sload
+  790 slmain pla;main-directory:cmp bpb+bprdlen+1
+  800 bcc slok:bne notfound
+  810 cpx bpb+bprdlen
+  820 bcc slok
+  830 notfound jmp enotfnd
+  840 clnotfnd lda sfirsfe:beq notfound
+  850 ldy #dtclus+1:lda (dtadr),y:tax:dey:lda (dtadr),y
+  860 jsr fextend:bne notfound
+  870 tya:ldy #dtclus+1:sta (dtadr),y:pha:txa:dey:sta (dtadr),y:tay:pla:tax:tya
+  880 jsr dclinit:bne notfound
+  890 jmp sload
+  900 ;****
+  910 notfnd jmp enotfnd
+  920 sloadr rts
+  930 sload lda #0:jsr slcalcr
+  940 bne sloadr
+  950 ldx #dename:lda sfirsfe:beq sfirsf
+  960 lda dirbuf,x:beq slfound1:cmp #$e5:bne slnexe:slfound1 jmp slfound
+  970 sfirsf ldy #dsname
+  980 lda dirbuf,x:beq notfnd
+  990 cmp #$e5:beq slnexe; geloescht
+  991 ldx #dename+8:slxx dex:lda dirbuf,x
+  992 cmp #" ":beq slxx2:cmp #95
+  993 bne slxx1
+  994 slxx2 cpx #dename
+  995 bne slxx:slxx1 stx int1
+ 1000 ldx #dename
+ 1010 slncomp lda (dtadr),y:beq slnexe
+ 1020 cmp #"?":beq slnnext
+ 1030 cmp #"*":beq slext;extension
+ 1040 cmp dirbuf,x:beq slnnext; next entry
+ 1041 cmp #" ":bne slnexe:cpx int1:bcs slnexe
+ 1042 lda dirbuf,x:cmp #95:beq slnnext
+ 1050 slnexe jmp snext
+ 1060 slnnext inx:iny:cpx #dename+8:bne slncomp
+ 1070 slext
+ 1071 ldx #deext+3:slxy dex:lda dirbuf,x
+ 1072 cmp #" ":beq slxy2:cmp #95
+ 1073 bne slxy1
+ 1074 slxy2 cpx #deext
+ 1075 bne slxy:slxy1 stx int1
+ 1079 ldy #dsext:ldx #deext
+ 1080 slecomp lda (dtadr),y
+ 1090 cmp #"?":beq slenext
+ 1100 cmp #"*":beq slattr
+ 1110 cmp dirbuf,x:beq slenext
+ 1111 cmp #" ":bne slnexe:cpx int1:bcs slnexe
+ 1112 lda dirbuf,x:cmp #95:bne slnexe
+ 1120 slenext inx:iny:cpx #deext+3:bne slecomp
+ 1130 slattr ldy #dsattr:ldx #deattr
+ 1140 lda (dtadr),y:and #$1f:and dirbuf,x:bne slfound
+ 1142 lda (dtadr),y:and #$20:beq slnexe:lda dirbuf,x:and #$1f:bne slnexe
+ 1150 slfound ldx #dename:ldy #dgname
+ 1160 slfn lda dirbuf,x:sta (dtadr),y
+ 1170 inx:iny:cpy #dgname+8:bne slfn
+ 1180 ldx #deext:ldy #dgext
+ 1190 slfe lda dirbuf,x:sta (dtadr),y
+ 1200 inx:iny:cpy #dgext+3:bne slfe
+ 1210 ldx #deattr:ldy #dgattr
+ 1220 lda dirbuf,x;attribut:sta (dtadr),y
+ 1230 ldx #defclus:ldy #dgclus
+ 1240 lda dirbuf,x:sta (dtadr),y
+ 1250 iny:inx:lda dirbuf,x:sta (dtadr),y
+ 1260 ldx #desize:ldy #dgsize
+ 1270 slfs lda dirbuf,x:sta (dtadr),y
+ 1280 iny:inx:cpx #desize+5:bne slfs
+ 1290 ldx #deuhr:lda dirbuf,x:sta int1:and #%00011111:asl
+ 1300 ldy #dgsec:sta (dtadr),y
+ 1310 inx:lda dirbuf,x:sta int1+1:tax:lda int1
+ 1320 ldy #5:jsr nlsr:and #%00111111
+ 1330 ldy #dgmin:sta (dtadr),y
+ 1340 lda int1:ldx int1+1:ldy #11:jsr nlsr
+ 1350 and #%00011111:ldy #dghour:sta (dtadr),y
+ 1360 ldx #dedate:lda dirbuf,x:sta int1:and #%00011111
+ 1370 ldy #dgday:sta (dtadr),y
+ 1380 inx:lda dirbuf,x:sta int1+1:tax:lda int1
+ 1390 ldy #5:jsr nlsr:and #%00001111
+ 1400 ldy #dgmonth:sta (dtadr),y
+ 1410 lda int1:ldx int1+1:ldy #9:jsr nlsr
+ 1420 and #%01111111:ldy #dgyear:sta (dtadr),y
+ 1430 jmp writfat
+ 1440 ;**********
+ 1450 cdexit ldx #<actdrv:ldy #>actdrv:lda #0:cdderr rts
+ 1460 ;*****
+ 1470 pnamdtp stx cd0attr
+ 1480 sta pzei:sty pzei+1
+ 1481 lda #<dtp:ldy #>dtp:sec:jsr sgdta
+ 1482 lda #"*":sta dtp+dsname:sta dtp+dsext
+ 1490 clc:jsr sgdrive:sta newdrv
+ 1500 ldy #<-1:cdd3 iny:lda (pzei),y:beq cdd2:cmp #backs:beq cdd2
+ 1510 cmp #" ":beq cdd3
+ 1520 iny:lda (pzei),y:dey:cmp #":":bne cdd2
+ 1530 sty pa1+1:lda (pzei),y:and #$0f:tay:dey:sty newdrv
+ 1540 ldy pa1+1:iny:iny
+ 1550 cdd2 sty pa1+1:lda newdrv:sec:jsr sgdrive:bne cdderr:jsr gtpath:sta dzei
+ 1560 sty dzei+1:ldy #gpclus:lda (dzei),y
+ 1570 sta actfil:sta actclus:iny:lda (dzei),y:sta actfil+1:sta actclus+1
+ 1580 ldy #gppath:gn2 lda (dzei),y:sta actpath-gppath,y
+ 1590 beq gn1:iny:bne gn2
+ 1600 gn1 ;
+ 1610 ldy pa1+1:lda (pzei),y:cmp #backs
+ 1620 bne cdsub:iny
+ 1630 lda #0
+ 1640 sta actfil:sta actfil+1
+ 1650 sta actpath
+ 1660 ;****
+ 1670 cdsub sty pa1+1
+ 1680 lda actfil:ora actfil+1:sta actflag
+ 1690 cds1 lda (pzei),y:beq cdex1:cmp #"/":beq cdex1
+ 1700 cmp #" ":bne cdsub2
+ 1710 iny:bne cds1:jmp pathovrf
+ 1720 cdex1 jmp cdexit
+ 1730 cdsub2 ldx #7:lda #" ":cds0a sta dtp+dsname,x:dex:bpl cds0a
+ 1740 ldx #2:cds0b sta dtp+dsext,x:dex:bpl cds0b
+ 1750 inx:lda (pzei),y:cmp #".":bne cdsn1
+ 1760 ldx #3:sta dtp+dsname:iny
+ 1770 lda (pzei),y:cmp #".":bne cdse1
+ 1780 sta dtp+dsname+1:beq cdse1
+ 1790 cdsn1 lda (pzei),y:beq cdattr
+ 1800 cmp #backs:beq cdattr
+ 1810 cmp #"/":beq cdattr
+ 1820 iny:cmp #".":beq cdse
+ 1830 cpx #8:bcs cdsn1
+ 1840 sta dtp+dsname,x
+ 1850 inx:bne cdsn1
+ 1860 cdse ldx #0
+ 1870 cdse1 lda (pzei),y:beq cdattr
+ 1880 cmp #backs:beq cdattr
+ 1890 cmp #"/":beq cdattr
+ 1900 iny:cpx #3:bcs cdse1
+ 1910 sta dtp+dsext,x
+ 1920 inx:bne cdse1
+ 1930 cdattr cmp #backs:beq cdattr1
+ 1940 lda cd0attr:.byt $2c
+ 1950 cdattr1 lda #%00010000:sta dtp+dsattr
+ 1960 sty pa1+1
+ 1970 lda actfil:ldx actfil+1
+ 1980 sta actclus:stx actclus+1:ldy #0:jsr sfirso:beq cd00a1
+ 1990 cmp #ennotfnd:bne cd00at
+ 2000 pha:ldy pa1+1:lda (pzei),y:cmp #backs:beq cd00a2
+ 2010 cd00ar pla:ldx #<actdrv;getname tp:ldy #>actdrv
+ 2020 cd00at rts
+ 2030 cd00a2 pla:jmp dirnfnd
+ 2040 cd00a1 lda dtp+dgclus:sta actfil
+ 2050 lda dtp+dgclus+1:sta actfil+1
+ 2060 ldx #<-1:cda1 inx:lda actpath,x:bne cda1
+ 2070 cda2 stx pa2:cpx #pathlen-14:bcs cdovr
+ 2080 lda dtp+dgname:cmp #".":bne cdc1
+ 2090 lda dtp+dgname+1:cmp #".":bne cdident
+ 2100 ldx pa2:beq cdc2a:cdc2 dex:beq cdc2a:lda actpath,x
+ 2110 cmp #backs:bne cdc2
+ 2120 cdc2a lda #0:sta actpath,x:beq cdident
+ 2130 cdc1 lda #backs:sta actpath,x
+ 2140 inx
+ 2150 ldy #0:cdb1 lda dtp+dgname,y:sta actpath,x
+ 2160 inx:iny:cpy #8:bcc cdb1
+ 2161 cdbaa1 dex:lda actpath,x:cmp #" ":beq cdbaa1:inx
+ 2170 lda #".":sta actpath,x:inx
+ 2180 ldy #0:cdb2 lda dtp+dgext,y:sta actpath,x:inx:iny:cpy #3:bcc cdb2
+ 2181 cdbaa2 dex:lda actpath,x:cmp #" ":beq cdbaa2
+ 2182 cmp #".":beq cdbaa3:inx
+ 2190 cdbaa3 lda #0:sta actpath,x
+ 2200 cdident ldy pa1+1:lda (pzei),y:beq cdid1
+ 2210 cmp #"/":beq cdid1
+ 2220 iny:cdid1 jmp cdsub
+ 2230 cdovr ldx pa2:lda #0:sta actpath,x:jmp pathovrf
+ 2240 pchdir ldx #%00010000:jsr namedtp:bne pdx
+ 2250 stx pzei:sty pzei+1
+ 2260 ldy #gnfile:lda (pzei),y:sta dirclus
+ 2270 iny:lda (pzei),y:sta dirclus+1
+ 2280 ldy #gnpath
+ 2290 pcd1 lda (pzei),y:sta path-gnpath,y:beq pcd2:iny:bne pcd1
+ 2300 pcd2 lda #0:pdx rts
+ 2310 ;**********
+ 2320 wener jmp illname
+ 2330 pwrentry
+ 2340 ldy #dgname:ldx #dename
+ 2350 we1 lda (dtadr),y
+ 2360 cmp #"*":beq wener
+ 2370 cmp #"?":beq wener
+ 2380 sta dirbuf,x
+ 2390 iny:inx:cpx #dename+8:bcc we1:ldy #8
+ 2391 wex1 dex:dey:bmi wener:lda dirbuf,x:cmp #" ":beq wex1
+ 2392 wex3 dex:dey:bmi wex2:lda dirbuf,x:cmp #" ":bne wex3
+ 2393 lda #95:sta dirbuf,x:bne wex3
+ 2400 wex2 ldy #dgext:ldx #deext
+ 2410 we2 lda (dtadr),y
+ 2420 cmp #"*":beq wener
+ 2430 cmp #"?":beq wener
+ 2440 sta dirbuf,x
+ 2450 iny:inx:cpx #deext+3:bcc we2:ldy #3
+ 2451 wey1 dex:dey:bmi wey2:lda dirbuf,x:cmp #" ":beq wey1
+ 2452 wey3 dex:dey:bmi wey2:lda dirbuf,x:cmp #" ":bne wey3
+ 2453 lda #95:sta dirbuf,x:bne wey3
+ 2460 wey2 ldy #dgattr:lda (dtadr),y
+ 2470 sta dirbuf+deattr
+ 2480 ldy #dgclus:lda (dtadr),y
+ 2490 sta dirbuf+defclus
+ 2500 iny:lda (dtadr),y
+ 2510 sta dirbuf+defclus+1
+ 2520 clc:jsr sgtime:stx rwbzei:sty rwbzei+1
+ 2530 ldy #2:we3a lda (rwbzei),y:sta int1,y:dey:bpl we3a
+ 2540 ldy #dgsec:we3b lda int1-dgsec,y:sta (dtadr),y:iny:cpy #dghour+1:bne we3b
+ 2550 clc:jsr sgdate:stx rwbzei:sty rwbzei+1
+ 2560 ldy #2:we3c lda (rwbzei),y:sta int1,y:dey:bpl we3c
+ 2570 ldy #dgday:we3d lda int1-dgday,y:sta (dtadr),y:iny:cpy #dgyear+1:bne we3d
+ 2580 ldy #dgsize+3:ldx #3
+ 2590 we3 lda (dtadr),y:sta dirbuf+desize,x:dey:dex:bpl we3
+ 2600 ldy #dghour:lda (dtadr),y:and #%00011111
+ 2610 ldx #0:ldy #11:jsr nasl:sta int1:stx int1+1
+ 2620 ldy #dgmin:lda (dtadr),y:and #%00111111
+ 2630 ldx #0:ldy #5:jsr nasl:jsr add
+ 2640 ldy #dgsec:lda (dtadr),y:lsr
+ 2650 and #%00011111:ldx #0:jsr add
+ 2660 sta dirbuf+deuhr:stx dirbuf+deuhr+1
+ 2670 ldy #dgyear:lda (dtadr),y:and #%01111111
+ 2680 ldx #0:ldy #9:jsr nasl:sta int1:stx int1+1
+ 2690 ldy #dgmonth:lda (dtadr),y:and #%00001111
+ 2700 ldx #0:ldy #5:jsr nasl:jsr add
+ 2710 ldy #dgday:lda (dtadr),y
+ 2720 and #%00011111:ldx #0:jsr add
+ 2730 sta dirbuf+dedate:stx dirbuf+dedate+1
+ 2740 lda #1:jmp slcalcr
+ 2750 ;*****
+ 2760 slcalcr pha
+ 2770 ldy #dtdrv:lda (dtadr),y:ldy #2:jsr sfrbuf:stx slcbuf:bne slcerr1
+ 2780 ldy #dtdrv:lda (dtadr),y:sec:jsr sgdrive:bne sln3x1
+ 2790 ldy #dtclus+1:lda (dtadr),y:tax:dey:ora (dtadr),y:beq sldmain
+ 2800 lda (dtadr),y:jsr clusec:sta int1:stx int1+1
+ 2810 jmp slddir:slcerr1 tay:pla:tya:rts:sln3b bne sln3a:sln3x1 bne sln3x
+ 2820 sldmain lda bpb+bpfatrec:sta int1:ldx bpb+bpfatrec+1:stx int1+1
+ 2830 lda bpb+bpfsiz:ldx bpb+bpfsiz+1:jsr add
+ 2840 slddir ldy #dtsec+1:lda (dtadr),y:tax:dey:lda (dtadr),y:jsr add
+ 2850 sta slcsec:stx slcsec+1:ldy slcbuf:clc;lesen:jsr bufabs
+ 2860 pha
+ 2870 ldy #dtpos:lda (dtadr),y:sta int1:lda #0:sta int1+1
+ 2880 lda #32:ldx #0:jsr mult
+ 2890 ldy slcbuf:jsr bfzset:lda bf1z:ldx bf1z+1
+ 2900 sta dirzei:stx dirzei+1
+ 2910 pla:sln3x tax:pla:beq slca1:txa:sln3a bne sln3
+ 2920 ldy #31:sln2 lda dirbuf,y:sta (bf1z),y:dey:bpl sln2
+ 2930 lda slcsec:ldx slcsec+1:ldy slcbuf:sec:jsr bufabs:jmp sln3
+ 2940 slca1 ldy #31:sln1 lda (bf1z),y:sta dirbuf,y:dey:bpl sln1
+ 2950 txa:sln3 pha:ldx slcbuf:jsr rlbuf:pla:cliee rts
+ 2960 ;**********
+ 2970 dclinit jsr clusec
+ 2980 sta abspar+aprecord:stx abspar+aprecord+1
+ 2990 clc:jsr sgdrive:ldy #2:jsr sfrbuf:stx slcbuf:bne cliee
+ 3000 lda #0:sta pa1:sta pa1+1:tax:ldy slcbuf:jsr bfzset
+ 3010 dcli1 lda #0:jsr bfset:bcc dcli1
+ 3020 dclie lda abspar+aprecord:ldx abspar+aprecord+1
+ 3030 ldy slcbuf:sec:jsr bufabs:bne dclier
+ 3040 inc pa1:bne dcli3:inc pa1+1
+ 3050 dcli3 lda pa1+1:cmp bpb+bpclsiz+1:bcc dclie
+ 3060 bne dcliee
+ 3070 lda pa1:cmp bpb+bpclsiz:bcc dclie
+ 3080 dcliee lda #0:dclier pha:ldx slcbuf:jsr rlbuf:pla:rts
+ 3090 ;**********
+ 3100 fextend sta dword:stx dword+1
+ 3110 jsr sfrclus:bne fxnotf2;neuen dir-cluster anlegen fuer empty entry
+ 3120 stx dword+2:sty dword+3
+ 3130 lda #<dword:ldy #>dword:sec:jsr sgnexcl:bne fxnotfnd
+ 3140 lda dword+2:sta dword:lda dword+3:sta dword+1
+ 3150 lda #$ff:sta dword+3:lda #$f7:sta dword+2
+ 3160 lda #<dword:ldy #>dword:sec:jsr sgnexcl:bne fxnotfnd
+ 3170 ldx dword:ldy dword+1:lda #0:rts
+ 3180 fxnotfnd rts
+ 3190 fxnotf2 jmp diskfull
+

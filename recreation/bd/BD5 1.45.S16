@@ -1,0 +1,95 @@
+
+
+;BD5 1.45.S16 ==0801==
+ 1000 psetvec sei
+ 1010 stx rwbzei:sty rwbzei+1
+ 1020 ldy #svanz
+ 1030 lda (rwbzei),y:asl:sta int1
+ 1040 ldy #svadr
+ 1050 lda (rwbzei),y:sta abszei:iny
+ 1060 lda (rwbzei),y:sta abszei+1
+ 1070 ldy #svold
+ 1080 lda (rwbzei),y:sta zei:iny
+ 1090 lda (rwbzei),y:sta zei+1
+ 1100 ldy #0:psv1
+ 1110 lda (abszei),y:tax
+ 1120 lda vektor,x:sta (zei),y:iny
+ 1130 lda vektor+1,x:sta (zei),y
+ 1140 iny:cpy int1:bcc psv1
+ 1150 ldy #svnew
+ 1160 lda (rwbzei),y:sta zei:iny
+ 1170 lda (rwbzei),y:sta zei+1
+ 1200 ldy #0:psv2
+ 1210 lda (abszei),y:tax
+ 1220 lda (zei),y:sta vektor,x:iny
+ 1230 lda (zei),y:sta vektor+1,x
+ 1240 iny:cpy int1:bcc psv2
+ 1250 cli:lda #0:rts
+ 1999 ;********
+ 2000 prtbuf lda dvfl:bmi prb1:prbx lda #endbe:prbe sec:rts
+ 2010 prb1 lda dbanz:beq prbx
+ 2020 ldx dvout:lda #2; listen:jsr devcmd:bne prbc
+ 2030 ldy #0:prbl
+ 2040 jsr chost:beq prb2
+ 2050 cmp #endbf:beq prbl
+ 2060 bne prbc
+ 2070 prb2 lda devbuf,y
+ 2080 ldx dvout:jsr devout:bcs prbc
+ 2090 iny:cpy dbanz:bne prbl
+ 2100 lda #0:prbc pha
+ 2110 ldx dvout:lda #3; unlisten:jsr devcmd
+ 2120 lda #0:sta dbanz:pla:bne prby:clc:rts:prby sec:rts
+ 2199 ;****
+ 2200 pchout sta chdiv
+ 2201 pha:tya:pha:txa:pha
+ 2202 lda chdiv:jsr ppchout:sta chdiv
+ 2203 pla:tax:pla:tay:pla
+ 2205 bcc pco0:lda chdiv:pco0 rts
+ 2209 ppchout bit dvfl:bmi pco1
+ 2210 pcol jsr chost:beq pco2
+ 2220 cmp #endbf:beq pcol:sec:rts
+ 2230 pco2 lda chdiv:ldx dvout:jmp devout
+ 2250 pco1 ldy dbanz:sta devbuf,y:iny
+ 2255 sty dbanz
+ 2260 cmp #13:bne pco5:jmp prtbuf
+ 2270 pco5 iny:iny:bne pco4:lda #endbf:sec:rts
+ 2280 pco4 lda #0:clc:rts
+ 2299 ;****
+ 2300 pchodev pha:bit dvfl:bpl pcod1
+ 2310 jsr prtbuf:jmp pcod2
+ 2320 pcod1 ldx dvout:lda #3:jsr devcmd
+ 2330 pcod2 pla:sta dvfl
+ 2340 and #127:sta dvout
+ 2350 lda dvfl:bmi pchost
+ 2360 ldx dvout:lda #2:jmp devcmd
+ 2399 ;****
+ 2400 pchost ldx dvout:lda #0:jmp devcmd
+ 2499 ;****
+ 2500 pchin tya:pha:txa:pha
+ 2509 ldx dvin:jsr chist:beq pci1
+ 2510 cmp #endbe:beq pchin:sec:bcs pci2
+ 2520 pci1 ldx dvin:jsr devin:pci2 sta chdiv
+ 2530 pla:tax:pla:tay:lda chdiv:rts
+ 2599 ;****
+ 2600 pchidev pha
+ 2610 ldx dvin:lda #5:jsr devcmd
+ 2620 pla:sta dvin:tax
+ 2630 lda #4:jmp devcmd
+ 2699 ;****
+ 2700 pchist ldx dvin:lda #1:jmp devcmd
+ 2799 ;****
+ 2800 chinit lda #0:sta dbanz
+ 2810 jsr chodev:lda #0:jsr chidev
+ 2820 rts
+ 2999 ;********
+ 3000 pdevout cpx #0:beq pdo1
+ 3010 pdie jmp dnotpr:pdo1
+ 3020 jsr bout:clc:rts
+ 3099 ;****
+ 3100 pdevin cpx #0:bne pdie
+ 3110 pdi1 jsr bgkey:beq pdi1
+ 3120 sta chdiv:clc:rts
+ 3199 ;****
+ 3200 pdevcmd cpx #0:bne pdie
+ 3210 lda #0:rts
+

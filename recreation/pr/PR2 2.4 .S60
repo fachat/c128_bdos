@@ -1,0 +1,336 @@
+
+
+;PR2 2.4 .S60 ==0801==
+//   10 .if fci:.goto 400
+#if fci-1
+  100 lload sta zei:sty zei+1:ldy #0
+  110 lll0 lda (zei),y:beq lll2:cmp #"/":beq lll1:iny:bne lll0
+  120 lll1 iny:lll2 tya:clc:adc zei:sta fad2:lda zei+1:adc #0:sta fad2+1
+  130 lda zei:ldy zei+1
+  140 jsr rwopen
+  145 bne llor1a
+  150 ldy #fpanz:lda #2:sta (zei),y:iny:lda #0:sta (zei),y
+  160 ldy #fpbank:lda #prgbank:sta (zei),y
+  170 ldy #fpadr:lda #<buffer:sta (zei),y:iny:lda #>buffer:sta (zei),y
+  180 lda zei:sta fl1:lda zei+1:sta fl1+1
+  190 ldx handle:jsr dread:bne lloe
+  195 llor1a bne llor
+  200 lda fl1:sta zei:lda fl1+1:sta zei+1
+  210 ldy #fpadr
+  220 lda buffer:sta nadr:sta (zei),y
+  230 lda buffer+1:sta nadr+1:iny:sta (zei),y
+  240 ldy #fpsize:lda (zei),y:tax:iny:lda (zei),y
+  250 ldy #fpanz+1:sta (zei),y:dey:txa:sta (zei),y
+  260 ldx handle:jsr dread:cmp #eneof:bne lloe:lda #0
+  270 lloe pha:ldx handle:jsr dclose:pla:bne llor
+  280 lda nadr:sta llvec:lda nadr+1:sta llvec+1
+  290 lda fad2:ldy fad2+1
+  300 jmp (llvec):llor rts
+  310 ;**********
+  320 del ldx #$e7:jmp delete
+  330 ;**********
+  340 md  jmp mkdir
+  350 ;**********
+  360 rd  jmp rmdir
+  370 ;**********
+  380 cr  ldx #$20:jmp dcreate
+  390 ;**********
+#endif
+  400 pformat sta czei:sty czei+1:lda #1:sta fformat
+  410 pff0 jsr chrgot:beq pfo1:cmp #"/":bne pff1
+  420 jsr chrget:jsr gbyt:bne pff0
+  430 stx fformat:beq pff0
+  440 pff1 tax:ldy #1:lda (czei),y:cmp #":":bne pfo1
+  450 jsr chrget:jsr chrget
+  460 txa:sec:sbc #"a":jmp pfo2
+  470 pfo1 clc:jsr sgdrive
+  480 pfo2 sta fadr:ldx fformat:jsr flopfmt:bne pfoe
+  490 jsr chrgot:beq pfoe
+  500 lda fadr:sec:jsr sgdrive:bne pfoe
+  510 lda #<ddtp:ldy #>ddtp:sec:jsr sgdta
+  520 lda #0:tax:ldy #1; ersten leeren eintrag:jsr sfirso:bne pfoe
+  530 ldy #0:ldx #0
+  540 pfo3 lda (czei),y:beq pfoleer
+  550 cmp #".":beq pfoext
+  560 sta ddtp+dgname,x:iny:inx:cpx #8:bcc pfo3
+  570 pfo3a lda (czei),y:beq pfoleer
+  580 cmp #".":beq pfoext
+  590 iny:bne pfo3a:pfoleer dey
+  600 pfoext lda #" ":cpx #8:beq pfoex1
+  610 sta ddtp+dgname,x:inx:bne pfoext
+  620 pfoex1 iny:ldx #0
+  630 pfo4 lda (czei),y:beq pfoend
+  640 sta ddtp+dgext,x
+  650 iny:inx:cpx #3:bne pfo4
+  660 pfoend lda #" ":cpx #3:beq pfoe1
+  670 sta ddtp+dgext,x:inx:bne pfoend
+  680 pfoe1 lda #$08:sta ddtp+dgattr
+  690 jmp wrentry:pfoe rts
+//  695 .if fci:.goto 10000
+#if 1-fci
+  700 ;**********
+  710 cd  jmp chdir
+  720 ;**********
+  730 ex jsr exit:jmp ($fffc)
+  740 ;**********
+  750 rwopen jsr dopen:stx zei:sty zei+1:bne prwe
+  760 stx fadr:sty fadr+1
+  770 ldy #fphandle:lda (zei),y:sta handle
+  780 ldy #fpsize:flen2 lda (zei),y
+  790 sta laenge-fpsize,y:iny:cpy #fpsize+4:bne flen2:prwe rts
+  800 ;****
+  810 pread jsr rwopen:bne preade
+  820 jsr prttst:read lda fadr:sta zei:lda fadr+1:sta zei+1
+  830 ldy #fpanz:lda prblen:sta (zei),y:iny:lda prblen+1:sta (zei),y
+  840 ldy #fpadr:lda #<buffer:sta (zei),y:iny:lda #>buffer:sta (zei),y
+  850 ldy #fpbank:lda #prgbank:sta (zei),y
+  860 ldx handle:jsr dread:bne pread1
+  870 ldx prblen:ldy prblen+1:jsr rdprint:bcs pread1
+  880 lda laenge:sec:sbc prblen:sta laenge
+  890 lda laenge+1:sbc prblen+1:sta laenge+1
+  900 bcs rd1:lda laenge+2:bne rd2:dec laenge+3:rd2 dec laenge+2
+  910 rd1 jmp read
+  920 pread1 cmp #eneof:bne preade
+  930 ldx laenge:ldy laenge+1:jsr rdprint
+  940 preade pha:ldx handle:jsr dclose:jsr prtoff:pla:rts
+  950 ;****
+  960 rdprint stx tplen:sty tplen+1
+  970 txa:ora tplen+1:beq wrle
+  980 lda #<buffer:sta zei:lda #>buffer:sta zei+1
+  990 rdp1 ldy #0:lda (zei),y:jsr chout
+  995 jsr bgkey:cmp #3:bne wrls:lda #enbreak:sec:rts
+ 1000 wrls inc zei:bne rdp1a:inc zei+1
+ 1010 rdp1a lda tplen:bne rdp2:dec tplen+1:rdp2 dec tplen
+ 1020 lda tplen:ora tplen+1:bne rdp1
+ 1030 wrle clc:rts
+ 1040 ;**********
+ 1050 pwrite sta nadr:sty nadr+1:ldx #$20:jsr dcreate
+ 1060 bne wrle:lda nadr:ldy nadr+1:jsr rwopen:bne pwritee
+ 1070 wrloop jsr wrinput:sta st1
+ 1080 stx tplen:sty tplen+1
+ 1090 lda fadr:sta zei:lda fadr+1:sta zei+1
+ 1100 ldy #fpanz:lda tplen:sta (zei),y:iny:lda tplen+1:sta (zei),y
+ 1110 ldy #fpadr:lda #<buffer:sta (zei),y:iny:lda #>buffer:sta (zei),y
+ 1120 ldy #fpbank:lda #prgbank:sta (zei),y
+ 1130 ldx handle:jsr dwrite:bne pwritee
+ 1140 lda st1:beq wrloop
+ 1150 lda #0:pwritee pha:ldx handle:jsr dclose:pla:rts
+ 1160 ;****
+ 1170 wrinput lda #<buffer:sta zei:lda #>buffer:sta zei+1
+ 1180 lda #0:sta tplen:sta tplen+1
+ 1190 wril jsr bgkey:beq wril:jsr chout:ldy #0:sta (zei),y:pha
+ 1200 inc zei:bne wri1:inc zei+1
+ 1210 wri1 inc tplen:bne wri2:inc tplen+1
+ 1220 wri2 pla:cmp #3;run/stop:beq wrie
+ 1230 lda tplen+1:cmp prblen+1:bne wril
+ 1240 lda tplen:cmp prblen:bne wril
+ 1250 lda #0:.byt $2c:wrie lda #eneof
+ 1260 ldx tplen:ldy tplen+1:rts
+ 1270 ;*********
+ 1280 pcopy sta zei:sty zei+1:ldx #0
+ 1281 ldy #<-1:pcc1 iny:lda (zei),y:beq pcce:cmp #" ":beq pcc1
+ 1282 pcc2 lda (zei),y
+ 1283 cmp #" ":beq pcc3a:sta dbuf,x:cmp #0:beq pcce
+ 1284 iny:inx:bne pcc2
+ 1285 pcc3a pcce lda #0:sta dbuf,x
+ 1286 dey:pcc4 iny:lda (zei),y:cmp #" ":beq pcc4
+ 1287 tya:clc:adc zei:sta nadr:lda zei+1:adc #0:sta nadr+1
+ 1340 jsr gsoutar:bne pcc3:lda #enbreak:rts
+ 1350 pcc3 lda #<dbuf:ldy #>dbuf:jsr rwopen:bne pcerr1a
+ 1360 lda nadr:ldy nadr+1:ldx #$20:jsr dcreate
+ 1370 pcerr1a bne pcerr1b
+ 1380 lda nadr:ldy nadr+1:jsr dopen:stx fad2:sty fad2+1:php
+ 1390 stx zei:sty zei+1:ldy #fphandle:lda (zei),y
+ 1400 sta handl2:plp:bne pcerr2a
+ 1410 pcread lda fadr:sta zei:lda fadr+1:sta zei+1
+ 1420 ldy #fpanz:lda prblen:sta (zei),y:iny:lda prblen+1:sta (zei),y
+ 1430 ldy #fpadr:lda #<buffer:sta (zei),y:iny:lda #>buffer:sta (zei),y
+ 1440 ldy #fpbank:lda #prgbank:sta (zei),y
+ 1450 ldx handle:jsr dread:sta st1:cmp #eneof:beq pcrwa
+ 1460 lda prblen+1:sta tplen+1:lda prblen:sta tplen
+ 1470 lda laenge:sec:sbc prblen:sta laenge
+ 1480 lda laenge+1:sbc prblen+1:sta laenge+1:bcs pcrw1
+ 1490 lda laenge+2:bne pcrw2
+ 1500 pcerr1b bne pcerr1:pcerr2a bne pcerr2
+ 1510 dec laenge+3:pcrw2 dec laenge+2
+ 1520 pcrw1 jmp pcrw3:pcreada beq pcread
+ 1530 pcrwa lda laenge:sta tplen
+ 1540 lda laenge+1:sta tplen+1
+ 1550 pcrw3 lda fad2:sta zei:lda fad2+1:sta zei+1
+ 1560 ldy #fpanz:lda tplen:sta (zei),y:iny:lda tplen+1:sta (zei),y
+ 1570 ldy #fpadr:lda #<buffer:sta (zei),y:iny:lda #>buffer:sta (zei),y
+ 1580 ldy #fpbank:lda #prgbank:sta (zei),y
+ 1590 ldx handl2:jsr dwrite:bne pcerr2
+ 1600 lda st1:beq pcreada:cmp #eneof:bne pcerr2:lda #0
+ 1610 pcerr2 pha:ldx handl2:jsr dclose:pla
+ 1620 pcerr1 pha:ldx handle:jsr dclose:pla:rts
+ 1630 ;**********
+ 1640 psave sta zei:sty zei+1:ldx #0
+ 1642 ldy #<-1:pss1 iny:lda (zei),y:beq psse:cmp #" ":beq pss1
+ 1643 pss2 lda (zei),y
+ 1644 cmp #" ":beq pss3a:sta dbuf,x:cmp #0:beq psse
+ 1645 iny:inx:bne pss2
+ 1646 pss3a psse lda #0:sta dbuf,x
+ 1647 dey:pss4 iny:lda (zei),y:cmp #" ":beq pss4
+ 1648 tya:clc:adc zei:sta zei:lda zei+1:adc #0:sta zei+1
+ 1680 ldy #0:psa1 lda (zei),y:sta buf,y:beq psa2:iny:bne psa1
+ 1690 psa2 sty dint1:tya:ldx #<buf:ldy #>buf:jsr setfnpar
+ 1700 ldx iecunit:lda #1:ldy #1:jsr setfpar
+ 1710 ;****
+ 1720 ldy #0:pts1 lda buf,y:iny:cmp #" ":beq pts1
+ 1730 and #$0f:sta dr1:lda buf,y:cmp #":":beq pts2
+ 1740 lda #0:sta dr1
+ 1750 pts2 ldy #0:pts3 lda dbuf,y:iny:cmp #" ":beq pts3
+ 1760 sec:sbc #"a":sta dr2:lda dbuf,y:cmp #":":beq pts4
+ 1770 clc:jsr sgdrive
+ 1780 sta dr2
+ 1790 pts4 jsr drvtest:bcc pls1
+ 1800 jmp pss
+ 1810 ;****
+ 1820 pls1 jsr gsoutar:bne pls1a:lda #enbreak:rts
+ 1830 pls1a lda #<dbuf:ldy #>dbuf:jsr rwopen:bne psaerr1a
+ 1840 jsr open:bcc psa3:lda #ennotimp:bne psaerr2
+ 1850 psaerr1a bne psaerr1:psa3
+ 1860 psread lda fadr:sta zei:lda fadr+1:sta zei+1
+ 1870 ldy #fpanz:lda prblen:sta (zei),y:iny:lda prblen+1:sta (zei),y
+ 1880 ldy #fpadr:lda #<buffer:sta (zei),y:iny:lda #>buffer:sta (zei),y
+ 1890 ldy #fpbank:lda #prgbank:sta (zei),y
+ 1900 ldx handle:jsr dread:bne psa4
+ 1910 ldx prblen:ldy prblen+1:psa5 jsr ppsave:beq psa4a
+ 1920 lda #endnrdy:bne psa4
+ 1930 psa4a lda laenge:sec:sbc prblen:sta laenge
+ 1940 lda laenge+1:sbc prblen+1:sta laenge+1
+ 1950 bcs rs1:lda laenge+2:bne rs2:dec laenge+3:rs2 dec laenge+2
+ 1960 rs1 jmp psread
+ 1970 psa4 cmp #eneof:bne psaerr2
+ 1980 ldx laenge:ldy laenge+1:jsr ppsave:lda #0
+ 1990 psaerr2 pha:lda #1:jsr close:pla
+ 2000 psaerr1 pha:ldx handle:jsr dclose:pla:rts
+ 2010 ppsave stx tplen:sty tplen+1
+ 2020 txa:ora tplen+1:beq pssx
+ 2030 lda #0:sta status:ldx #1:jsr ckout:bcc ppsav1:ora #64:bne pssx
+ 2040 ppsav1 lda #<buffer:sta zei:lda #>buffer:sta zei+1
+ 2050 ldy #0:ppsa1 lda (zei),y:jsr bsout:inc zei:bne pssa2:inc zei+1
+ 2060 pssa2 lda tplen:bne pssa3:dec tplen+1:pssa3 dec tplen
+ 2070 lda tplen:ora tplen+1:bne ppsa1
+ 2080 jsr clrch:lda status:and #255-64:pssx rts
+ 2090 ;****
+ 2100 pss jsr gsource:beq psse3
+ 2110 lda #<dbuf:ldy #>dbuf:jsr rwopen:bne pssee1
+ 2120 ldy #fpanz:lda prblen:sta (zei),y:iny:lda prblen+1:sta (zei),y
+ 2130 ldy #fpadr:lda #<buffer:sta (zei),y:iny:lda #>buffer:sta (zei),y
+ 2140 ldy #fpbank:lda #prgbank:sta (zei),y
+ 2150 ldx handle:jsr dread
+ 2160 pssee1 pha:ldx handle:jsr dclose:pla
+ 2170 beq psse1
+ 2180 cmp #eneof:bne pssee
+ 2190 jsr gtarget:beq psse3
+ 2200 lda dint1:ldx #<buf:ldy #>buf:jsr setfnpar
+ 2210 ldx iecunit:lda #1:ldy #1:jsr setfpar
+ 2220 jsr open:bcs psse2
+ 2230 ldx laenge:ldy laenge+1:jsr ppsave:beq pssex:lda #endnrdy
+ 2240 pssex pha:lda #1:jsr close:pla:rts
+ 2250 psse1 lda #enprange:.byt $2c
+ 2260 psse3 lda #enbreak:.byt $2c
+ 2270 psse2 lda #ennotimp
+ 2280 pssee rts
+ 2290 ;****
+ 2300 gsource lda #<tsource:ldy #>tsource:jsr textout:pllo7 jsr bgkey:beq pllo7
+ 2310 cmp #keystp:rts
+ 2320 gtarget lda #<ttarget:ldy #>ttarget:jsr textout:pllo6 jsr bgkey:beq pllo6
+ 2330 cmp #keystp:rts
+ 2340 gsoutar lda #<tsoutar:ldy #>tsoutar:jsr textout:ptttt jsr bgkey:beq ptttt
+ 2350 cmp #keystp:rts
+ 2360 ;**********
+ 2370 pload ;
+ 2380 sta zei:sty zei+1:ldx #0
+ 2381 ldy #<-1:plc1 iny:lda (zei),y:beq plce:cmp #" ":beq plc1
+ 2382 plc2 lda (zei),y
+ 2383 cmp #" ":beq plc3a:sta dbuf,x:cmp #0:beq plce
+ 2384 iny:inx:bne plc2
+ 2385 plc3a plce lda #0:sta dbuf,x:stx st1
+ 2386 dey:plc4 iny:lda (zei),y:cmp #" ":beq plc4
+ 2387 tya:clc:adc zei:sta nadr:lda zei+1:adc #0:sta nadr+1
+ 2440 ldy #0:ptl1 lda dbuf,y:iny:cmp #" ":beq ptl1
+ 2450 and #$0f:sta dr1:lda dbuf,y:cmp #":":beq ptl2
+ 2460 lda #0:sta dr1
+ 2470 ptl2 ldy #0:ptl3 lda buf,y:iny:cmp #" ":beq ptl3
+ 2480 sec:sbc #"a":sta dr2:lda buf,y:cmp #":":beq ptl4
+ 2490 clc:jsr sgdrive
+ 2500 sta dr2
+ 2510 ptl4 lda st1:ldx #<dbuf:ldy #>dbuf:jsr setfnpar
+ 2511 ldx iecunit:lda #1:ldy #0:jsr setfpar
+ 2520 jsr drvtest:bcs pll1
+ 2550 ;****
+ 2560 pll1y jsr gsoutar:bne pll1a:lda #enbreak:rts
+ 2570 pll1a jsr open:bcc plo3:lda #ennotimp:bne plerr2
+ 2580 plo3 lda nadr:ldy nadr+1:ldx #$20:jsr dcreate
+ 2590 bne plerr2:lda nadr:ldy nadr+1:jsr rwopen:bne plerr2
+ 2600 plloop jsr plinput:sta st1
+ 2610 stx tplen:sty tplen+1
+ 2620 lda fadr:sta zei:lda fadr+1:sta zei+1
+ 2630 ldy #fpanz:lda tplen:sta (zei),y:iny:lda tplen+1:sta (zei),y
+ 2640 ldy #fpadr:lda #<buffer:sta (zei),y:iny:lda #>buffer:sta (zei),y
+ 2650 ldy #fpbank:lda #prgbank:sta (zei),y
+ 2660 ldx handle:jsr dwrite:bne plerr2
+ 2670 lda st1:beq plloop:lda #0
+ 2680 plerr1 pha:ldx handle:jsr dclose:pla
+ 2690 plerr2 pha:lda #1:jsr close:pla:plerr1a rts
+ 2700 ;****
+ 2710 pll1 jsr gsource
+ 2720 beq pllo4c
+ 2730 jsr open:bcc pllo3:lda #ennotimp:bne plloerr
+ 2740 pllo3 jsr plinput:sta st1:and #255-64:bne pllo4b
+ 2750 lda st1:and #64:bne pllo4a
+ 2760 pllo4  lda #enprange:.byt $2c
+ 2770 pllo4a lda #enok    :.byt $2c
+ 2780 pllo4c lda #enbreak :.byt $2c
+ 2790 pllo4b lda #endnrdy
+ 2800 stx tplen:sty tplen+1
+ 2810 plloerr pha:lda #1:jsr close:pla:beq pllo5:rts
+ 2820 pllo5 jsr gtarget
+ 2830 beq pllo4c
+ 2840 lda nadr:ldy nadr+1:ldx #$20:jsr dcreate
+ 2850 bne plerr1a:lda nadr:ldy nadr+1:jsr rwopen:bne plerr1
+ 2860 ldy #fpanz:lda tplen:sta (zei),y:iny:lda tplen+1:sta (zei),y
+ 2870 ldy #fpadr:lda #<buffer:sta (zei),y:iny:lda #>buffer:sta (zei),y
+ 2880 ldy #fpbank:lda #prgbank:sta (zei),y
+ 2890 ldx handle:jsr dwrite:jmp plerr1
+ 2900 ;****
+ 2910 plinput lda #0:sta tplen:sta tplen+1
+ 2920 sta status:ldx #1:jsr chkin
+ 2930 lda #<buffer:sta zei:lda #>buffer:sta zei+1
+ 2940 pliloop jsr basin:ldy #0:sta (zei),y
+ 2950 inc zei:bne pli1:inc zei+1
+ 2960 pli1 inc tplen:bne pli2:inc tplen+1
+ 2970 pli2 lda status:bne plie
+ 2980 lda tplen:cmp prblen:bne pliloop:lda tplen+1:cmp prblen+1:bne pliloop
+ 2990 lda #0:plie pha:jsr clrch:ldx tplen:ldy tplen+1:pla:rts
+ 3000 ;**********
+ 3010 drvtest lda dr2:ldx #0:cmp dosd0,x:beq drt1
+ 3020 inx:cmp dosd0,x:bne drte
+ 3030 drt1 lda iecunit:cmp iecd0,x:bne drte
+ 3040 lda dr1:cmp drvd0,x:bne drte
+ 3050 sec:rts:drte clc:rts
+ 3999 ;**********
+ 4000 copycon sta fadr:sty fadr+1
+ 4003 ldx #$20:jsr dcreate:bne cpcend
+ 4005 lda fadr:ldy fadr+1
+ 4007 jsr rwopen:bne cpcend
+ 4010 cpcl jsr linein
+ 4011 sta zei:sty zei+1
+ 4012 ldy #0:cpca lda (zei),y:sta buf,y:beq cpcb:iny:bne cpca
+ 4015 cpcb lda fadr:sta zei:lda fadr+1:sta zei+1
+ 4020 ldy #<-1:cpc0 iny:lda buf,y:beq cpcen:cmp #" ":beq cpc0
+ 4030 cpc1 iny:lda buf,y:cmp #0:bne cpc1
+ 4040 lda #13:sta buf,y:iny:tya:ldy #fpanz
+ 4050 sta (zei),y:iny:lda #0:sta (zei),y
+ 4060 lda #<buf:ldy #fpadr
+ 4070 sta (zei),y:iny:lda #>buf:sta (zei),y
+ 4075 ldy #fpbank:lda #prgbank:sta (zei),y
+ 4080 ldx handle:jsr dwrite:beq cpcl
+ 4090 cpcen pha:ldx handle:jsr dclose
+ 4100 pla:cpcend rts
+#endif
+10000 .end
+

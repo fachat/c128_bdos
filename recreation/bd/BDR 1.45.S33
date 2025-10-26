@@ -1,0 +1,102 @@
+
+
+;BDR 1.45.S33 ==0801==
+ 1000 ;**********
+ 1010 ; ab hier beginnt rom-data
+ 1020 ; dieser teil muss im rom stehen
+ 1030 verblock ;
+ 1040 .byt va
+ 1050 .byt vb
+ 1060 .byt bufanz
+ 1070 .byt pathlen
+ 1080 .byt anzdrv
+ 1090 .byt fpbanz
+ 1100 .word vektor
+ 1110 .word 0,0,0,0
+ 1120 .asc "bdos+ 1.45 17.08.1989 by a.fachat ":.byt 0
+ 1121 ;********
+ 1122 crsrcol
+ 1123 .byt $90,$05,$1c,$9f,$9c,$1e,$1f,$9e
+ 1124 .byt $81,$95,$96,$97,$98,$99,$9a,$9b
+ 1130 ;**********
+ 1140 bfdindex ; tabelle der offsets fuer bf1-daten
+#ifdef ORIG
+ 1150 .byt *-bfdindex*bfoffs
+ 1160 .if *-bfdindex-bufanz:;.goto 1150
+#else
+	.byt 0
+	.byt bfoffs
+	.byt 2*bfoffs
+	.byt 3*bfoffs
+#endif
+ 1170 ;*********
+ 1180 vektab ; tabelle der vektoren fuer die jumps am anfang hier rom
+ 1190 .word pinit
+ 1200 .word pexit
+ 1210 .word illdrv  ; query
+ 1220 .word illdrv  ; mediach
+ 1230 .word pgetbpb
+ 1240 .word illdrv  ; floprw
+ 1250 .word prwabs
+ 1260 .word illdrv  ; format
+ 1270 .word psgdta
+ 1280 .word psgdrive
+ 1290 .word pgtpath
+ 1300 .word psgnexcl
+ 1310 .word psfrclus
+ 1320 .word pgtdskfr
+ 1330 .word psfirst
+ 1340 .word psfirso
+ 1350 .word psnext
+ 1360 .word pchdir
+ 1370 .word pnamdtp
+ 1380 .word pwrentry
+ 1390 .word pdelete
+ 1400 .word pdcreate
+ 1410 .word pmkdir
+ 1420 .word prmdir
+ 1430 .word popen
+ 1440 .word pclose
+ 1450 .word pread
+ 1460 .word pwrite
+ 1470 .word plseek
+ 1480 .word pversion
+ 1490 .word notimpl
+ 1500 .word notimpl
+ 1510 .word notimpl
+ 1520 .word notimpl
+ 1530 .word notimpl
+ 1540 .word notimpl
+ 1550 .word pwritfat
+ 1560 .word preadfat
+ 1570 .word pwritbuf
+ 1580 .word preadbuf
+ 1590 .word psfrbuf
+ 1600 .word prlbuf
+ 1610 .word pbufabs
+ 1620 .word pbfzset
+ 1630 .word pbfset
+ 1640 .word pbfget
+ 1650 .word notimpl
+ 1660 .word notimpl
+ 1670 .word notimpl
+ 1680 .word notimpl
+ 1690 .word notimpl
+ 1700 .word notimpl
+ 1710 .word notimpl
+ 1720 .word notimpl
+ 1730 .word notimpl
+ 1740 .word notimpl
+ 1750 .word notimpl
+ 1760 .word notimpl
+ 1770 .word psetvec
+ 1780 .word pchout
+ 1790 .word pchodev
+ 1800 .word pchost
+ 1810 .word pchin
+ 1820 .word pchidev
+ 1830 .word pchist
+ 1840 .word pdevout
+ 1850 .word pdevin
+ 1860 .word pdevcmd
+

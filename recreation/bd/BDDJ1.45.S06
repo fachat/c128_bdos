@@ -1,0 +1,75 @@
+
+
+;BDDJ1.45.S06 ==0801==
+ 1000 ; ab hier beginnt ram-data, dieser teil muss nicht initiaisiert werden
+ 1010 vektor ; hier ist die eigentliche jump-table
+ 1020 vinit    .word 0
+ 1030 vexit    .word 0
+ 1040 vquery   .word 0
+ 1050 vmediach .word 0
+ 1060 vgetbpb  .word 0
+ 1070 vfloprw  .word 0
+ 1080 vrwabs   .word 0
+ 1090 vformat  .word 0
+ 1100 vsgdta   .word 0
+ 1110 vsgdrive .word 0
+ 1120 vgtpath  .word 0
+ 1130 vsgnexcl .word 0
+ 1140 vsfrclus .word 0
+ 1150 vgtdskfr .word 0
+ 1160 vsfirst  .word 0
+ 1170 vsfirso  .word 0
+ 1180 vsnext   .word 0
+ 1190 vchdir   .word 0
+ 1200 vnamdtp  .word 0
+ 1210 vwrentry .word 0
+ 1220 vdelete  .word 0
+ 1230 vdcreate .word 0
+ 1240 vmkdir   .word 0
+ 1250 vrmdir   .word 0
+ 1260 vopen    .word 0
+ 1270 vclose   .word 0
+ 1280 vread    .word 0
+ 1290 vwrite   .word 0
+ 1300 vlseek   .word 0
+ 1310 vversion .word 0
+ 1320 vreset   .word 0
+ 1330 virq     .word 0
+ 1340 vnmi     .word 0
+ 1350 vsgtime  .word 0
+ 1360 vsgdate  .word 0
+ 1370 vsalarm  .word 0
+ 1380 v37      .word 0
+ 1390 v38      .word 0
+ 1400 v39      .word 0
+ 1410 v40      .word 0
+ 1420 v41      .word 0
+ 1430 v42      .word 0
+ 1440 v43      .word 0
+ 1450 v44      .word 0
+ 1460 v45      .word 0
+ 1470 v46      .word 0
+ 1480 v47      .word 0
+ 1490 v48      .word 0
+ 1500 v49      .word 0
+ 1510 v50      .word 0
+ 1520 v51      .word 0
+ 1530 v52      .word 0
+ 1540 v53      .word 0
+ 1550 v54      .word 0
+ 1560 v55      .word 0
+ 1570 v56      .word 0
+ 1580 v57      .word 0
+ 1590 v58      .word 0
+ 1600 v59      .word 0
+ 1610 v60      .word 0
+ 1620 v61      .word 0
+ 1630 v62      .word 0
+ 1640 v63      .word 0
+ 1650 v64      .word 0
+ 1660 v65      .word 0
+ 1670 v66      .word 0
+ 1680 v67      .word 0
+ 1690 v68      .word 0
+ 1700 v69      .word 0
+

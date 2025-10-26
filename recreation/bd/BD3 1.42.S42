@@ -1,0 +1,118 @@
+
+
+;BD3 1.42.S42 ==0801==
+ 1000 pdelete jsr namedtp
+ 1015 php:ldx #0:stx pmc1:stx pmc1+1:plp
+ 1020 bne delnfb:beq delentry
+ 1030 delnext jsr snext:bne delr
+ 1040 delentry lda #$e5:ldy #dgname:sta (dtadr),y
+ 1050 jsr wrentry:bne delr
+ 1060 ldy #dgclus:lda (dtadr),y:tax:iny:lda (dtadr),y:tay
+ 1120 delnexcl stx pmc3:sty pmc3+1:txa:pha:tya:tax:pla
+ 1125 tay:ora pmc3+1:beq delnexf:tya
+ 1127 clc:jsr sgnexcl
+ 1130 stx pmc2:sty pmc2+1
+ 1140 php:lda pmc3:ldx pmc3+1
+ 1150 jsr delcl:bne delnfa:plp:beq delnexcl:.byt $24
+ 1160 delnfa plp
+ 1167 delnexf inc pmc1:bne delnf1:delnfb bne delnf:inc pmc1+1
+ 1170 delnf1 jmp delnext
+ 1180 delr ldx pmc1:ldy pmc1+1:lda #0:delerr rts
+ 1200 delcl sta dword:stx dword+1
+ 1210 lda #0:sta dword+2:sta dword+3
+ 1220 lda #<dword:ldy #>dword:sec:jsr sgnexcl:bne delerr
+ 1230 jsr writfat:ldx pmc2:ldy pmc2+1:lda #0:rts
+ 1240 delnf jmp notfound
+ 1440 ;**********
+ 1450 copdsdg ldy #dsname:ldx #0:stx copfl
+ 1455 cop1 lda (dtadr),y:sta copnam,x:iny:inx:cpx #8:bcc cop1
+ 1460 ldy #dgname:ldx #0
+ 1465 cop2 lda copnam,x:cmp #"?":beq cop2b:cmp #"*":bne cop2a:cop2b sta copfl
+ 1468 cop2a sta (dtadr),y:iny:inx:cpx #8:bcc cop2
+ 1470 ldy #dsext:ldx #0
+ 1475 cop3 lda (dtadr),y:sta copnam,x:iny:inx:cpx #3:bcc cop3
+ 1480 ldy #dgext:ldx #0
+ 1485 cop4 lda copnam,x:cmp #"?":beq cop4b:cmp #"*":bne cop4a:cop4b sta copfl
+ 1488 cop4a sta (dtadr),y:iny:inx:cpx #3:bcc cop4
+ 1490 lda copfl:rts
+ 1499 ;**********
+ 1500 pdcreate stx dcrattr
+ 1505 jsr namedtp:pha:stx pzei:sty pzei+1
+ 1509 ldy #gnact:lda (pzei),y:sta dword:iny:lda (pzei),y:sta dword+1
+ 1510 pla:beq dcrexist:cmp #ennotfnd;error nummer entry not found
+ 1520 bne dcrend
+ 1530 dcra1 lda dword:ldx dword+1
+ 1535 ldy #<-1;leeren eintrag:jsr sfirso:bne dcrdfull
+ 1540 lda #2:ldx #0:jsr sfrclus:bne dcrdfull
+ 1550 stx dword:sty dword+1
+ 1560 tya:ldy #dgclus+1:sta (dtadr),y
+ 1570 dey:txa:sta (dtadr),y
+ 1580 lda #$ff:sta dword+3:lda #$f7:sta dword+2
+ 1610 ldy #dgsize:lda #0
+ 1620 dcr1 sta (dtadr),y:iny:cpy #dgsize+4:bcc dcr1
+ 1630 jsr copdsdg:bne dcrnam
+ 1665 ldy #dgattr:lda dcrattr:sta (dtadr),y
+ 1670 jsr wrentry:bne dcrend
+ 1671 lda #<dword:ldy #>dword:sec:jsr sgnexcl
+ 1672 bne dcrend
+ 1675 jsr writfat:ldx dword:ldy dword+1:lda #0:rts
+ 1680 dcrend   jmp diskerr
+ 1690 dcrpar   jmp parrange
+ 1700 dcrexist jmp filexist
+ 1710 dcrnam   jmp illname
+ 1720 dcrdfull jmp diskfull
+ 1799 ;**********
+ 1800 pmkdir ldx #%00010000:jsr dcreate:bne dcrend
+ 1810 stx pmk1:sty pmk1+1
+ 1812 txa:pha:tya:tax:pla
+ 1814 jsr dclinit:bne dcrend
+ 1816 ldy #dtstart:lda (dtadr),y:sta pmk2:iny:lda (dtadr),y:sta pmk2+1
+ 1830 lda pmk1:ldx pmk1+1:ldy #$ff:jsr sfirso:bne dkdend
+ 1840 jsr dgnamini:lda #".":ldy #dgname
+ 1850 sta (dtadr),y
+ 1860 ldy #dgclus:lda pmk1:sta (dtadr),y
+ 1870 iny:lda pmk1+1:sta (dtadr),y
+ 1880 ldy #dgattr:lda #$10:sta (dtadr),y
+ 1890 jsr wrentry:bne dkdend
+ 1895 lda pmk1:ldx pmk1+1:ldy #$ff:jsr sfirso:bne dkdend
+ 1897 jsr dgnamini
+ 1900 ldy #dgname:lda #".":sta (dtadr),y
+ 1902 iny:sta (dtadr),y
+ 1905 ldy #dgattr:lda #$10:sta (dtadr),y
+ 1910 ldy #dgclus:lda pmk2:sta (dtadr),y
+ 1920 iny:lda pmk2+1:sta (dtadr),y
+ 1930 jsr wrentry
+ 1940 dkdend cmp #0:rts
+ 1960 mkdroot .asc "..":;.byt 0
+ 1979 ;**********
+ 1980 dgnamini ldx #8:ldy #dgname:lda #" "
+ 1982 dgni1 sta (dtadr),y:iny:dex:bne dgni1
+ 1985 ldx #3:ldy #dgext
+ 1987 dgni2 sta (dtadr),y:iny:dex:bne dgni2:rts
+ 1990 dsnamini ldx #8:ldy #dsname:lda #" "
+ 1992 dsni1 sta (dtadr),y:iny:dex:bne dsni1
+ 1995 ldx #3:ldy #dgext
+ 1997 dsni2 sta (dtadr),y:iny:dex:bne dsni2:rts
+ 1999 ;**********
+ 2000 prmdir sta pmk1:sty pmk1+1
+ 2005 ldx #%00010000:jsr namedtp:bne pmdend
+ 2006 stx pzei:sty pzei+1:ldy #gnact
+ 2007 lda (pzei),y:sta pmk2:iny
+ 2008 lda (pzei),y:sta pmk2+1
+ 2009 jsr snext:beq pmdnam
+ 2010 jsr dsnamini:lda #"*"
+ 2020 ldy #dsname:sta (dtadr),y
+ 2030 ldy #dsext:sta (dtadr),y
+ 2040 ldy #dsattr:lda #$f7:sta (dtadr),y
+ 2042 ldy #gnfile+1:lda (pzei),y:tax:dey:lda (pzei),y
+ 2043 cmp dirclus:bne rmd1:cpx dirclus+1:beq pmdact
+ 2044 rmd1 ldy #0
+ 2050 jsr sfirso:jmp pmd1
+ 2055 pmd2 jsr snext:pmd1 bne pmddel
+ 2060 ldy #dgname:lda (dtadr),y:cmp #".":beq pmd2
+ 2080 jmp notempty
+ 2090 pmddel lda pmk1:ldy pmk1+1:ldx #%00010000:jmp delete
+ 2100 pmdend rts
+ 2110 pmdnam jmp illname
+ 2120 pmdact jmp eactdir
+

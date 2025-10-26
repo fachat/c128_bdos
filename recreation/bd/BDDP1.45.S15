@@ -1,0 +1,89 @@
+
+
+;BDDP1.45.S15 ==0801==
+   10 ;********* data bdc
+   20 rbrec .word 0
+   30 ;********* data bdb
+   40 pwfrec .word 0
+  100 ;********* data fuer teil 1
+  110 ;puffer fuer floppy-befehl
+  170 ;parameterblock f. floprw syscall
+  180 pblock .byt 0,0,0,0,0:.word 0:.byt 0
+  190 ;parameterblock fuer rwabs
+  200 abspar .byt 0,0:.word 0,0,0:.byt 0
+  210 pgbbuf .byt 0
+  270 ;**** bios-parameter block aktuell, enthaelt gp-struktur
+  280 bpb ;
+#ifdef ORIG
+  290 .byt 0:.if *-bpb-bpblen:.goto 290
+#else
+	.dsb bpblen, 0
+#endif
+  300 ;**** hier folgt gp-struktur
+  310 dirclus .word 0
+  320 path ;
+#ifdef ORIG
+  330 .byt 0:.if *-path-pathlen:.goto 330
+#else
+	.dsb pathlen, 0
+#endif
+  340 sfirsfe .byt 0; flag,ob leeren eintrag suchen
+  350 ;********** data fuer teil 2
+  360 cd0attr .byt 0; attribut fuer change dir
+  370 newdrv   .byt 0  ; neues drive bei setdrv
+  380 ;**** hier folgt getname-transfer-puffer struktur
+  390 actdrv   .byt 0  ; actual drive
+  400 actflag  .byt 0  ; flag fuer getname
+  410 actclus  .word 0 ; startcluster akt. directory
+  420 actfil   .word 0 ; startcluster file
+  430 actpath ; pfad fuer getname
+#ifdef ORIG
+  440 .byt 0:.if *-actpath-pathlen:.goto 440
+#else
+	.dsb pathlen, 0
+#endif
+  450 ;**** zwischenspeicher fuer dir-eintrag
+  460 dirbuf   .asc "01234567890123456789012345678901"
+  470 ; disk-transfer-puffer
+  480 dtp
+#ifdef ORIG
+  490 .byt 0:.if *-dtp-dtplen:.goto 490
+#else
+	.dsb dtplen,0
+#endif
+  500 pa1 .word 0
+  510 pa2 .word 0
+  520 dword .word 0,0
+  530 slcsec .word 0
+  540 slcbuf .byt  0
+  550 ;*********** data fuer teil 3
+  560 pmc1 .word 0
+  570 pmc2 .word 0
+  580 pmc3 .word 0
+  590 pmk1 .word 0
+  600 pmk2 .word 0
+  610 copnam .asc "01234567"
+  620 copfl .byt 0
+  630 dcrattr .byt 0
+  640 ;********** data fuer teil 4
+  650 fcpc .word 0
+  660 fp1  .word 0
+  670 addprf .byt  0
+  680 przbank .byt  0
+  690 ;********** data fuer teil time
+  700 datum .byt 0,0,0
+  710 ;********** data fuer format
+  720 fformat .byt 0
+  730 ;********** data fuer teil 5
+  740 devbuf
+#ifdef ORIG
+  750 .word 0,0,0,0,0,0,0,0:.if *-devbuf-256:.goto 750
+#else
+	.dsb 256, 0
+#endif
+  760 dbanz   .byt 0
+  770 dvout   .byt 0
+  780 dvin    .byt 0
+  790 dvfl    .byt 0
+  800 chdiv   .byt 0
+

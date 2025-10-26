@@ -1,0 +1,143 @@
+
+
+;BDJ 1.45.S31 ==0801==
+#if 1-prg
+ 1010 anzjmp  =68
+ 1020 init    jmp pinit      ; start von vorne
+ 1030 exit    jmp (vexit   ) ; start von vorne
+ 1040 query   jmp (vquery  ) ; disk-format feststellen
+ 1050 mediach jmp (vmediach) ; disk gewechselt
+ 1060 getbpb  jmp (vgetbpb ) ; adr des bpb holen
+ 1070 floprw  jmp (vfloprw ) ; pfloprw  ; block lesen/schreiben
+ 1080 rwabs   jmp (vrwabs  ) ; blockreihe r/w ueber log blocknummer
+ 1090 flopfmt jmp (vformat ) ; floppy formatieren
+ 1100 sgdta   jmp (vsgdta  ) ; adresse dta-puffer setzten/holen
+ 1110 sgdrive jmp (vsgdrive) ; drive holen/setzen
+ 1120 gtpath  jmp (vgtpath ) ; holt adresse des aktuellen pfades
+ 1130 sgnexcl jmp (vsgnexcl) ; folgecluster holen/setzen
+ 1140 sfrclus jmp (vsfrclus) ; naechsten freien sektor suchen
+ 1150 gtdskfr jmp (vgtdskfr) ; freien platz auf der diskette berechnen
+ 1160 sfirst  jmp (vsfirst ) ; ersten eintrag in dir suchen nach dta
+ 1170 sfirso  jmp (vsfirso ) ; file umbenennen
+ 1180 snext   jmp (vsnext  ) ; naechsten eintrag
+ 1190 chdir   jmp (vchdir  ) ; directory wechseln
+ 1200 namedtp jmp (vnamdtp ) ; pfad fuer prg setzen
+ 1210 wrentry jmp (vwrentry) ; entry in dta auf disk schreiben
+ 1220 delete  jmp (vdelete ) ; file loeschen
+ 1230 dcreate jmp (vdcreate) ; file zum ersten mal oeffnen
+ 1240 mkdir   jmp (vmkdir  ) ; directory anlegen
+ 1250 rmdir   jmp (vrmdir  ) ; directory loeschen
+ 1260 dopen   jmp (vopen   ) ; file oeffnen
+ 1270 dclose  jmp (vclose  ) ; file schliessen
+ 1280 dread   jmp (vread   ) ; aus file lesen
+ 1290 dwrite  jmp (vwrite  ) ; in file schreiben
+ 1300 lseek   jmp (vlseek  ) ; position in file bestimmen
+ 1310 version jmp pversion   ; version des bdos holen
+ 1320 reschain jmp (vreset  ) ;
+ 1330 irqchain jmp (virq    ) ;
+ 1340 nmichain jmp (vnmi    ) ;
+ 1350 sgtime   jmp (vsgtime ) ;
+ 1360 sgdate   jmp (vsgdate ) ;
+ 1370 salarm   jmp (vsalarm ) ;
+ 1380 writfat  jmp (v37     ) ;
+ 1390 readfat  jmp (v38     ) ;
+ 1400 writbuf  jmp (v39     ) ;
+ 1410 readbuf  jmp (v40     ) ;
+ 1420 sfrbuf   jmp (v41     ) ;
+ 1430 rlbuf    jmp (v42     ) ;
+ 1440 bufabs   jmp (v43     ) ;
+ 1450 bfzset   jmp (v44     ) ;
+ 1460 bfset    jmp (v45     ) ;
+ 1470 bfget    jmp (v46     ) ;
+ 1480 bout     jmp (v47     ) ;
+ 1490 bin      jmp (v48     ) ;
+ 1500 bcan     jmp (v49     ) ;
+ 1510 bcaus    jmp (v50     ) ;
+ 1520 bbcol    jmp (v51     ) ;
+ 1530 btcol    jmp (v52     ) ;
+ 1540 bcpos    jmp (v53     ) ;
+ 1550 bgkey    jmp (v54     ) ;
+ 1560 bfetch   jmp (v55     ) ;
+ 1570 bstash   jmp (v56     ) ;
+ 1580 bfadr    jmp (v57     ) ;
+ 1590 bsadr    jmp (v58     ) ;
+ 1591 setvec   jmp (v59     ) ;
+ 1600 chout    jmp (v60     ) ;
+ 1601 chodev   jmp (v61     ) ;
+ 1602 chost    jmp (v62     ) ;
+ 1603 chin     jmp (v63     ) ;
+ 1604 chidev   jmp (v64     ) ;
+ 1605 chist    jmp (v65     ) ;
+ 1606 devout   jmp (v66     ) ;
+ 1607 devin    jmp (v67     ) ;
+ 1608 devcmd   jmp (v68     ) ;
+#else
+ 1620 init    =bdos        ; start von vorne
+ 1630 exit    =bdos+3      ; start von vorne
+ 1640 query   =bdos+6      ; disk-format feststellen
+ 1650 mediach =bdos+9      ; disk gewechselt
+ 1660 getbpb  =bdos+12     ; adr des bpb holen
+ 1670 floprw  =bdos+15     ; pfloprw  ; block lesen/schreiben
+ 1680 rwabs   =bdos+18     ; blockreihe r/w ueber log blocknummer
+ 1690 flopfmt =bdos+21     ; floppy formatieren
+ 1700 sgdta   =bdos+24     ; adresse dta-puffer setzten/holen
+ 1710 sgdrive =bdos+27     ; drive holen/setzen
+ 1720 gtpath  =bdos+30     ; holt adresse des aktuellen pfades
+ 1730 sgnexcl =bdos+33     ; folgecluster holen/setzen
+ 1740 sfrclus =bdos+36     ; naechsten freien sektor suchen
+ 1750 gtdskfr =bdos+39     ; freien platz auf der diskette berechnen
+ 1760 sfirst  =bdos+42     ; ersten eintrag in dir suchen nach dta
+ 1770 sfirso  =bdos+45     ; file umbenennen
+ 1780 snext   =bdos+48     ; naechsten eintrag
+ 1790 chdir   =bdos+51     ; directory wechseln
+ 1800 namedtp =bdos+54     ; pfad fuer prg setzen
+ 1810 wrentry =bdos+57     ; entry in dta auf disk schreiben
+ 1820 delete  =bdos+60     ; file loeschen
+ 1830 dcreate =bdos+63     ; file zum ersten mal oeffnen
+ 1840 mkdir   =bdos+66     ; directory anlegen
+ 1850 rmdir   =bdos+69     ; directory loeschen
+ 1860 dopen   =bdos+72     ; file oeffnen
+ 1870 dclose  =bdos+75     ; file schliessen
+ 1880 dread   =bdos+78     ; aus file lesen
+ 1890 dwrite  =bdos+81     ; in file schreiben
+ 1900 lseek   =bdos+84     ; position in file bestimmen
+ 1910 version =bdos+87     ; versionsblock holen
+ 1920 reschain =bdos+90     ;
+ 1930 irqchain =bdos+93     ;
+ 1940 nmichain =bdos+96     ;
+ 1950 sgtime  =bdos+99     ;
+ 1960 sgdate  =bdos+102    ;
+ 1970 salarm  =bdos+105    ;
+ 1980 writfat =bdos+108
+ 1990 readfat =bdos+111
+ 2000 writbuf =bdos+114
+ 2010 readbuf =bdos+117
+ 2020 sfrbuf  =bdos+120
+ 2030 rlbuf   =bdos+123
+ 2040 bufabs  =bdos+126
+ 2050 bfzset  =bdos+129
+ 2060 bfset   =bdos+132
+ 2070 bfget   =bdos+135
+ 2080 bout    =bdos+138
+ 2090 bin     =bdos+141
+ 2100 bcan    =bdos+144
+ 2110 bcaus   =bdos+147
+ 2120 bbcol   =bdos+150
+ 2130 btcol   =bdos+153
+ 2140 bcpos   =bdos+156
+ 2150 bgkey   =bdos+159
+ 2160 bfetch  =bdos+162
+ 2170 bstash  =bdos+165
+ 2180 bfadr   =bdos+168
+ 2190 bsadr   =bdos+171
+ 2200 setvec  =bdos+174
+ 3600 chout   =bdos+177
+ 3601 chodev  =bdos+180
+ 3602 chost   =bdos+183
+ 3603 chin    =bdos+186
+ 3604 chidev  =bdos+189
+ 3605 chist   =bdos+192
+ 3606 devout  =bdos+195
+ 3607 devin   =bdos+198
+ 3608 devcmd  =bdos+201
+#endif

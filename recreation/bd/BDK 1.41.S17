@@ -1,0 +1,53 @@
+
+
+;BDK 1.41.S17 ==0801==
+  100 setfpar  =$ffba
+  110 setfnpar =$ffbd
+  120 open     =$ffc0
+  130 close    =$ffc3
+  140 chkin    =$ffc6
+  150 ckout    =$ffc9
+  160 clrch    =$ffcc
+  170 basin    =$ffcf
+  180 bsout    =$ffd2
+  185 getkey   =$ffe4
+  190 ;****
+  200 rwbzei  =$2e
+  210 abszei  =$fc
+  220 dtadr   =$fe
+  230 dirzei  =$2a
+  240 bf1z    =$16
+  250 zei     =$18
+  260 pzei    =$1a
+  270 tzei    =$1e
+  280 dzei    =$20
+  290 bfzei   =$24
+  300 przei   =$3c
+  310 fpzei   =$28
+  315 status  =$90
+  316 stavec  =$02b9
+  317 stash   =$02af
+  318 fetvec  =$02aa
+  319 fetch   =$02a2
+  320 serial  =$0a1c
+  330 basirq  =$0a04
+  340 ;****
+  350 cia1    =$dc00
+  360 cia2    =$dd00
+  370 sdr     =cia1+$c
+  380 icr     =cia1+$d
+  390 dra     =cia2+$0
+  395 nmicr   =cia2+$d
+  400 cra     =cia1+$e
+  410 mmureg  =$d505
+  420 timal   =cia1+$4
+  430 timah   =cia1+$5
+  435 tcia    =cia1
+  440 ;****
+  450 unit    =8
+  460 ff      =255
+  470 clkin   =%01000000
+  480 clkout  =%00010000
+  490 backs   =$5c
+  500 prgbank =$0e
+

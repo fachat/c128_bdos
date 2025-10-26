@@ -1,0 +1,292 @@
+
+
+;../WP1 2.4 .S96 ==0801==
+   10 menuprg lda #0:sta $9d; error meldung unterbinden
+   15 jsr sortinit
+   16 jsr convinit
+   17 jsr mprtinit
+   18 lda #"0":sta iecdrive
+   20 lda menubcol:jsr setbck:lda menutcol:jsr settxt
+   22 lda #8 ;"{dish}":jsr wout:lda #142:jsr wout
+   24 ;********
+  100 mprg lda #<mainmenu:ldy #>mainmenu
+  110 jsr wminit
+  111 jsr version:txa:clc:adc #vetext:bcc mver1:iny:mver1 jsr wprnterr
+  112 mp3 jsr stline:jsr wclrcmd:lda #7:jsr wout:jsr wmenloop
+  115 mp2 txa:pha:tya:pha:jsr wclrerr:pla:tay:pla
+  120 asl:tax:jsr mp1
+  130 cmp #0:beq mp3:jsr fehlout:jmp mp3
+  131 fehlout pha:jsr wclrerr:pla:jsr errtxt:jmp wprnterr
+  140 mp1 lda mpma+1,x:pha:lda mpma,x:pha:rts
+  160 mpm1 tya:asl:tax
+  170 lda mpm1a+1,x:pha:lda mpm1a,x:pha:rts
+  180 mpm2 tya:asl:tax
+  190 lda mpm2a+1,x:pha:lda mpm2a,x:pha:rts
+  200 mpm3 tya:asl:tax
+  210 lda mpm3a+1,x:pha:lda mpm3a,x:pha:rts
+  220 mpm4 tya:asl:tax
+  230 lda mpm4a+1,x:pha:lda mpm4a,x:pha:rts
+  240 mpm5 tya:asl:tax
+  250 lda mpm5a+1,x:pha:lda mpm5a,x:pha:rts
+  500 mpr clc:rts
+  999 ;**** copyrights
+ 1000 mpm11 jsr version:txa:clc:adc #vetext:bcc mver2:iny:mver2 jsr wprnterr
+ 1005 lda #<coptxt:ldy #>coptxt:jsr wopenmsg
+ 1010 mpm11a jsr wgetkey:cmp #13:bne mpm11a
+ 1020 jsr wclose:lda #0:rts
+ 1099 ;**** colours
+ 1100 mpm12 lda #<coltxt:ldy #>coltxt
+ 1110 jsr wopenmsg
+ 1115 mpm12d lda menubcol:jsr setbck:lda menutcol:jsr settxt
+ 1120 mpm12a jsr wgetkey:beq mpm12a
+ 1130 cmp #29; "{rght}":bne mpm12b
+ 1140 inc menubcol:jmp mpm12d
+ 1150 mpm12b cmp #29+128 ;"{left}":bne mpm12c
+ 1160 dec menubcol:jmp mpm12d
+ 1170 mpm12c cmp #17 ;"{down}":bne mpm12e
+ 1172 inc menutcol:jmp mpm12d
+ 1180 mpm12e cmp #17+128 ;"{up}":bne mpm12f
+ 1182 dec menutcol:jmp mpm12d
+ 1197 mpm12f cmp #13:bne mpm12a
+ 1198 jsr wclose:lda #0:m14a rts
+ 1199 ;********
+ 1200 mpm14 jsr asksure:bcs m14a:jsr exit:jmp ($fffc)
+ 1299 ;********
+ 1300 mpm13
+// 1304 .if fci:lda #ennotimp:rts:.goto 1400
+#if fci
+	lda #ennotimp
+	rts
+#else
+ 1305 pla:pla:jsr wclose:jsr wclr
+ 1310 jmp cliprg
+ 1399 ;********
+#endif
+// 1400 mpm28 .if fci:lda #ennotimp:rts:.goto 4000
+mpm28
+#if fci
+	lda #ennotimp
+	rts
+#else
+ 1404 lda #9:jsr prntcmd
+ 1405 lda #<mbeft:ldy #>mbeft:jsr winput
+ 1407 bcc m27nff:rts
+ 1410 m27nff stx czei:sty czei+1
+ 1420 jsr sbef:beq m27nf:cmp #maxmenu+1:bcs m27nf
+ 1430 jsr exec:rts:m27nf lda #ennotimp:rts
+ 3999 ;******** cbmunit
+#endif
+ 4000 mpm32 lda #11:jsr prntcmd
+ 4002 ldx #0:lda #<m32mt:ldy #>m32mt:jsr wsubmenu
+ 4005 m32b jsr wsubloop
+ 4010 m32a cmp #13:bne m32b
+ 4020 tya:clc:adc #8:cmp #12:bcc m32c
+ 4025 clc:adc #"0"-13:sta iecdrive:jmp m32d
+ 4050 m32c sta iecunit:m32d jsr wclose:lda #0:rts
+ 4099 ;**** cbmcommand
+ 4100 mpm34 lda #9:jsr prntcmd
+ 4105 lda #<m34t:ldy #>m34t:jsr winput:bcc mpm34x:rts
+ 4110 mpm34x jsr setfnpar
+ 4120 lda #1:ldx iecunit:ldy #15:jsr setfpar
+ 4130 jsr open:ora #64:bcs m34c
+ 4134 jsr m34b:lda #0
+ 4137 m34c pha:jsr clrch:m34c1 lda #1:jsr close:pla:rts
+ 4140 m34b ldx #1:jsr chkin:ora #64:bcs m34c:ldy #0:sty status
+ 4150 m34a jsr basin:cmp #13:beq m34aa:sta iobuf,y
+ 4160 iny:m34aa lda status:beq m34a
+ 4165 lda #0:sta iobuf,y:jsr clrch
+ 4167 jsr wclrerr
+ 4170 lda #<iobuf:ldy #>iobuf:jsr wprnterr
+ 4175 lda iobuf:cmp #"0":bne m34y
+ 4180 lda #0:rts:m34y lda #eneof:rts
+ 4999 ;******** (cbmcatalog)
+ 5000 ismcbm lda #1:jsr prntcmd
+ 5005 lda #<ismct:ldy #>ismct:jsr winput:bcc ismcx:rts
+ 5010 ismcx pha:cmp #0:bne ismc3:lda #1
+ 5016 ismc3 clc:adc #3:jsr setfnpar:tay:pla:pha:tax
+ 5020 ismc1 lda iobuf,x:sta iobuf,y
+ 5030 dey:dex:bpl ismc1
+ 5031 pla:bne ismc2:sta iobuf+4
+ 5032 lda #"*":sta iobuf+3
+ 5035 ismc2 lda #"$":sta iobuf
+ 5036 lda iecdrive:sta iobuf+1:lda #":":sta iobuf+2:clc:rts
+ 5040 ;****
+ 5090 m31err jmp m31i1
+ 5099 ;****
+ 5100 gtcbmdir jsr ismcbm:bcc gtcbm1:rts
+ 5105 gtcbm1 lda #19 ;"{home}":jsr wout
+ 5110 lda #1:ldx iecunit:ldy #0:jsr setfpar
+ 5120 jsr open:ora #64:bcs m31err
+ 5130 ldx #1:jsr chkin:ora #64:bcs m31err
+ 5140 jsr basin:jsr basin:jsr basin:jsr basin
+ 5150 jsr basin:pha:jsr basin:pla
+ 5160 and #15:clc:adc #"0":sta iobuf
+ 5165 lda #" ":sta iobuf+1
+ 5170 ldy #2
+ 5180 m31a jsr basin:cmp #" ":bcc m31b
+ 5190 sta iobuf,y:iny
+ 5200 m31b
+ 5210 ldx status:beq m31aa
+ 5215 lda #0:sta iobuf,y:lda #endnrdy:bne m31err
+ 5220 m31aa cmp #0:bne m31a
+ 5230 sta iobuf,y
+ 5240 lda #<liste:sta lzei
+ 5250 lda #>liste:sta lzei+1
+ 5260 lda #0:sta lanz
+ 5270 m31e jsr getencbm
+ 5280 bcs m31c
+ 5290 lda #20:clc:adc lzei:sta lzei:bcc m31d
+ 5300 inc lzei+1:m31d inc lanz
+ 5302 jsr testlist:bcc m31e:lda #32:jmp m31i1
+ 5320 m31c ldy #0:lda (lzei),y:sta int1
+ 5330 iny:lda (lzei),y:sta int1+1
+ 5340 ldx #0:m31f lda iobuf,x:beq m31g:inx:bne m31f
+ 5350 m31g lda #",":sta iobuf,x:inx
+ 5360 jsr getdez:ldy #0
+ 5370 m31h lda m31bft,y:sta iobuf,x:beq m31i
+ 5380 iny:inx:bne m31h
+ 5390 m31i lda #0
+ 5400 m31i1
+ 5410 pha:jsr clrch:lda #1:jsr close:pla
+ 5420 bne m31sor
+ 5430 ldx #0:ldy lanz:beq m31sor0:dey
+ 5440 lda #0:jsr sort
+ 5450 m31sor0 lda #0:m31sor rts
+ 5499 ;****
+ 5500 getencbm jsr basin:jsr basin; kettenadresse
+ 5510 ldy #0:jsr basin:sta (lzei),y:iny
+ 5520 jsr basin:sta (lzei),y:iny
+ 5530 gec1 jsr basin:cmp #34:beq gec2
+ 5540 lda status:beq gec1:bne gecr
+ 5550 gec2 jsr basin:cmp #34:beq gec4a
+ 5555 cmp #" ":bcs gec3
+ 5560 adc #"@":gec3 sta (lzei),y:iny
+ 5570 lda status:beq gec2:bne gecr
+ 5575 gec4a lda #0:sta (lzei),y
+ 5580 gec4 jsr basin:cmp #" ":bne gec5
+ 5590 lda status:beq gec4:bne gecr
+ 5600 gec5 ldy #19:sta (lzei),y
+ 5605 lda #0:dey:sta (lzei),y
+ 5610 gec6 jsr basin:cmp #0:beq gec7
+ 5620 lda status:beq gec6
+ 5630 gecr sec:rts:gec7 clc:rts
+ 5699 ;****
+ 5700 inimlist lda lseit:sta int1:lda #0:sta int1+1
+ 5710 lda #mdiranz:ldx #0:jsr mult
+ 5720 sta int1:lda lanz:sec:sbc int1
+ 5730 cmp #mdiranz:bcc iml1:beq iml1
+ 5740 lda #mdiranz
+ 5750 iml1 sta dirmenu:sta lmanz:lda #mdirtbrt:sta dirmenu+1
+ 5760 lda #3:sta dirmenu+2:lda #6:sta dirmenu+3
+ 5770 lda #0:sta int1+1:lda #20:ldx #0:jsr mult
+ 5780 clc:adc #<liste:sta lzei:txa:adc #>liste:sta lzei+1
+ 5790 lda #<dirmenu+4:sta lmzei:lda #>dirmenu+4:sta lmzei+1
+ 5800 iml2 lda #" ":sta iobuf:sta iobuf+1:sta iobuf+2
+ 5810 ldy #2:iml3 lda (lzei),y:beq iml4
+ 5820 sta iobuf+1,y:iny:cpy #18:bne iml3
+ 5830 iml4 lda #" "
+ 5840 iml5 cpy #19:beq iml6:sta iobuf+1,y:iny:bne iml5
+ 5850 iml6 sta iobuf+21:lda (lzei),y:sta iobuf+1,y
+ 5855 ldy #18:lda (lzei),y:bpl iml6a:lda #">":sta iobuf+1
+ 5860 iml6a ldy #0:lda (lzei),y:sta int1:iny:lda (lzei),y:sta int1+1
+ 5870 ldx #22:jsr getdez
+ 5880 lda #" ":iml7 sta iobuf,x:cpx #26:beq iml8:inx:bne iml7
+ 5890 iml8 ldy #mdirtbrt:iml9 lda iobuf-1,y:sta (lmzei),y:dey:bne iml9
+ 5895 lda #128:sta (lmzei),y
+ 5900 lda lzei:clc:adc #20:sta lzei:bcc iml10
+ 5910 inc lzei+1:iml10
+ 5920 lda lmzei:clc:adc #mdirtbrt+1:sta lmzei:bcc iml11
+ 5930 inc lmzei+1:iml11 dec lmanz:bne iml2:rts
+ 5999 ;********
+ 6000 mpm31 jsr gtcbmdir:beq mpm31x:rts
+ 6011 mpm31x lda #<iobuf:ldy #>iobuf:jsr wprnterr
+ 6012 lda lanz:bne mpm31y
+ 6013 rts
+ 6020 mpm31y lda #10:jsr prntcmd:lda #0
+ 6029 mpdirin sta mpdf:lda #0:sta lseit:.byt $2c:mp31a1 lda #128
+ 6030 pha:jsr inimlist:pla:ora #32:tax
+ 6035 lda #<dirmenu:ldy #>dirmenu:jsr wsubmenu
+ 6040 mp31a jsr wsubloop
+ 6050 mp31al cmp #29 ;"{rght}":beq mp31aa:cmp #17 ;"{down}":bne mp31b
+ 6060 mp31aa lda lseit:sta int1:inc int1:lda #0:sta int1+1
+ 6070 lda #mdiranz:ldx #0:jsr mult:cpx #0:bne mp31a
+ 6080 cmp lanz:bcs mp31a
+ 6090 inc lseit:bne mp31a1
+ 6100 mp31b cmp #29+128 ;"{left}":beq mp31ba:cmp #17+128 ;"{up}":bne mp31c
+ 6110 mp31ba lda lseit:beq mp31a
+ 6120 dec lseit:jmp mp31a1
+ 6130 mp31c cmp #"=":beq mp31d:cmp #"#":beq mp31d
+ 6135 cmp #3:beq mp31e:cmp #13:bne mp31a
+ 6137 bit mpdf:bvs mp31xx
+ 6140 mp31e pha:jsr wclose:jsr wclrerr
+ 6150 pla:cmp #3:beq mp31ea:lda #0:rts
+ 6160 mp31ea lda #enbreak:rts
+ 6200 mp31d lda mpdf:bpl mp31e:sty sma
+ 6210 lda lseit:sta int1:lda #0:sta int1+1
+ 6220 lda #mdiranz:ldx #0:jsr mult
+ 6230 clc:adc sma:sta int1:bcc mp31f:inx
+ 6240 mp31f stx int1+1:lda #20:ldx #0
+ 6245 jsr mult:clc:adc #<liste:sta lzei
+ 6250 txa:adc #>liste:sta lzei+1
+ 6260 ldy #18:lda (lzei),y:eor #$80:sta (lzei),y
+ 6270 ldy #2:lda (lmzei),y:eor #$1e:sta (lmzei),y
+ 6275 bit mpdf:bvc mp31xx:lda #0:beq mp31e:mp31xx
+ 6280 lda #17 ;"{down}":jsr wexloop:jmp mp31al
+ 6999 ;********
+ 7000 mpm33 jsr gtcbmdir:beq mpm33x:rts
+ 7011 mpm33x lda #<iobuf:ldy #>iobuf:jsr wprnterr
+ 7012 lda lanz:bne mpm33y
+ 7013 rts
+ 7020 mpm33y lda #7:jsr prntcmd:lda #128:jsr mpdirin:beq mpm33ya:rts
+ 7030 mpm33ya lda #<liste:sta lzei:lda #>liste:sta lzei+1
+ 7040 jsr asksure:bcc mp33a:rts
+ 7050 mp33a lda #"s":sta iobuf:lda iecdrive
+ 7060 sta iobuf+1:lda #":":sta iobuf+2
+ 7070 ldy #18:lda (lzei),y:bpl mp33c
+ 7075 ldy #2:mp33d lda (lzei),y:sta iobuf+1,y
+ 7080 beq mp33b:iny:cpy #18:bne mp33d
+ 7085 lda #0:sta iobuf+1,y
+ 7090 mp33b iny:tya:ldx #<iobuf:ldy #>iobuf:jsr setfnpar
+ 7100 lda #1:ldx iecunit:ldy #15:jsr setfpar
+ 7110 jsr open:jsr m34b:pha:lda #1:jsr close:pla:beq mp33c
+ 7115 jsr errorq:bcs mp33ee
+ 7120 mp33c lda lzei:clc:adc #20:sta lzei:bcc mp33e
+ 7130 inc lzei+1:mp33e dec lanz:bne mp33a
+ 7140 mp33ee lda #0:rts
+ 7900 ;********
+ 7910 asksure lda #<ast:ldy #>ast:jsr wopenmsg
+ 7920 as1 jsr wgetkey:beq as1
+ 7930 cmp #13:beq as2:cmp #3:bne as1
+ 7940 jsr wclose:sec:lda #enbreak:rts
+ 7950 as2 jsr wclose:clc:rts
+ 7999 ;********
+ 8000 ertxrx   lda #entxrx:.byt $2c
+ 8010 ernotimp lda #ennotimp
+ 8100 rts
+ 8499 ;****
+ 8500 getdez ldy #0:stx gdb
+ 8510 go1 lda dhi,y:tax:lda dlo,y:jsr ddiv
+ 8520 iny:cmp #0:bne go2:cpy #4:bne go1:beq go3
+ 8530 go2 clc:adc #"0":ldx gdb:sta iobuf,x:inc gdb
+ 8540 go3 lda dhi,y:tax:lda dlo,y:jsr ddiv
+ 8550 clc:adc #"0":ldx gdb:sta iobuf,x:inc gdb
+ 8560 iny:cpy #5:bcc go3:ldx gdb:rts
+ 8599 ;********
+ 8600 stline ldx #23:ldy #0:clc:jsr wcursor
+ 8602 ldy #39:lda #" ":stl0 jsr wout:dey:bne stl0
+ 8604 ldx #23:ldy #0:clc:jsr wcursor
+ 8610 lda #<stlt1:ldy #>stlt1:jsr textout
+ 8620 lda iecdrive:jsr wout:lda #",":jsr wout
+ 8630 lda #"u":jsr wout
+ 8640 ldx iecunit:cpx #10:bcc stl1
+ 8650 txa:sec:sbc #10:tax:lda #"1":.byt $2c
+ 8660 stl1 lda #" ":jsr wout:txa:clc:adc #"0":jsr wout
+ 8670 lda #<stlt2:ldy #>stlt2:jsr textout
+ 8680 clc:jsr sgdrive:clc:adc #"A" ;"a":jsr wout
+ 8690 lda #":":jsr wout
+ 8700 jsr gtpath:sta lmzei:sty lmzei+1
+ 8710 ldy #2
+ 8720 stl3 lda (lmzei),y:beq stl4:jsr wout:iny:cpy #stlend:bne stl3
+ 8730 stl4 rts
+ 9999 ;********
+

@@ -1,0 +1,13 @@
+
+
+;WPK 2.0 .S4  ==0801==
+  100 lzei   =$0e
+  110 lmzei  =$10
+  120 wzei   =$12
+  130 wszei  =$1c
+  140 wczei  =$22
+  141 oldfpb =$26
+  142 newfpb =$2c
+  150 ;****
+  160 iobuf =$0200
+

@@ -1,0 +1,114 @@
+
+
+;BD1 1.45.S60 ==0801==
+  100 ;**********
+  110 pinit
+  200 lda #0:sta bpb+bpbval:sta bpb+bpbflag:ldx #0:bpbclr stx path:txa
+  210 jsr psdabs:ldy #bpbval:lda #0:sta (abszei),y
+  220 ldy #bpbflag:sta (abszei),y
+  225 ldy #bppath:sta (abszei),y
+  230 ldx path:inx:cpx #anzdrv:bcc bpbclr
+  240 lda #0:sta path:clbuf lda path:sta int1:lda #0:sta int1+1
+  250 lda #<bfoffs:ldx #>bfoffs:jsr mult
+  260 tax:lda #0:sta bf1val,x
+  270 inc path:lda path:cmp #bufanz:bcc clbuf
+  280 ldx #fpbanz:fpbclr stx path:jsr sfpzei
+  290 ldy #fpname:lda #0:sta (fpzei),y
+  300 ldx path:dex:bne fpbclr
+  310 lda #0:sta path:sta dirclus:sta dirclus+1:sta actdrv
+  320 ldy #0:pin1 lda vektab,y:sta vektor,y:iny:cpy #anzjmp*2:bne pin1
+  400 jsr chinit
+  460 ldx #<vektor:ldy #>vektor:lda #0:rts
+  480 ;*********
+  490 pexit jsr clrch:jmp ($fffc); reset
+  510 ;*********
+  520 pversion ldx #<verblock:ldy #>verblock:lda #0:rts
+  530 ;*********
+ 1690 pgetbpb sta pblock+pbdrive:ldy #3:jsr sfrbuf:bne pgb1e:stx pgbbuf
+ 1700 txa:tay:lda #0:tax:jsr bfzset; setzt bf1z auf puffer-adr
+ 1710 ldy #0:sty pblock+pbside:sty bpb+bpbval
+ 1720 sty pblock+pbtrack
+ 1730 iny:sty pblock+pbsector
+ 1740 lda bf1z:sta pblock+pbbuffer:lda bf1z+1:sta pblock+pbbuffer+1
+ 1750 lda #prgbank:sta pblock+pbbank
+ 1760 lda #0;lesen:sta pblock+pbrwflag
+ 1770 lda #<pblock:ldy #>pblock:jsr floprw
+ 1780 beq pbgetok:pha:ldx pgbbuf:jsr rlbuf:pla:pgb1e rts
+ 1790 pbgetok lda #bflagof:sta bpb+bflags
+ 1800 ldy #btbps:lda (bf1z),y:sta bpb+bprecsiz:sta int1
+ 1810 iny:lda (bf1z),y:sta bpb+bprecsiz+1:sta int1+1
+ 1820 ldy #btspc:lda (bf1z),y:sta bpb+bpclsiz
+ 1830 ldx #0:stx bpb+bpclsiz+1
+ 1840 jsr mult:sta bpb+bpclsizb:stx bpb+bpclsizb+1
+ 1850 ldy #btspf+1:lda (bf1z),y:sta bpb+bpfsiz+1
+ 1860 dey:lda (bf1z),y:sta bpb+bpfsiz
+ 1870 ldy #btfat:lda (bf1z),y
+ 1880 ldx bpb+bpfsiz:ldy bpb+bpfsiz+1
+ 1890 cmp #1:bne pgbpb1a
+ 1900 ldx #0:ldy #0
+ 1910 pgbpb1a inx:bne pgbpb1:iny
+ 1920 pgbpb1 stx bpb+bpfatrec:sty bpb+bpfatrec+1
+ 1930 ldy #btside:lda (bf1z),y:sta bpb+bpsides:tax
+ 1940 iny:lda (bf1z),y:sta bpb+bpsides+1
+ 1950 stx int1:sta int1+1
+ 1960 ldy #btspt:lda (bf1z),y:sta bpb+bpspt:pha
+ 1970 iny:lda (bf1z),y:sta bpb+bpspt+1:tax:pla
+ 1980 jsr mult:sta bpb+bpspts:stx bpb+bpspts+1
+ 1990 ldy #bthid:lda (bf1z),y:sta bpb+bphidden
+ 2000 iny:lda (bf1z),y:sta bpb+bphidden+1
+ 2010 ldy #btserial:lda (bf1z),y:sta bpb+bpserial
+ 2020 iny:lda (bf1z),y:sta bpb+bpserial+1
+ 2030 iny:lda (bf1z),y:sta bpb+bpserial+2
+ 2040 ldy #btsec:lda (bf1z),y:sta int1:iny:lda (bf1z),y:sta int1+1
+ 2050 lda bpb+bpspts:ldx bpb+bpspts+1
+ 2060 jsr div:sta bpb+bptracks:stx bpb+bptracks+1
+ 2070 lda #32:sta int1:lda #0:sta int1+1
+ 2080 ldy #btdir+1:lda (bf1z),y:tax:dey:lda (bf1z),y:jsr mult
+ 2090 sta int1:stx int1+1:lda bpb+bprecsiz:ldx bpb+bprecsiz+1
+ 2100 jsr div:sta bpb+bprdlen:stx bpb+bprdlen+1
+ 2110 lda bpb+bpfatrec:clc:adc bpb+bprdlen
+ 2120 tay:lda bpb+bpfatrec+1:adc bpb+bprdlen+1
+ 2130 tax:tya:clc:adc bpb+bpfsiz:sta bpb+bpdatrec
+ 2140 txa:adc bpb+bpfsiz+1:sta bpb+bpdatrec+1
+ 2150 ldy #btsec:lda (bf1z),y:sec:sbc bpb+bpdatrec:sta int1
+ 2160 iny:lda (bf1z),y:sbc bpb+bpdatrec+1:sta int1+1
+ 2170 lda bpb+bpclsiz:ldx bpb+bpclsiz+1:jsr div
+ 2180 sta bpb+bpnumcl:stx bpb+bpnumcl+1
+ 2190 lda #<-1:sta bpb+bpbval
+ 2200 ldx pgbbuf:jsr rlbuf
+ 2210 ldx #<bpb:ldy #>bpb:lda #0:abs1end rts
+ 2220 ;**********
+ 2230 prwabs sta abszei:sty abszei+1
+ 2240 ldy #apbuffer:lda (abszei),y:sta pblock+pbbuffer
+ 2250 iny:lda (abszei),y:sta pblock+pbbuffer+1
+ 2260 ldy #apbank:lda (abszei),y:sta pblock+pbbank
+ 2270 lda bpb+bpbval:bne rwabs1
+ 2280 ldy #apdrive:lda (abszei),y:jsr getbpb:bne abs1end
+ 2290 rwabs1 ldy #apdrive:lda (abszei),y:sta pblock+pbdrive
+ 2300 ldy #aprecord:lda (abszei),y:sta int1
+ 2310 iny:lda (abszei),y:sta int1+1
+ 2320 lda bpb+bpspts:ldx bpb+bpspts+1
+ 2330 jsr div
+ 2340 sta pblock+pbtrack:bne rwerr1a
+ 2350 ldy int1+1:lda int1
+ 2360 sec:sbc bpb+bpspt:tax:tya
+ 2370 sbc bpb+bpspt+1:tay:txa
+ 2380 ldx #1:bcs rwside2
+ 2390 ldx #0
+ 2400 lda int1:ldy int1+1
+ 2410 rwside2 clc:adc #1:sta pblock+pbsector
+ 2420 cpy #0:rwerr1a bne rwerr1
+ 2430 stx pblock+pbside
+ 2440 ldy #aprwflag
+ 2450 lda (abszei),y:sta pblock+pbrwflag
+ 2460 lda #<pblock:ldy #>pblock:jsr floprw:bne absend
+ 2470 stx pblock+pbbuffer
+ 2480 sty pblock+pbbuffer+1
+ 2490 ldy #aprecord:lda (abszei),y:clc:adc #1:sta (abszei),y
+ 2500 iny:lda (abszei),y:adc #0:sta (abszei),y
+ 2510 ldy #apanz:lda (abszei),y:sec:sbc #1:sta (abszei),y:iny
+ 2520 lda (abszei),y:sbc #0:sta (abszei),y
+ 2530 dey:ora (abszei),y:beq rwabs2
+ 2540 jmp rwabs1:rwabs2 jmp error0
+ 2550 rwerr1 jmp parrange:absend rts
+

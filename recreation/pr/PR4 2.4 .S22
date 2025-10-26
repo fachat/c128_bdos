@@ -1,0 +1,187 @@
+
+
+;PR4 2.4 .S22 ==0801==
+//   10 .if fci:.goto 710
+#if 1-fci
+  100 ;zei =$1c
+  110 dir ldx #$10:jsr namedtp:beq dirok
+  120 rts
+  130 dirok stx zei:sty zei+1
+  135 jsr prtbtst:beq diroo1:jmp direx
+  140 diroo1 ldy #gnfile:lda (zei),y:sta dcl
+  150 iny:lda (zei),y:sta dcl+1
+  160 lda zei:clc:adc #gnpath:sta dpa
+  170 lda zei+1:adc #0:sta dpa+1
+  180 clc:jsr sgdta:sta zei:sty zei+1
+  190 lda #0:sta dircount:sta dircount+1
+  200 lda #<dirstext:ldy #>dirstext:jsr textout
+  210 clc:jsr sgdrive:clc:adc #"A"; "a":jsr chout:lda #":":jsr chout
+  220 lda #<dirntext:ldy #>dirntext:jsr textout
+  230 lda #<ddtp:ldy #>ddtp:sec:jsr sgdta
+  240 lda #"*":sta ddtp+dsname:sta ddtp+dsext
+  250 lda #%00001000;disk-name:sta ddtp+dsattr
+  260 lda dcl:ldx dcl+1:ldy #0:jsr sfirso:bne dirnonam
+  270 jsr dirnout
+  280 dirnonam lda #13:jsr chout
+  290 lda dpa:ldy dpa+1:sta zei:sty zei+1
+  300 ldy #0:dirnn2 lda (zei),y:beq dirnn1
+  310 jsr chout:iny:bne dirnn2
+  320 dirnn1 lda #%11110111:sta ddtp+dsattr
+  330 lda dcl:ldx dcl+1:ldy #0:jsr sfirso:jmp pnexte
+  340 pnext jsr snext
+  350 pnexte bne dirend
+  360 inc dircount:bne dira1:inc dircount+1
+  370 dira1 jsr crout
+  380 jsr dirnout:jsr dirpout:jmp pnext
+  390 dirend cmp #ennotfnd:bne direx
+  399 dirend1 jsr crout
+  400 lda dircount+1:jsr hexout:lda dircount:jsr hexout
+  410 lda #<dirftext:ldy #>dirftext:jsr textout
+  420 lda #<dword:ldy #>dword:jsr gtdskfr;anzahl freie bytes auf diskette
+  430 bne direx:ldy #3
+  440 ddfspo lda dword,y:jsr hexout:dey:bpl ddfspo
+  450 lda #<dirbtext:ldy #>dirbtext:jsr textout
+  460 lda #0:direx pha:jsr prtoff:pla:rts
+  470 dirnout ldy #0:dir1 lda ddtp+dgname,y:jsr chout
+  480 iny:cpy #8:bne dir1
+  490 jsr spout
+  500 ldy #0:dir2 lda ddtp+dgext,y:jsr chout
+  510 iny:cpy #3:bne dir2:rts
+  520 dirpout lda ddtp+dgattr:and #%00010000:beq dirsize
+  530 ldy #>dirdtext:lda #<dirdtext:jsr textout:jmp dirdate
+  540 dirsize jsr spout
+  550 lda ddtp+dgsize+3:jsr hexout
+  560 lda ddtp+dgsize+2:jsr hexout
+  570 lda ddtp+dgsize+1:jsr hexout
+  580 lda ddtp+dgsize+0:jsr hexout
+  590 dirdate jsr spout
+  600 lda ddtp+dghour:jsr dezbout
+  610 lda #":":jsr chout
+  620 lda ddtp+dgmin:jsr dezbout
+  630 lda #":":jsr chout
+  640 lda ddtp+dgsec:jsr dezbout
+  650 jsr spout
+  660 lda ddtp+dgday:jsr dezbout
+  670 lda #".":jsr chout
+  680 lda ddtp+dgmonth:jsr dezbout
+  690 lda #".":jsr chout
+  700 lda ddtp+dgyear:clc:adc #80:jmp dezbout
+#endif
+  710 textout sta zei:sty zei+1:ldy #0
+  720 texto1 lda (zei),y:beq textor
+  730 jsr chout:inc zei:bne texto1
+  740 inc zei+1:bne texto1
+  750 textor rts
+//  755 .if fci:.goto 2020
+#if fci-1
+  760 hexout pha:lsr:lsr:lsr:lsr:jsr binout
+  770 pla:and #$0f
+  780 binout clc:adc #"0":cmp #"9"+1:bcc bino1
+  790 adc #6:bino1 jmp chout
+  800 dezbout sta dint1:lda #0:sta dint1+1
+  810 lda #10:ldx #0:jsr ddiv:clc:adc #"0":jsr chout
+  820 lda dint1:clc:adc #"0":jmp chout
+  830 ;**** dint1 / a/x = a/x rest dint1
+  840 ddiv stx dint2+1:sta dint2:sty dabuf:ldx #1:lda #0:sta dint3:sta dint3+1
+  850 ddiv1 lda dint2:asl:tay:lda dint2+1:rol:bcs ddiv3
+  860 cmp dint1+1:bcc ddiv2:bne ddiv3
+  870 cpy dint1:bcc ddiv2:bne ddiv3
+  880 ddiv2 sta dint2+1:sty dint2:inx:bne ddiv1
+  890 ddiv3 dex:bpl ddiv6:ldy dabuf:lda dint3:ldx dint3+1:rts
+  900 ddiv6 lda dint1+1:cmp dint2+1:bcc ddiv4:bne ddiv5
+  910 lda dint1:cmp dint2:bcc ddiv4
+  920 ddiv5 lda dint1:sec:sbc dint2:sta dint1
+  930 lda dint1+1:sbc dint2+1:sta dint1+1
+  940 sec:.byt $24:ddiv4 clc:rol dint3:rol dint3+1
+  950 lsr dint2+1:ror dint2:jmp ddiv3
+  960 ;****
+  980 ;****
+  990 pcat ;
+  995 jsr prtbtst:sec:bne dce1:lda #13:jsr chout
+ 1000 lda #"$":sta buf
+ 1010 lda #1:ldx #<buf:ldy #>buf:jsr setfnpar
+ 1020 ldx iecunit:lda #1:ldy #0:jsr setfpar
+ 1030 jsr open:ora #64:dce1 bcs dce
+ 1040 lda #0:sta status:ldx #1:jsr chkin
+ 1045 ora #64:bcs dce
+ 1050 jsr basin:jsr basin
+ 1060 dcloop lda #0:sta status:jsr basin:jsr basin
+ 1070 lda status:bne dcok
+ 1080 jsr basin:sta dint1:jsr basin:sta dint1+1
+ 1090 jsr dezout
+ 1100 dcl1 jsr basin:jsr chout:cmp #0:bne dcl1
+ 1110 jsr clrch:jsr crout:ldx #1:jsr chkin:ora #64:bcs dce:jmp dcloop
+ 1120 dcok lda #0:dce pha
+ 1122 jsr prtoff
+ 1123 jsr clrch:lda #1:jsr close
+ 1125 pla:rts
+ 1130 ;****
+ 1140 dezout ldy #0
+ 1150 do1 lda dhi,y:tax:lda dlo,y:jsr ddiv
+ 1160 iny:cmp #0:bne do2:cpy #4:bne do1:beq do3
+ 1170 do2 clc:adc #"0":jsr chout
+ 1180 do3 lda dhi,y:tax:lda dlo,y:jsr ddiv
+ 1190 clc:adc #"0":jsr chout
+ 1200 iny:cpy #5:bcc do3:rts
+ 1999 ;********
+ 2000 pprint lda prtfl:eor #128:sta prtfl:bpl pprt1
+ 2005 lda #<tpon:ldy #>tpon:jsr textout:lda #0:rts
+ 2010 pprt1
+ 2015 lda #<tpoff:ldy #>tpoff:jsr textout:lda #0:pca1 rts
+#endif
+ 2020 ;****
+ 2025 prtbtst lda prtdev:ora #$80:tax
+ 2027 bne prttst1
+ 2030 prttst ldx prtdev
+ 2032 prttst1 lda prtfl:bpl pttr
+ 2035 lda prtfl:ora #64:sta prtfl
+ 2040 txa:jmp chodev
+ 2045 pttr lda #0:rts
+ 2050 ;****
+ 2055 prtoff lda prtfl:and #191:sta prtfl
+ 2060 lda #0:jmp chodev
+// 2065 .if fci:.goto 2300
+#if fci-1
+ 2099 ;********
+ 2100 pecho sta czei:sty czei+1
+ 2110 jsr prttst:bne pecr
+ 2120 lda czei:ldy czei+1
+ 2150 jsr textout:jsr crout
+ 2160 lda #0:pecr pha
+ 2170 jsr prtoff:pla:rts
+ 2199 ;********
+ 2200 pprtdev sta czei:sty czei+1
+ 2205 jsr gbyt:bcs pca1
+ 2210 stx prtdev
+ 2212 jsr gbyt:bcs pca1:txa
+ 2220 and #63:bit prtfl:bpl ppd1
+ 2230 ora #128:ppd1 sta prtfl
+ 2240 lda #0:rts
+ 2299 ;********
+#endif
+ 2300 prtinit lda #0:sta prtfl
+ 2310 ldx #<svtab:ldy #>svtab:jsr setvec
+ 2320 rts
+ 2399 ;********
+ 2400 pchout bit prtfl:bvc pcor
+ 2405 pha:lda prtfl
+ 2410 lsr:bcc pco1
+ 2415 pla:jsr bcbmasc:jmp pco3
+ 2420 pco1 lsr:bcc pco2
+ 2430 pla:jsr basccbm:jmp pco3
+ 2440 pco2 pla:pco3
+ 2450 cmp #10:bne pco4
+ 2460 lda prtfl:and #%00110000
+ 2470 eor #%00010000:lsr:lsr
+ 2480 jmp pco4a
+ 2500 pco4 cmp #13:bne pcor
+ 2510 lda prtfl:and #%00001100:pco4a
+ 2520 lsr:lsr:sta prtdiv
+ 2525 cmp #2:bcc pco7
+ 2530 lsr:lda #10:bcc pco6:lda #13:pco6
+ 2535 jsr pcor
+ 2540 pco7 lda prtdiv
+ 2550 lsr:lda #13:bcc pco8:lda #10:pco8
+ 2560 pcor jmp (vchout)
+10000 .end
+

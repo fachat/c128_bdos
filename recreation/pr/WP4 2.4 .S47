@@ -1,0 +1,330 @@
+
+
+;WP4 2.4 .S47 ==0801==
+  120 ;****
+  130 mpm41 ; pc->pc
+  140 lda #128:ldx #7
+  150 jsr mdirpin
+  160 bne m41aa
+  170 lda lanz:bne m41a:m41aa rts
+  180 m41a clc:jsr sgdrive:sta olddrv
+  190 lda #12:jsr prntcmd
+  200 lda #<cppt1:ldy #>cppt1:jsr winput:bcs m41aa
+  201 txa:pha:tya:pha:jsr askdisks:beq m41xx:tay:pla:pla:tya:rts
+  210 m41xx pla:tay:pla:jsr chdir:bne m41aa
+  220 clc:jsr sgdrive:sta newdrv
+  230 lda #<liste:sta lzei:lda #>liste:sta lzei+1
+  240 ;****
+  241 m41loop ldy #16:lda (lzei),y:bmi m41a0:jmp m41next
+  250 m41a0 jsr lzeibuf
+  255 lda newdrv:sec:jsr sgdrive
+  258 jsr wclrcmd:lda #<iobuf:ldy #>iobuf:jsr wprntcmd
+  260 m41a3 lda #<iobuf:ldy #>iobuf:ldx #$20:jsr dcreate
+  270 beq m41b:cmp #enfexist:bne m41a1
+  271 jsr gtnname:bcc m41a3:bne m41a2:beq m41b1
+  280 m41b lda #<iobuf:ldy #>iobuf:jsr dopen
+  290 beq m41c:m41a1 jsr error:bcc m41b1:m41a2 lda #1:sta lanz:m41b1 jmp m41next
+  300 m41c stx newfpb:sty newfpb+1
+  310 ldy #fphandle:lda (newfpb),y:sta newhdl
+  320 ;****
+  330 lda olddrv:sec:jsr sgdrive
+  340 jsr lzeibuf:jsr dopen
+  350 beq m41d:jsr error:bcc m41b2:lda #1:sta lanz:m41b2 jmp m41l
+  360 m41d stx oldfpb:sty oldfpb+1
+  370 ldy #fphandle:lda (oldfpb),y:sta oldhdl
+  380 ldy #fpsize:m41d1 lda (oldfpb),y:sta oldsize-fpsize,y
+  390 iny:cpy #fpsize+4:bne m41d1
+  400 ;****
+  410 cppl2 lda #prgbank:ldy #fpbank:sta (oldfpb),y
+  420 ldy #fpadr:lda #<buffer:sta (oldfpb),y
+  430 iny:lda #>buffer:sta (oldfpb),y
+  440 ldy #fpanz:lda prblen:sta (oldfpb),y
+  450 iny:lda prblen+1:sta (oldfpb),y
+  460 ldx oldhdl:jsr dread:sta olderr
+  470 beq m41e:cmp #eneof:beq m41f
+  475 jsr error:bcc m41b3:lda #1:sta lanz:m41b3 jmp m41i
+  480 m41e lda oldsize:sec:sbc prblen:sta oldsize
+  490 lda oldsize+1:sbc prblen+1:sta oldsize+1
+  500 bcs m41e1:lda oldsize+2:bne m41e2
+  510 dec oldsize+3:m41e2 dec oldsize+2
+  520 m41e1 lda prblen:ldx prblen+1
+  530 jmp m41g
+  540 m41f lda oldsize:ldx oldsize+1
+  550 m41g jsr conv:ldy #fpanz:sta (newfpb),y
+  560 iny:txa:sta (newfpb),y
+  570 ldy #fpadr:lda #<buffer:sta (newfpb),y
+  580 iny:lda #>buffer:sta (newfpb),y
+  590 ldy #fpbank:lda #prgbank:sta (newfpb),y
+  600 ldx newhdl:jsr dwrite
+  610 beq m41h
+  615 jsr error:bcc m41b4:lda #1:sta lanz:m41b4 jmp m41i
+  620 m41h lda olderr:bne m41i:jmp cppl2
+  630 ;****
+  640 m41i ldx oldhdl:jsr dclose
+  650 m41l ldx newhdl:jsr dclose
+  660 m41next lda lzei:clc:adc #19:sta lzei
+  670 bcc m41j:inc lzei+1
+  680 m41j dec lanz:beq m41k:jmp m41loop
+  690 m41k lda #0:rts
+  999 ;********
+ 1000 gtnname
+ 1001 lda #<iobuf:ldy #>iobuf:jsr wprnterr
+ 1002 lda #<gtnnt3:ldy #>gtnnt3:jsr textout
+ 1003 gtnname1 lda #<gtnnt:ldy #>gtnnt:jsr wopenmsg
+ 1010 gtn1 jsr wgetkey:beq gtn1
+ 1020 cmp #13:beq gtnret
+ 1030 cmp #"=":beq gtnnam
+ 1040 cmp #3:bne gtn1
+ 1045 jsr wclose:gtn1x lda #enbreak:sec:rts
+ 1050 gtnret jsr wclose:lda #0:sec:rts
+ 1060 gtnnam jsr wclose
+ 1070 lda #5:jsr prntcmd
+ 1080 lda #<isnpt:ldy #>isnpt:jsr winput:bcs gtn1x
+ 1090 clc:lda #0:rts
+ 1099 ;****
+ 1100 askdisks lda #<adt:ldy #>adt:jsr wopenmsg
+ 1110 adl1 jsr wgetkey:beq adl1
+ 1120 cmp #13:beq adl2:cmp #3:bne adl1
+ 1125 lda #enbreak:.byt $2c
+ 1130 adl2 lda #0:pha:jsr wclose:pla:rts
+ 1999 ;********
+ 2000 mpm42 ; pc->cbm
+ 2010 lda #128:ldx #7
+ 2020 jsr mdirpin
+ 2030 bne m42aa
+ 2040 lda lanz:bne m42a:m42aa rts
+ 2050 m42a clc:jsr sgdrive:sta olddrv
+ 2060 jsr askdisks:bne m42aa
+ 2100 lda #<liste:sta lzei:lda #>liste:sta lzei+1
+ 2102 lda #0:jsr setfnpar:lda #1:ldx iecunit:ldy #15:jsr setfpar
+ 2104 jsr open:ora #64:bcs m42aa
+ 2120 ;****
+ 2130 m42loop ldy #16:lda (lzei),y:bmi m42a0:jmp m42next
+ 2140 m42a0 lda iecdrive:sta iobuf:lda #":":sta iobuf+1
+ 2141 ldy #0:m42a3 lda (lzei),y:sta iobuf+2,y:iny:cpy #8:bne m42a3
+ 2142 m42a4 lda (lzei),y:sta iobuf+3,y:iny:cpy #11:bne m42a4
+ 2143 lda #".":sta iobuf+2+8:lda #0:sta iobuf+3+11
+ 2149 lda #14:m42newnam ldx #<iobuf:ldy #>iobuf
+ 2150 jsr setfnpar:lda #2:ldx iecunit:ldy #1:jsr setfpar
+ 2160 jsr wclrcmd:lda #<iobuf:ldy #>iobuf:jsr wprntcmd
+ 2170 jsr open:ora #64:bcs m42c
+ 2180 jsr m34b:beq m42cc:lda #2:jsr close
+ 2183 lda iobuf:cmp #"6":bne m42xa:lda iobuf+1:cmp #"3":beq m42xb
+ 2186 m42xa jsr errorq:bcs m42xkk:m42ce jmp m42next
+ 2190 m42xb jsr gtnname1:bcc m42cd
+ 2192 beq m42ce:m42xkk jmp m42kk
+ 2195 m42cd ldy #<-1:m42cf iny:lda iobuf,y:bne m42cf
+ 2197 tya:jmp m42newnam
+ 2220 ;****
+ 2230 m42cc lda olddrv:sec:jsr sgdrive
+ 2240 jsr lzeibuf:jsr dopen
+ 2250 beq m42d:m42c jsr error:bcc m42b2:lda #1:sta lanz:m42b2 jmp m42l
+ 2260 m42d stx oldfpb:sty oldfpb+1
+ 2280 ldy #fphandle:lda (oldfpb),y:sta oldhdl
+ 2290 ldy #fpsize:m42d1 lda (oldfpb),y:sta oldsize-fpsize,y
+ 2300 iny:cpy #fpsize+4:bne m42d1
+ 2310 ;****
+ 2320 cpcl2 lda #prgbank:ldy #fpbank:sta (oldfpb),y
+ 2330 ldy #fpadr:lda #<buffer:sta (oldfpb),y
+ 2340 iny:lda #>buffer:sta (oldfpb),y
+ 2360 ldy #fpanz:lda prblen:sta (oldfpb),y
+ 2370 iny:lda prblen+1:sta (oldfpb),y
+ 2380 ldx oldhdl:jsr dread:sta olderr
+ 2400 beq m42e:cmp #eneof:beq m42f
+ 2410 jsr error:bcc m42b3:lda #1:sta lanz:m42b3 jmp m42i
+ 2420 m42e lda oldsize:sec:sbc prblen:sta oldsize
+ 2430 lda oldsize+1:sbc prblen+1:sta oldsize+1
+ 2440 bcs m42e1:lda oldsize+2:bne m42e2
+ 2450 dec oldsize+3:m42e2 dec oldsize+2
+ 2460 m42e1 lda prblen:ldx prblen+1
+ 2470 jmp m42g
+ 2480 m42f lda oldsize:ldx oldsize+1
+ 2490 m42g jsr conv:jsr cwrite
+ 2550 beq m42h
+ 2560 jsr error:bcc m42b4:lda #1:sta lanz:m42b4 jmp m42i
+ 2570 m42h lda olderr:bne m42i:jmp cpcl2
+ 2580 ;****
+ 2600 m42i ldx oldhdl:jsr dclose
+ 2610 m42l lda #2:jsr close
+ 2620 m42next lda lzei:clc:adc #19:sta lzei
+ 2630 bcc m42j:inc lzei+1
+ 2640 m42j dec lanz:beq m42k:jmp m42loop
+ 2650 m42k lda #0:m42kk pha:lda #1:jsr close:pla:rts
+ 2699 ;****
+ 2700 cwrite sta ccnt:stx ccnt+1
+ 2710 lda #<buffer:sta newfpb:lda #>buffer:sta newfpb+1
+ 2720 ldx #2:jsr ckout:ora #64:bcs cwre
+ 2730 ldy #0
+ 2740 cwrl lda (newfpb),y:jsr bsout
+ 2750 inc newfpb:bne cwr1:inc newfpb+1
+ 2760 cwr1 lda ccnt:bne cwr2
+ 2770 dec ccnt+1:cwr2 dec ccnt
+ 2780 lda ccnt:bne cwrl:ora ccnt+1:bne cwrl
+ 2790 lda #0:cwre pha:jsr clrch:pla:rts
+ 2999 ;********
+ 3000 mpm43 ; cbm->pc
+ 3003 jsr gtcbmdir:beq m43x1:m43x2 rts
+ 3006 m43x1 lda #<iobuf:ldy #>iobuf:jsr wprnterr
+ 3007 lda #7:jsr prntcmd
+ 3009 lda lanz:beq m43x2
+ 3012 lda #128:jsr mpdirin:bne m43x2
+ 3060 lda #12:jsr prntcmd
+ 3070 lda #<cppt1:ldy #>cppt1:jsr winput:bcs m43x2
+ 3071 txa:pha:tya:pha:jsr askdisks:beq m43xx:tay:pla:pla:tya:rts
+ 3072 m43xx pla:tay:pla
+ 3080 jsr chdir:bne m43x2
+ 3090 clc:jsr sgdrive:sta newdrv
+ 3100 lda #<liste:sta lzei:lda #>liste:sta lzei+1
+ 3120 ;****
+ 3130 m43loop ldy #18:lda (lzei),y:bmi m43a0:jmp m43next
+ 3140 m43a0 jsr lcpzeibuf:lda newdrv:sec:jsr sgdrive
+ 3145 jsr wclrcmd:lda #<iobuf:ldy #>iobuf:jsr wprntcmd
+ 3150 m43a3 lda #<iobuf:ldy #>iobuf:ldx #$20:jsr dcreate
+ 3160 beq m43b:cmp #enfexist:bne m43a1
+ 3170 jsr gtnname:bcc m43a3:bne m43a2:beq m43b1
+ 3180 m43b lda #<iobuf:ldy #>iobuf:jsr dopen
+ 3190 beq m43c:m43a1 jsr error:bcc m43b1:m43a2 lda #1:sta lanz:m43b1 jmp m43next
+ 3200 m43c stx newfpb:sty newfpb+1
+ 3210 ldy #fphandle:lda (newfpb),y:sta newhdl
+ 3220 ;****
+ 3240 jsr lczeibuf:jsr setfnpar
+ 3241 lda #2:ldx iecunit:ldy #0:jsr setfpar
+ 3245 jsr open:ora #64:bcc m43d
+ 3250 jsr error:bcc m43b2:lda #1:sta lanz:m43b2 jmp m43l
+ 3260 m43d jsr m34b:beq ccpl2
+ 3300 ;****
+ 3310 ccpl2
+ 3360 jsr cread:sta olderr
+ 3370 beq m43f:cmp #eneof:beq m43f
+ 3380 jsr error:bcc m43b3:lda #1:sta lanz:m43b3 jmp m43i
+ 3450 m43f tya
+ 3460 m43g jsr conv:ldy #fpanz+1:sta (newfpb),y
+ 3470 dey:txa:sta (newfpb),y
+ 3480 ldy #fpadr:lda #<buffer:sta (newfpb),y
+ 3490 iny:lda #>buffer:sta (newfpb),y
+ 3500 ldy #fpbank:lda #prgbank:sta (newfpb),y
+ 3510 ldx newhdl:jsr dwrite
+ 3520 beq m43h
+ 3530 jsr error:bcc m43b4:lda #1:sta lanz:m43b4 jmp m43i
+ 3540 m43h lda olderr:bne m43i:jmp ccpl2
+ 3550 ;****
+ 3560 m43i lda #2:jsr close
+ 3570 m43l ldx newhdl:jsr dclose
+ 3580 m43next lda lzei:clc:adc #20:sta lzei
+ 3590 bcc m43j:inc lzei+1
+ 3600 m43j dec lanz:beq m43k:jmp m43loop
+ 3610 m43k lda #0:rts
+ 3699 ;****
+ 3700 lczeibuf lda iecdrive:sta iobuf:lda #":":sta iobuf+1
+ 3710 ldy #2:ldx #2
+ 3720 lczei1 lda (lzei),y:sta iobuf,x:beq lczei2
+ 3730 inx:iny:cpy #18:bne lczei1
+ 3740 lczei2 lda #",":sta iobuf,x:inx:ldy #19:lda (lzei),y:sta iobuf,x:inx
+ 3749 lda #0:sta iobuf,x
+ 3750 txa:ldx #<iobuf:ldy #>iobuf:rts
+ 3799 ;****
+ 3800 lcpzeibuf ldy #2
+ 3810 lcpz1 lda (lzei),y:cmp #".":bne lcpz1a:lda #"_"
+ 3830 lcpz1a sta iobuf-2,y:beq lcpze:iny:cpy #14:bne lcpz1
+ 3840 lda #0:sta iobuf-2,y
+ 3850 lcpze lda iobuf+8:beq lcpze1:lda #".":sta iobuf+8:lcpze1 rts
+ 3899 ;****
+ 3900 cread ldx #2:jsr chkin:ora #64:bcs crde
+ 3910 lda #0:sta status:sta ccnt:sta ccnt+1
+ 3920 lda #<buffer:sta oldfpb:lda #>buffer:sta oldfpb+1
+ 3930 crdl1 jsr basin:ldy #0:sta (oldfpb),y
+ 3940 inc oldfpb:bne crdl2:inc oldfpb+1
+ 3950 crdl2 inc ccnt:bne crdl2a:inc ccnt+1
+ 3959 crdl2a jsr tststat:bne crde
+ 3960 lda ccnt+1:cmp prblen+1:bcc crdl1
+ 3970 bne crdl3
+ 3980 lda ccnt:cmp prblen:bcc crdl1
+ 3982 crdl3 lda #0
+ 3990 crde pha:jsr clrch
+ 3992 lda oldfpb:sec:sbc #<buffer:tax
+ 3994 lda oldfpb+1:sbc #>buffer:tay:pla:rts
+ 3999 ;********
+ 4000 mpmprint jsr mprton
+ 4005 mpmread lda #64:ldx #6:jsr mdirpin
+ 4010 beq mrd1:mrd2 rts
+ 4020 mrd1 lda lanz:beq mrd2:jsr lzeibuf:jsr dopen:bne mrd2
+ 4021 stx oldfpb:sty oldfpb+1
+ 4022 ldy #fphandle:lda (oldfpb),y:sta oldhdl
+ 4023 ldy #fpsize:m4rd1 lda (oldfpb),y:sta oldsize-fpsize,y
+ 4024 iny:cpy #fpsize+4:bne m4rd1
+ 4025 ldx #3:ldy #0:clc:jsr wcursor
+ 4026 ldx #18:lda #39:jsr wopen
+ 4027 lda #19+128 ;"{clr}":sta newhdl:jsr wclr
+ 4030 mrdl
+ 4040 lda #prgbank:ldy #fpbank:sta (oldfpb),y
+ 4050 ldy #fpadr:lda #<buffer:sta (oldfpb),y
+ 4060 iny:lda #>buffer:sta (oldfpb),y
+ 4070 ldy #fpanz:lda prblen:sta (oldfpb),y
+ 4080 iny:lda prblen+1:sta (oldfpb),y
+ 4090 ldx oldhdl:jsr dread:sta olderr
+ 4100 beq m4re:cmp #eneof:beq m4rf
+ 4110 jmp m4rxe
+ 4120 m4re lda oldsize:sec:sbc prblen:sta oldsize
+ 4130 lda oldsize+1:sbc prblen+1:sta oldsize+1
+ 4140 bcs m4re1:lda oldsize+2:bne m4re2
+ 4150 dec oldsize+3:m4re2 dec oldsize+2
+ 4160 m4re1 lda prblen:ldx prblen+1
+ 4170 jmp m4rg
+ 4180 m4rf lda oldsize:ldx oldsize+1
+ 4190 m4rg jsr cprint:bne m4rxe
+ 4300 m4rh lda olderr:bne m4ri:jmp mrdl
+ 4310 m4ri lda #0:m4rxe pha
+ 4330 cprl5 jsr wgetkey:beq cprl5
+ 4390 jsr mprtoff:ldx oldhdl:jsr dclose:jsr wclose:pla:rts
+ 4399 ;****
+ 4400 cprint sta ccnt:stx ccnt+1
+ 4410 lda #<buffer:sta newfpb:lda #>buffer:sta newfpb+1
+ 4415 jsr prttst:bne cprx
+ 4420 cprl1 ldy #0:lda (newfpb),y
+ 4430 cmp #19 ;"{home}":bne cprl2
+ 4440 cmp newhdl:beq cprla
+ 4450 cprl2 jsr chartest:sta newhdl:jsr chout:bcs cprx
+ 4460 cprla inc newfpb:bne cprl3:inc newfpb+1
+ 4470 cprl3 lda ccnt:bne cprl4
+ 4480 dec ccnt+1:cprl4 dec ccnt
+ 4485 jsr wgetkey:beq cprl6:cmp #3:beq cprbrk:cprl7 jsr wgetkey:beq cprl7
+ 4490 cprl6 lda ccnt:ora ccnt+1:bne cprl1
+ 4495 lda #0:.byt $2c:cprbrk lda #enbreak:cprx pha:jsr prtoff:pla:rts
+ 4499 ;****
+ 4500 chartest tax:and #127:cmp #32:bcs chatok
+ 4507 ldy #anztkey-1:txa
+ 4510 chat1 cmp chtkeys,y:beq chatok:dey:bpl chat1
+ 4520 lda #"@":rts
+ 4530 chatok clc:txa:rts
+ 5000 ;********
+ 5010 prntcmd pha:jsr wclrcmd:pla
+ 5020 asl:tax
+ 5030 lda ptta-1,x:tay:lda ptta-2,x:jmp wprntcmd
+ 6000 ;********
+ 6010 tststat lda status:beq tst2
+ 6030 and #$bf:bne tst1
+ 6040 lda #eneof:.byt $2c
+ 6050 tst1 lda #29+64:tst2 cmp #0:rts
+ 6999 ;********
+ 7000 mpcprint jsr mprton
+ 7005 mpcread
+ 7010 jsr gtcbmdir:beq mcr1:mcrr rts:mcr1
+ 7020 lda #<iobuf:ldy #>iobuf:jsr wprnterr
+ 7030 lda #15:jsr prntcmd
+ 7040 lda lanz:beq mcrr
+ 7050 lda #128+64:jsr mpdirin:bne mcrr
+ 7060 jsr lczeibuf
+ 7070 jsr setfnpar:lda #2:ldx iecunit:ldy #0:jsr setfpar
+ 7072 ldx #3:ldy #0:jsr wcursor
+ 7074 ldx #18:lda #39:jsr wopen
+ 7076 lda #19+128 ;"{clr}":sta newhdl:jsr wclr
+ 7080 jsr open:ora #64:bcs mcrx
+ 7100 mcrl jsr cread:sta olderr:beq mcr2:cmp #eneof
+ 7110 bne mcrx:mcr2
+ 7120 txa:pha:tya:tax:pla:jsr cprint:bne mcrx
+ 7130 lda olderr:beq mcrl
+ 7140 lda #0:mcrx pha:lda #2:jsr close
+ 7142 mcry jsr wgetkey:beq mcry
+ 7145 jsr mprtoff:jsr wclose:pla
+ 7150 rts
+

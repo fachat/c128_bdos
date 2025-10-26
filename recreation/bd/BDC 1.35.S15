@@ -1,0 +1,148 @@
+
+
+;BDC 1.35.S15 ==0801==
+ 3000 ;****
+ 3010 clusec sec:sbc #2:sta int1:txa:sbc #0:sta int1+1
+ 3020 lda bpb+bpclsiz:ldx bpb+bpclsiz+1
+ 3030 jsr mult:sta int1:stx int1+1
+ 3040 lda bpb+bpdatrec:ldx bpb+bpdatrec+1
+ 3050 jsr add:rts
+ 3059 ;****
+ 3060 clufat tay:lda bpb+bflags:and #1:bne fat16b
+ 3070 tya:and #1:sta cabsx; bit 0 retten
+ 3080 tya:and #%11111110:sta int1:stx int1+1
+ 3090 txa:lsr:tax:lda int1:ror:jsr add
+ 3100 lda cabsx:ldx #0:jsr add
+ 3110 fat16ba lda bpb+bprecsiz:ldx bpb+bprecsiz+1
+ 3120 jsr div:rts
+ 3130 fat16b tya:asl:sta int1:txa:rol:sta int1+1
+ 3140 jmp fat16ba
+ 3999 ;*****
+ 4000 psgnexcl bcc pgnexcl:jmp psnexcl:pgnerr jmp diskerr
+ 4020 pgnexcl jsr cluspr:bne pgnerr
+ 4030 sta up2:jsr clufat
+ 4040 ldy int1:sty up1:ldy int1+1:sty up1+1
+ 4060 clc:adc bpb+bpfatrec:pha:txa
+ 4080 adc bpb+bpfatrec+1:tay:pla:tax
+ 4100 stx up4:sty up4+1:lda #0:sta up2+1
+ 4105 lda bpb+bpbfat:sta pgnbuf
+ 4110 lda up4:ldx up4+1
+ 4115 jsr readfat:beq pgnex:jmp diskerr
+ 4120 pgnex lda up1:ldx up1+1:ldy pgnbuf:jsr bfzset
+ 4140 jsr bfget:sta up1:bcc gnex1
+ 4160 lda up4:clc:adc #1:tax:lda up4+1:adc #0:tay:jsr gnexload
+ 4180 gnex1 jsr bfget:sta int1+1:lda up1:sta int1
+ 4200 lda bpb+bflags:and #1:bne gnex3
+ 4220 lda up2:lsr:bcc gnex2a
+ 4240 ldy #4:lda int1:ldx int1+1:jsr nlsr
+ 4260 sta int1:stx int1+1
+ 4280 gnex2a lda int1+1:and #$0f
+ 4300 tax:stx int1+1:cpx #$0f:bcc gnexr:bcs gnex3a
+ 4320 gnex3 ldx int1+1:cpx #$ff:bcc gnexr
+ 4340 gnex3a lda int1:cmp #$f7:bcs gnexre
+ 4360 gnexr ldx int1:ldy int1+1
+ 4380 lda up2+1:bne gnexrr; anderer fehler
+ 4400 cpy #0:bne gnexa1:cpx #2:bcc gnexre
+ 4401 gnexa1 lda bpb+bpnumcl:ldy bpb+bpnumcl+1
+ 4402 clc:adc #2:bcc gnexb1:iny
+ 4410 gnexb1 cpy int1+1:bne gnexb2:cmp int1:beq gnexre
+ 4420 gnexb2 sec:sbc int1:tya:sbc int1+1:bcc gnexre
+ 4460 gnexr2 ldx int1:ldy int1+1:lda #0:gnexrr rts
+ 4480 gnexre ldx int1:ldy int1+1:jmp clusnfnd
+ 4500 gnexload ;
+ 4520 txa:pha:tya:tax:pla
+ 4530 jsr readfat:beq gnexra:sta up2+1;fehler
+ 4540 gnexra lda #0:tax:ldy pgnbuf:jsr bfzset:rts
+ 4600 ;**********
+ 4610 psnexcl sta dzei:sty dzei+1
+ 4620 lda #0:sta up2+1:ldx bpb+bpbfat:stx pgnbuf
+ 4630 ldy #3:lda (dzei),y:sta up3+1:dey:lda (dzei),y:sta up3
+ 4640 dey:lda (dzei),y:tax:dey:lda (dzei),y:sta up4:jsr clufat
+ 4650 ldy int1:sty up1:ldy int1+1:sty up1+1
+ 4660 clc:adc bpb+bpfatrec:pha:txa
+ 4670 adc bpb+bpfatrec+1:tax:pla
+ 4680 sta up0:stx up0+1:jsr readfat
+ 4690 lda bpb+bflags:and #1:beq snex16a:jmp snex16b
+ 4700 snex16a lda up1:ldx up1+1:ldy pgnbuf:jsr bfzset
+ 4710 jsr bfget:sta up2:bcc snex1
+ 4720 lda up0:clc:adc #1:tax:lda up0+1:adc #0:tay:jsr gnexload
+ 4725 lda #0:tax:ldy pgnbuf:jsr bfzset
+ 4730 snex1 jsr bfget:sta int1+1:lda up2:sta int1
+ 4740 ldy #$f0:ldx #$00:lda up4:lsr
+ 4750 bcc snex2
+ 4760 ldy #$00:ldx #$0f
+ 4770 snex2 tya:eor #$ff:sta up5+1:txa:eor #$ff:sta up5
+ 4780 tya:and int1+1:sta int1+1
+ 4790 txa:and int1:sta int1
+ 4800 ldy #3:lda (dzei),y:tax
+ 4810 dey:lda (dzei),y:tay
+ 4820 lda up4:lsr:tya:bcc snex4
+ 4830 tya:ldy #4:jsr nasl
+ 4840 snex4 and up5:pha:txa:and up5+1:tax:pla
+ 4850 jsr add:sta up3:stx up3+1
+ 4860 ;up3/+1 ist neuer 2 byte wert
+ 4870 snex16b lda up0:ldx up0+1:jsr readfat:bne snexr
+ 4875 lda bpb+bpbflag:ora #dfwrit:sta bpb+bpbflag
+ 4880 lda up1:ldx up1+1:ldy pgnbuf:jsr bfzset
+ 4890 lda up3:jsr bfset:bcc snex5
+ 4900 jsr snexwr
+ 4910 jsr gnexload; parameter von snexwr
+ 4915 lda bpb+bpbflag:ora #dfwrit:sta bpb+bpbflag
+ 4920 snex5 lda up3+1:jsr bfset
+ 4940 snexr lda up2+1:rts
+ 4950 snexwr
+ 5040 lda up0:clc:adc #1:sta up0:tax
+ 5050 lda up0+1:adc #0:sta up0+1:tay:rts
+ 5100 ;**********
+ 5400 cluspr sta up7:stx up7+1
+ 5410 sec:sbc #2:tay:txa:sbc #0:bcc clpe
+ 5420 cmp bpb+bpnumcl+1:bcc clpr2:bne clpe
+ 5430 clpr1 cpy bpb+bpnumcl:bcs clpe
+ 5460 clpr2 lda up7:ldx up7+1:ldy #0:rts
+ 5470 clpe jmp parrange
+ 5899 ;*****
+ 6000 psfrclus jsr cluspr:beq psfr1a
+ 6002 lda #2:ldx #0
+ 6004 psfr1a sta psgcnt:stx psgcnt+1
+ 6005 sta psgdat:stx psgdat+1
+ 6010 lda bpb+bpnumcl:clc:adc #2:sta psgend
+ 6020 lda bpb+bpnumcl+1:adc #0:sta psgend+1
+ 6030 lda #0:sta psgflag
+ 6040 psfrl1 lda psgcnt:ldx psgcnt+1
+ 6050 jsr cluspr:bne psfr1
+ 6060 jsr gnexclus
+ 6070 beq psfrok
+ 6080 lda #1:clc:adc psgcnt:sta psgcnt
+ 6090 bcc psfr2:inc psgcnt+1
+ 6100 psfr2 lda psgcnt+1:cmp psgend+1:bcc psfrl1:bne psfr1
+ 6102 lda psgcnt:cmp psgend:bcc psfrl1
+ 6110 psfr1 lda psgflag:bne psfrnf
+ 6120 eor #1:sta psgflag
+ 6130 lda psgdat:sta psgend
+ 6140 lda psgdat+1:sta psgend+1
+ 6150 lda #2:sta psgcnt
+ 6160 lda #0:sta psgcnt+1
+ 6170 jmp psfr2
+ 6180 psfrok ldx psgcnt:ldy psgcnt+1:lda #0:rts
+ 6190 psfrnf jmp clusnfnd
+ 6999 ;*****
+ 7000 pgtdskfr sta dzei:sty dzei+1
+ 7005 ldy #3:lda #0:pgfl2 sta psgdat,y:dey:bpl pgfl2
+ 7010 lda #2:sta psgcnt
+ 7020 lda #0:sta psgcnt+1
+ 7050 pgfl1 lda psgcnt:ldx psgcnt+1
+ 7055 jsr cluspr:bne pgf2
+ 7060 jsr gnexclus
+ 7070 bne pgf1
+ 7080 lda bpb+bpclsizb:clc:adc psgdat:sta psgdat
+ 7090 lda bpb+bpclsizb+1:adc psgdat+1:sta psgdat+1
+ 7100 bcc pgf1
+ 7110 inc psgdat+2:bne pgf1:inc psgdat+3
+ 7120 pgf1 inc psgcnt:bne pgfl1
+ 7130 inc psgcnt+1:jmp pgfl1
+ 7140 pgf2 ldy #3:pgfl3 lda psgdat,y:sta (dzei),y:dey:bpl pgfl3
+ 7150 jmp error0
+ 7299 ;******
+ 7300 gnexclus clc:jsr sgnexcl
+ 7310 stx int1:tya:ora int1:rts
+

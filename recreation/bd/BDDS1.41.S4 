@@ -1,0 +1,22 @@
+
+
+;BDDS1.41.S4  ==0801==
+ 2140 ;********** data allgemein
+ 2150 drvbpb ;
+#ifdef ORIG
+ 2160 .byt 0:.if *-drvbpb-(bpplen*anzdrv):.goto 2160
+#else
+	.dsb bpplen*anzdrv,0
+#endif
+ 2170 fpbt ;
+#ifdef ORIG
+ 2180 .byt 0:.if *-fpbt-(fpbanz*fpblen):.goto 2180
+#else
+	.dsb fpbanz*fpblen
+#endif
+#ifdef ORIG
+ 2185 .if (bufanf-*)>15 :xyz memory error ( data mehr als bis bufanf )
+#else
+;	.assert bufanz-*<=15, "more data than buffer"
+#endif
+

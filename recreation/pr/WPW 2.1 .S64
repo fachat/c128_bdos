@@ -1,0 +1,233 @@
+
+
+;WPW 2.1 .S64 ==0801==
+//   10 .if fmn:.goto 162
+#if fmn-1
+  100 cursor =bcpos
+  102 esc =27
+  104 ;********
+  106 manz =40
+  108 mtab =41
+  110 smanz =0
+  112 sml   =1
+  114 smor  =2
+  116 smlr  =3
+  118 smtab =4
+  120 ;********
+  122 wminit   jmp pminit
+  124 wmenloop jmp menuloop
+  126 wopen    jmp pwopen
+  128 wclose   jmp pwclose
+  130 wout     jmp bout
+  132 wcursor  jmp cursor
+  134 wgetkey  jmp bgkey
+  136 wsubmenu jmp submenu
+  138 wsmclose jmp smclose
+  140 wsubloop jmp smloop
+  141 wexloop  jmp sml1a
+  142 wprntcmd jmp ppcmd
+  144 wclrcmd  jmp pclrcmd
+  146 wprnterr jmp pperr
+  148 wclrerr  jmp pclrerr
+  150 wopenmsg jmp popmsg
+  152 wprnttxt jmp pptxt
+  154 winput   jmp pwinput
+  156 wcuran   jmp bcan
+  158 wcuraus  jmp bcaus
+  160 wgetscr  jmp bin
+#endif
+  162 setbck   jmp bbcol
+  164 settxt   jmp btcol
+//  170 .if fmn :.goto 3600
+#if fmn-1
+  300 ;********
+  310 pwopen pha:txa:pha
+  325 jsr wescout:lda #"t":jsr wout
+  330 pla:tax:pla:tay:clc:jsr wcursor
+  340 jsr wescout:lda #"b":jsr wout
+  345 jsr wclr
+  350 lda #0:rts
+  360 ;********
+  370 pwclose jsr wclr:lda #19 ;"{home}":jsr wout:jsr wout:lda #18+128 ;"{rvof}":jsr wout
+  380 lda #0:rts
+  381 ;********
+  385 wclr    lda #19+128 ;"{clr}":.byt $2c
+  390 wescout lda #esc:jmp wout
+  400 ;********
+  410 pminit sta wzei:sty wzei+1
+  420 jsr wclose:jsr wclr
+  421 jsr wescout:lda #"o":jsr wout
+  430 ldx #1:ldy #0:clc:jsr wcursor
+  440 lda #18 ;"{rvon}":jsr wout
+  450 ldy #0
+  460 pmi1 lda (wzei),y:jsr wout:iny:cpy #40:bne pmi1
+  470 lda #18+128 ;"{rvof}":jsr wout
+  480 lda #0:sta wmenu:rts
+  490 menuloop jsr mnorm
+  500 mnl1 jsr wgetkey:beq mnl1
+  510 mnl1a ldy #menk-1
+  520 mnl2 cmp menkey,y:beq mnl3:dey:bpl mnl2
+  530 jmp menuloop
+  540 mnl3 tya:asl:tax:jsr mnl4
+  550 bcc menuloop:cmp #13:bne mnl1a
+  560 ldx wmenu:rts
+  570 mnl4 lda menka+1,x:pha
+  580 lda menka,x:pha:rts
+  900 ;****
+  901 menext jsr mrevers
+  902 inc wmenu
+  903 ldy #manz:lda (wzei),y:cmp wmenu
+  904 bne mener:lda #0:sta wmenu
+  905 mener clc:rts
+  911 mevor jsr mrevers
+  912 lda wmenu:beq mev1
+  913 dec wmenu:clc:rts
+  914 mev1 ldy #manz:lda (wzei),y
+  916 sta wmenu:dec wmenu:merr clc:rts
+  920 meret jsr mrevers
+  921 lda wmenu:jsr mtadr:iny
+  922 lda (wzei),y:and #64:beq merr
+  923 lda #13:ldy #0:sec:rts
+  930 mesub lda wmenu:jsr mtadr:iny
+  931 lda (wzei),y:bpl merr
+  932 iny:lda (wzei),y:pha
+  933 iny:lda (wzei),y:tay:pla
+  934 ldx #0:jsr wsubmenu
+  935 mesub1 jsr wsubloop
+  936 mesub2 cmp #17 ;"{down}":beq mesub1
+  937 jmp wsmclose
+  999 ;********
+ 1000 mtadr asl:asl:clc:adc #mtab:tay:rts
+ 1010 mrevers lda #18 ;"{rvon}":.byt $2c
+ 1020 mnorm lda #18+128 ;"{rvof}":jsr wout
+ 1030 lda wmenu:beq mno1
+ 1040 sec:sbc #1
+ 1050 jsr mtadr
+ 1060 lda (wzei),y:tay
+ 1070 .byt $2c:mno1 ldy #0
+ 1080 sty wza
+ 1090 ldx #1:clc:jsr wcursor
+ 1100 lda wmenu:jsr mtadr:lda (wzei),y
+ 1110 ldy wza:sta wza
+ 1120 mno2 lda (wzei),y:jsr wout
+ 1130 iny:cpy wza:bne mno2
+ 1140 lda #18+128 ;"{rvof}":jmp wout
+ 1999 ;****************
+ 2000 submenu sta wszei:sty wszei+1
+ 2010 stx smf:cpx #128:bcs subm1
+ 2020 ldy #smor:lda (wszei),y
+ 2030 tax:iny:lda (wszei),y:tay:clc
+ 2040 jsr wcursor
+ 2050 ldy #smanz:lda (wszei),y:tax:dex
+ 2060 iny:lda (wszei),y:jsr wopen
+ 2070 subm1 lda #0:sta wsmenu:jsr wclr
+ 2075 bit smf:bvs smi11
+ 2080 smi1 jsr smrevers:inc wsmenu
+ 2090 ldy #smanz:lda (wszei),y
+ 2100 cmp wsmenu:bne smi1
+ 2110 lda #0:sta wsmenu:smi11 rts
+ 2120 smloop jsr smnorm
+ 2130 sml1 jsr wgetkey:beq sml1
+ 2140 sml1a ldy #smka-1
+ 2150 sml2 cmp smkey,y:beq sml3:dey:bpl sml2
+ 2160 bmi smend
+ 2170 sml3 tya:asl:tax:jsr sml4
+ 2180 bcc smloop:smend sec:ldy wsmenu:rts
+ 2190 sml4 lda smadr+1,x:pha
+ 2200 lda smadr,x:pha:rts
+ 2210 ;****
+ 2220 smnext lda #29 ;"{rght}":jmp smend
+ 2230 smvor lda #29+128 ;"{left}":jmp smend
+ 2240 smdown jsr smrevers
+ 2250 ldy #smanz:lda (wszei),y
+ 2260 sec:sbc #1
+ 2270 cmp wsmenu:beq smd1
+ 2280 inc wsmenu:clc:rts
+ 2290 smd1 lda #17 ;"{down}":sec:rts
+ 2300 smup jsr smrevers
+ 2310 lda wsmenu:beq smu1
+ 2320 dec wsmenu:clc:rts
+ 2330 smu1 lda #17+128 ;"{up}":jmp smend
+ 2350 smclose pha
+ 2360 jsr wclose:pla:sec:rts
+ 2370 smret jsr smtadr
+ 2380 ldy #0:lda (lmzei),y:bpl smrr
+ 2390 lda #13:bne smend
+ 2400 smrr clc:rts
+ 2510 ;****
+ 2520 smtadr ldy #sml:lda (wszei),y:clc:adc #1:sta int1:ldx #0:stx int1+1
+ 2530 lda wsmenu:jsr mult
+ 2540 clc:adc #smtab:bcc sma1:inx
+ 2541 sma1 clc:adc wszei:sta lmzei:txa:adc wszei+1:sta lmzei+1:rts
+ 2549 ;****
+ 2550 smrevers lda #18 ;"{rvon}":.byt $2c
+ 2560 smnorm   lda #18+128 ;"{rvof}":pha
+ 2570 ldx wsmenu:ldy #0:clc:jsr wcursor
+ 2580 ldy #sml:lda (wszei),y
+ 2590 sta sma
+ 2600 jsr smtadr:ldy #1
+ 2605 pla:jsr wout:cmp #18+128 ;"{rvof}":bne smrv1:lda smf:and #32:bne smn1
+ 2610 smrv1 lda (lmzei),y:jsr wout:iny
+ 2620 dec sma:bne smrv1
+ 2630 rts
+ 2640 smn1 lda #18 ;"{rvon}":jsr wout
+ 2650 lda #"(":jsr wout:iny:dec sma:dec sma
+ 2660 jsr smrv1:lda #")":jmp wout
+ 2999 ;********
+ 3000 pclrcmd lda #<leerzei:ldy #>leerzei
+ 3005 ppcmd sta wczei:sty wczei+1
+ 3010 ldy #0:ldx #0:clc:jsr wcursor
+ 3011 ppe1 lda wczei:ldy wczei+1
+ 3015 pptxt sta wczei:sty wczei+1
+ 3020 ldy #0
+ 3030 ppc1 lda (wczei),y:beq ppc2:jsr wout
+ 3040 iny:bne ppc1
+ 3050 ppc2 rts
+ 3059 ;****
+ 3060 pclrerr lda #<leerzei:ldy #>leerzei
+ 3070 pperr sta wczei:sty wczei+1
+ 3080 ldy #0:ldx #24:clc:jsr wcursor
+ 3090 jmp ppe1
+ 3099 ;********
+ 3100 popmsg sta wczei:sty wczei+1
+ 3105 ldx #8:ldy #8:clc:jsr wcursor
+ 3110 lda #23:ldx #7:jsr wopen
+ 3120 lda wczei:ldy wczei+1:jmp pptxt
+ 3199 ;********
+ 3200 pwinput sta wczei:sty wczei+1
+ 3210 ldx #15:ldy #0:clc:jsr wcursor
+ 3220 lda wczei:ldy wczei+1
+ 3230 jsr wprnttxt
+ 3240 sec:jsr wcursor:sty wza
+ 3250 lda #39:sec:sbc wza:sta wza
+ 3260 sec:sbc #1:ldx #0:jsr wopen
+ 3265 winloop jsr wcuran
+ 3270 winl jsr wgetkey:beq winl
+ 3271 pha:jsr wcuraus:pla
+ 3272 cmp #3:beq wil2
+ 3276 tax:and #127:cmp #32:bcs winl1
+ 3277 ldy #inpanz-1:txa:winl2 cmp inpok,y
+ 3278 beq winl1:dey:bpl winl2
+ 3279 bmi winloop
+ 3280 winl1 txa:cmp #19 ;"{home}":bne wil1
+ 3290 cmp int1:beq winloop
+ 3310 wil1 cmp #13:beq wil2
+ 3320 sta int1:jsr wout:jmp winloop
+ 3330 wil2 sta sma:lda #19 ;"{home}":cmp int1:beq wil3
+ 3340 jsr wout
+ 3350 wil3 ldy #0
+ 3370 wil4 jsr wgetscr
+ 3372 sta iobuf,y:iny
+ 3380 cpy wza:bne wil4
+ 3390 dey
+ 3400 wil5 lda iobuf,y:cmp #" ":bne wil6
+ 3410 dey:bpl wil5
+ 3420 wil6 iny:lda #0:sta iobuf,y
+ 3430 tya:pha:jsr wclose
+ 3435 ldy #0:ldx #15:clc:jsr wcursor
+ 3437 ldy #39:wil7 lda #" ":jsr wout:dey:bne wil7
+ 3440 pla:ldx sma:cpx #3:bne winlx:sec:lda #enbreak:rts
+ 3470 winlx ldx #<iobuf:ldy #>iobuf:clc:rts
+#endif
+ 3600 .end
+

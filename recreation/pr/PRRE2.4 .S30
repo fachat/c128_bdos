@@ -1,0 +1,385 @@
+
+
+;PRRE2.4 .S30 ==0801==
+ 1000 svtab
+ 1010 .word 1
+ 1020 .word jmpadr
+ 1030 .word newadr
+ 1040 .word vchout
+ 1050 jmpadr .word (chout-bdos) *2/3
+ 1060 newadr .word pchout
+// 1070 .if fci:.goto 1530
+#if fci-1
+ 1080 dirdtext .asc "  <dir>  ":.byt 0
+ 1090 dirstext .byt 13:.asc "disk in drive ":.byt 0
+ 1100 dirntext .byt 13:.asc "name of disk:":.byt 0
+ 1110 dirftext .asc " files on disk":.byt 13,0
+ 1120 dirbtext .asc " bytes free":.byt 13,0
+ 1130 dhi .byt >10000,>1000,>100,>10,>1
+ 1140 dlo .byt <10000,<1000,<100,<10,<1
+ 1150 ;********
+#ifdef ORIG
+ 1160 bef .asc "deLmDrDcreatEcD"
+ 1170 .asc "formaTrenamE"
+ 1180 .asc "datEtimE"
+ 1190 maxmenu =9
+ 1200 .asc "exiTreaDwritEcopYsavEloaD"
+ 1210 .asc "diR"
+ 1220 .asc "QmCbPrAwAM":.byt ";"+$80
+ 1230 .asc "PRWcoLsyS"
+ 1240 .asc "UcaTmenUcopycoNprinTprtdeV"
+ 1250 .asc "echO"
+#else
+bef
+        .asc "de","l"+128
+        .asc "m", "d"+128
+        .asc "r", "d"+128
+        .asc "creat", "e"+128
+        .asc "c", "d"+128
+        .asc "forma", "t"+128
+        .asc "renam", "e"+128
+        .asc "dat", "e"+128
+        .asc "tim", "e"+128
+maxmenu =9
+        .asc "exi","t"+128
+        .asc "rea", "d"+128
+        .asc "writ", "e"+128
+        .asc "cop", "y"+128
+        .asc "sav", "e"+128
+        .asc "loa", "d"+128
+        .asc "di", "r"+128
+        .asc "q"+128
+        .asc "m" ,"c"+128
+        .asc "b", "p"+128
+        .asc "r", "a"+128
+        .asc "w", "a"+128
+        .asc "m"+128
+        .byt ";"+$80
+        .asc "p"+128
+        .asc "r"+128
+        .asc "w"+128
+        .asc "co", "l"+128
+        .asc "sy", "s"+128
+        .asc "u"+128
+        .asc "ca", "t"+128
+        .asc "men", "u"+128
+        .asc "copyco", "n"+128
+        .asc "prin", "t"+128
+        .asc "prtde", "v"+128
+        .asc "ech", "o"+128
+#endif
+ 1260 .byt 0
+ 1270 adr .word del-1,md-1,rd-1,cr-1,cd-1
+ 1280 .word pformat-1,prename-1
+ 1290 .word pdate-1,ptime-1
+ 1300 .word ex-1,pread-1,pwrite-1,pcopy-1
+ 1310 .word psave-1,pload-1,dir-1
+ 1320 .word pq-1,pc-1,pb-1,pra-1,pwa-1
+ 1330 .word pm-1,pg-1,pp-1,pr-1,pw-1
+ 1340 .word pcol-1,lload-1
+ 1350 .word pu-1,pcat-1,pmenu-1
+ 1360 .word copycon-1,pprint-1,pprtdev-1
+ 1370 .word pecho-1
+// 1380 coprt .asc "{clr}{down}{down}prompt v 2.4  "
+ 1380 coprt .asc 19+128,17,17,"prompt v 2.4  "
+ 1390 .asc "24.08.1989 by a.fachat"
+ 1400 .byt 13,10,0
+ 1410 tpon .byt 13:.asc "print on":.byt 13,0
+ 1420 tpoff .byt 13:.asc "print off":.byt 13,0
+ 1430 tsource .byt 13
+ 1440 .asc "please insert source disk and press     "
+ 1450 .asc "'return'":.byt 13,0
+ 1460 ttarget .byt 13
+ 1470 .asc "please insert target disk and press     "
+ 1480 .asc "'return'":.byt 13,0
+ 1490 tsoutar .byt 13
+ 1500 .asc "please insert source and target disk    "
+ 1510 .asc "and press "
+ 1520 .asc "'return'":.byt 13,0
+#endif
+ 1530 datum .byt 14,02,9;+1980=14.2.88
+ 1540 errnum .byt <-1,<-2,<-3,<-4,<-5,<-6,<-7
+ 1550 .byt <-8,<-9,<-10,<-11,<-12,<-13,<-14,<-15
+ 1560 .byt <-16,<-17,<-18,<-19,<-20,<-21,<-22
+ 1570 .byt <15,<8
+ 1580 .byt 65,66,67,68,69,70,71,72,73
+ 1590 .byt 32
+ 1600 .byt 2,3,5,6,9,11,14
+ 1610 .byt 29+64
+ 1615 .byt <-23,<-24,<-25
+ 1620 erranz =24+9+1+7+1+3
+ 1630 ert ;
+ 1640 .asc "command not implemented":.byt 0
+ 1650 .asc "transmission error":.byt 0
+ 1660 .asc "no serial transmission":.byt 0
+ 1670 .asc "no mfm-disk":.byt 0
+ 1680 .asc "parameter out of range":.byt 0
+ 1690 .asc "cluster not found":.byt 0
+ 1700 .asc "path not found":.byt 0
+ 1710 .asc "current directory":.byt 0
+ 1720 .asc "name not found":.byt 0
+ 1730 .asc "path to long":.byt 0
+ 1740 .asc "name not allowed":.byt 0
+ 1750 .asc "disk full":.byt 0
+ 1760 .asc "file exists":.byt 0
+ 1770 .asc "subdirectory not empty":.byt 0
+ 1780 .asc "wrong drive":.byt 0
+ 1790 .asc "drive not ready":.byt 0
+ 1800 .asc "to many files":.byt 0
+ 1810 .asc "file open":.byt 0
+ 1820 .asc "file not open":.byt 0
+ 1830 .asc "end of file":.byt 0
+ 1840 .asc "no buffer available":.byt 0
+ 1850 .asc "break":.byt 0
+ 1860 .asc "drive non existent":.byt 0
+ 1870 .asc "write protected":.byt 0
+ 1880 .asc "too many files":.byt 0
+ 1890 .asc "file open":.byt 0
+ 1900 .asc "file not open":.byt 0
+ 1910 .asc "file not found":.byt 0
+ 1920 .asc "device not present":.byt 0
+ 1930 .asc "not input file":.byt 0
+ 1940 .asc "not output file":.byt 0
+ 1950 .asc "missing filename":.byt 0
+ 1960 .asc "illegal device number":.byt 0
+ 1970 .asc "too many files":.byt 0
+ 1980 .asc "sector not found":.byt 0
+ 1990 .asc "no address mark":.byt 0
+ 2000 .asc "crc-data error":.byt 0
+ 2010 .asc "format error":.byt 0
+ 2020 .asc "header-checksum error":.byt 0
+ 2030 .asc "disk change":.byt 0
+ 2040 .asc "syntax error":.byt 0
+ 2050 .asc "load error":.byt 0
+ 2051 .asc "i/o-device not present":.byt 0
+ 2052 .asc "endbf ":.byt 0
+ 2053 .asc "endbe ":.byt 0
+ 2060 errnumt .asc "-message":.byt 0
+// 2070 .if fmn:.goto 3990
+#if fmn-1
+ 2080 mpma .word mpm1-1,mpm2-1
+ 2090 .word mpm3-1,mpm4-1,mpm5-1
+ 2100 mpm1a .word mpm11-1,mpm12-1
+ 2110 .word mpm13-1,mpm14-1,0
+ 2120 .word mpm51-1,mpm52-1,mpm53-1
+ 2130 .word mpm54-1,mpm55-1
+ 2140 mpm2a .word mpm21-1,mpm22-1
+ 2150 .word mpm23-1,mpmread-1,mpmprint-1
+ 2160 .word mpm24-1,mpm25-1,mpm26-1
+ 2170 .word mrename-1,mpm27-1,mpm28-1
+ 2180 mpm3a .word mpm31-1,mpm32-1
+ 2190 .word mpcread-1,mpcprint-1
+ 2195 .word mpm33-1,mpm34-1
+ 2200 mpm4a .word mpm41-1,mpm42-1
+ 2210 .word mpm43-1,0,mpm45-1
+ 2215 .word mpm46-1,mpm47-1
+ 2220 mpm5a .word 0
+// 2225 .if rs232:.word mpp232-1
+#if rs232
+	.word mpp232-1
+#endif
+ 2229 .word mppiec-1
+ 2230 .word mppcentr-1,0
+ 2240 .word mppnokon-1,mppacbm-1
+ 2250 .word mppcasc-1,0
+ 2260 .word mppcr-1,mpplf-1
+ 2270 ;********
+ 2280 mainmenu
+ 2290 .asc " bdos+   pc    cbm    copy   print      "
+ 2300 .byt 5
+ 2310 .byt 8,128:.word mallg
+ 2320 .byt 14,128:.word mpcdisk
+ 2330 .byt 21,128:.word mcbmdisk
+ 2340 .byt 28,128:.word mcopy
+ 2350 .byt 35,128:.word mprint
+ 2360 mallg .byt 10
+ 2370 .byt 11,2,1
+ 2380 .byt 128:.asc " copyright "
+ 2390 .byt 128:.asc " colors    "
+ 2400 .byt 128:.asc " cli       "
+ 2410 .byt 128:.asc " quit      "
+ 2420 .byt   0:.asc "-sort------"
+ 2430 .byt 128:hk11 .asc " none      "
+ 2440 .byt 128:hk12 .asc " name      "
+ 2450 .byt 128:hk13 .asc " ext/spur  "
+ 2460 .byt 128:hk14 .asc " size      "
+ 2470 .byt 128:hk15 .asc " norm/rev  "
+ 2480 mpcdisk .byt 11
+ 2490 .byt 10,2,9
+ 2500 .byt 128:.asc " dir      "
+ 2510 .byt 128:.asc " drive    "
+ 2520 .byt 128:.asc " path     "
+ 2530 .byt 128:.asc " read     "
+ 2540 .byt 128:.asc " print    "
+ 2550 .byt 128:.asc " make dir "
+ 2560 .byt 128:.asc " del dir  "
+ 2570 .byt 128:.asc " delete   "
+ 2580 .byt 128:.asc " rename   "
+ 2590 .byt 128:.asc " format   "
+ 2600 .byt 128:.asc " command  "
+ 2610 mcbmdisk .byt 6
+ 2620 .byt 9,2,15
+ 2630 .byt 128:.asc " cat     "
+ 2640 .byt 128:.asc " unit    "
+ 2650 .byt 128:.asc " read    "
+ 2651 .byt 128:.asc " print   "
+ 2660 .byt 128:.asc " scratch "
+ 2670 .byt 128:.asc " command "
+ 2680 mcopy .byt 7
+ 2690 .byt 12,2,22
+ 2700 .byt 128:.asc " pc  -> pc  "
+ 2710 .byt 128:.asc " pc  -> cbm "
+ 2720 .byt 128:.asc " cbm -> pc  "
+ 2730 .byt 0  :.asc "--conv.-----"
+ 2740 .byt 128:hk21 .asc " asc -> cbm "
+ 2750 .byt 128:hk22 .asc " cbm -> asc "
+ 2760 .byt 128:hk23 .asc " none       "
+ 2770 mprint .byt 10+rs232
+ 2780 .byt 12,2,26
+ 2790 .byt 0  :     .asc "---device---"
+// 2800 .if rs232:.byt 128:hk56 .asc " rs 232     "
+#if rs232
+	.byt 128
+hk56	.asc " rs 232     "
+#endif
+// 2810 .byt 128:.if rs232-1:hk56
+	.byt 128
+#if rs232-1
+hk56
+#endif
+ 2815 hk57 .asc " iec-bus    "
+ 2820 .byt 128:hk58 .asc " centronics "
+ 2830 .byt 0  :     .asc "--conv.-----"
+ 2840 .byt 128:hk51 .asc " none       "
+ 2850 .byt 128:hk52 .asc " asc -> cbm "
+ 2860 .byt 128:hk53 .asc " cbm -> asc "
+ 2870 .byt 0  :     .asc "---cr/lf----"
+ 2880 .byt 128:hk54 .asc " cr -> crlf "
+ 2890 .byt 128:hk55 .asc " lf -> crlf "
+ 2900 coptxt
+ 2910 .asc 19+128 ;"{clr}"
+ 2920 .asc "      menu v 2.4 ":.byt 13,13
+ 2930 .asc "       copyright":.byt 13,13
+ 2940 .asc "24.08.1989 by a.fachat"
+ 2950 .byt 13,13
+ 2960 .asc "    press 'return'    "
+ 2970 .byt 0
+ 2980 coltxt
+ 2990 .asc 19+128 ;"{clr}"
+ 3000 .asc " change colors: "
+ 3010 .byt 13
+ 3020 .asc "  background with :":.byt 13
+ 3030 .asc "    cursor left/right"
+ 3040 .asc "  text with :":.byt 13
+ 3050 .asc "    cursor up/down"
+ 3060 .byt 13,13
+ 3070 .asc " continue with 'return'"
+ 3080 .byt 0
+ 3090 ;********
+ 3100 menk =4
+// 3110 menkey .byt "{rght}","{left}","{down}",13
+ 3110 menkey .byt 29,29+128,17,13
+ 3120 menka .word menext-1,mevor-1,mesub-1,meret-1
+ 3130 ;********
+ 3140 smka =5
+// 3150 smkey .byt "{rght}","{left}","{down}","{up}",13
+ 3150 smkey .byt 29,29+128,17,17+128,13
+ 3160 smadr .word smnext-1,smvor-1,smdown-1,smup-1,smret-1
+ 3170 ;********
+ 3180 leerzei .asc "                                       ":.byt 0
+ 3190 inpanz =10
+// 3200 inpok .asc "{rght}{down}{up}{left}{home}{clr}{inst}":.byt 13,3,20
+ 3200 inpok .asc 29,17,17+128,29+128,19,19+128,20+128:.byt 13,3,20
+ 3210 cppt1 .asc "drive:":.byt 0
+// 3220 gtnnt .asc "{home}file exists!":.byt 13,13
+ 3220 gtnnt .asc 19,"file exists!":.byt 13,13
+ 3230 .asc "<run/stop>=end":.byt 13
+// 3240 .asc "{down}<=>       =new name":.byt 13
+ 3240 .asc 17,"<=>       =new name":.byt 13
+// 3250 .asc "{down}<ret>     =continue":.byt 0
+ 3250 .asc 17,"<ret>     =continue":.byt 0
+// 3260 adt .asc "{home}{down}{down}  insert source":.byt 13
+ 3260 adt .asc 19,17,17,"  insert source":.byt 13
+// 3270 .asc "{down}  and target disk     ":.byt 0
+ 3270 .asc 17,"  and target disk     ":.byt 0
+// 3290 chtkeys .byt 13,10,"{down}","{up}","{home}","{clr}","{rght}","{left}"
+ 3290 chtkeys .byt 13,10,17,17+128,19,19+128,29,29+128
+ 3300 anztkey =8
+ 3310 gtnnt3 .asc " exists already ":.byt 0
+ 3320 ptta .word ptt1,ptt2,ptt3,ptt4
+ 3330 .word ptt5,ptt6,ptt7,ptt8,ptt9
+ 3340 .word ptt10,ptt11,ptt12,ptt13
+ 3350 .word ptt14,ptt15
+ 3360 ptt1 .asc "input search mask (z.b. ab?c*)":.byt 0
+ 3370 ptt2 .asc "<run/stop>,<sh.ret>=subdir,<ret>=end ":.byt 0
+ 3380 ptt3 .asc "<ret> change drive":.byt 0
+ 3390 ptt4 .asc "input new path":.byt 0
+ 3400 ptt5 .asc "input name":.byt 0
+ 3410 ptt6 .asc "<run/stop>,<sh.ret>=subdir,<=>=select ":.byt 0
+ 3420 ptt7 .asc "<run/stop>,<=>=select,<ret>=end  ":.byt 0
+ 3430 ptt8 .asc "input drive + name of disk":.byt 0
+ 3440 ptt9 .asc "input command":.byt 0
+ 3450 ptt10 .asc "<run/stop>,<ret>=end ":.byt 0
+ 3460 ptt11 .asc "<ret> change unit or drive":.byt 0
+ 3470 ptt12 .asc "input target drive and path":.byt 0
+ 3480 ptt13 .asc "press a key":.byt 0
+ 3490 ptt14 .asc "input new name":.byt 0
+ 3500 ptt15 .asc "<run/stop>,<=>=select ":.byt 0
+ 3510 mpdt .byt 4
+ 3520 .byt 10,10,15
+ 3530 .byt 128:.asc " drive a: "
+ 3540 .byt 128:.asc " drive b: "
+ 3550 .byt 128:.asc " drive c: "
+ 3560 .byt 128:.asc " drive d: "
+ 3570 ismpt .asc "path :":.byt 0
+ 3580 isnpt .asc "name :":.byt 0
+// 3590 mwt .asc"{clr}{down}"
+ 3590 mwt .asc 19+128,17
+// 3600 .asc "{down}     error ! ":.byt 13,13
+ 3600 .asc 17,"     error ! ":.byt 13,13
+// 3610 .asc "{down}ret      = continue":.byt 13
+ 3610 .asc 17,"ret      = continue":.byt 13
+// 3620 .asc "{down}run/stop = end
+ 3620 .asc 17,"run/stop = end
+ 3630 .byt 0
+ 3640 sdirt .asc " <dir>":.byt 0
+ 3650 dirbfrei .asc " bytes free":.byt 0
+ 3660 ;********
+ 3670 m32mt .byt 7,9,7,13
+ 3680 .byt 128:.asc " unit 8  "
+ 3690 .byt 128:.asc " unit 9  "
+ 3700 .byt 128:.asc " unit 10 "
+ 3710 .byt 128:.asc " unit 11 "
+ 3720 .byt   0:.asc "         "
+ 3730 .byt 128:.asc " drive 0 "
+ 3740 .byt 128:.asc " drive 1 "
+ 3750 m34t .asc "disk-command:":.byt 0
+ 3760 ismct .asc "mask  :":.byt 0
+ 3770 m31bft .asc " bl.free":.byt 0
+// 3780 .if mix :.goto 3810
+#if mix-1
+ 3790 dhi .byt >10000,>1000,>100,>10,>1
+ 3800 dlo .byt <10000,<1000,<100,<10,<1
+#endif
+ 3810 mdiranz =19:mdirtbrt =27
+ 3820 ;dirmenu am ende
+ 3830 mdirtlen =mdiranz*(mdirtbrt+1)+4
+// 3840 ast .asc "{home}":.byt 13
+ 3840 ast .asc 19:.byt 13
+ 3850 .asc " are you sure?":.byt 13,13
+ 3860 .asc "    run/stop =no  ":.byt 13,13
+ 3870 .asc "    return   =yes":.byt 0
+ 3880 mbeft .asc "command:":.byt 0
+ 3890 stlt1 .asc "cbm>d":.byt 0
+ 3900 stlt2 .asc ":pc>":.byt 0
+ 3910 stlend =39-5-4-5
+ 3920 soname   .byt  2, 0
+ 3930 sonamend .byt 18, 8
+ 3940 soext    .byt 19, 8
+ 3950 soextend .byt 20,11
+ 3960 sosize   .byt  0,12
+ 3970 sosizend .byt  2,16
+ 3980 sollen   .byt 20,19
+#endif
+ 3990 .end
+

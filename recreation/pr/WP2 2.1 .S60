@@ -1,0 +1,221 @@
+
+
+;WP2 2.1 .S60 ==0801==
+//   10 .if fmn:.goto 4900
+#if fmn-1
+ 1000 mpm22 ; pcdrive:lda #3:jsr prntcmd
+ 1010 ldx #0:lda #<mpdt:ldy #>mpdt:jsr wsubmenu
+ 1020 m22a jsr wsubloop
+ 1030 cmp #13:bne m22a
+ 1040 tya:sec:jsr sgdrive
+ 1050 pha:jsr wclose:pla:rts
+ 1999 ;********
+ 2000 mpm21 lda #0:ldx #2
+ 2001 ;****
+ 2005 mdirpin sta mpdf:stx mpdcmd
+ 2007 jsr gtpcdir:bne m21ab:lda lanz:bne m21ac:m21ab rts
+ 2008 m21ac lda mpdcmd:jsr prntcmd
+ 2011 m21aa lda #0:sta lseit
+ 2012 lda #mdiranz:sta dirmenu:lda #mdirtbrt:sta dirmenu+1
+ 2013 lda #3:sta dirmenu+2:lda #6:sta dirmenu+3
+ 2014 ldx #64:lda #<dirmenu:ldy #>dirmenu:jsr wsubmenu
+ 2018 m21a1 jsr iniplist
+ 2020 ldx #128+32:lda #<dirmenu:ldy #>dirmenu:jsr wsubmenu
+ 2030 m21a jsr wsubloop
+ 2040 m21al cmp #29 ;"{rght}":beq m21b:cmp #17 ;"{down}":bne m21c
+ 2050 m21b ldx lseit:inx:stx int1:lda #0:sta int1+1
+ 2060 lda #mdiranz:ldx #0:jsr mult
+ 2070 cpx #0:bne m21a
+ 2080 cmp lanz:bcs m21a:inc lseit:bne m21a1
+ 2090 m21c cmp #29+128 ;"{left}":beq m21c1:cmp #17+128 ;"{up}":bne m21d
+ 2100 m21c1 lda lseit:beq m21a:dec lseit:jmp m21a1
+ 2110 m21d cmp #13+128:beq m21e
+ 2111 cmp #"=":beq m21e:cmp #"#":beq m21e
+ 2112 cmp #13:beq m21e:cmp #3:bne m21a
+ 2115 lda #enbreak:.byt $2c:m21f lda #0
+ 2117 m21a2 pha:jsr wclose:jsr wclrcmd:pla:rts
+ 2120 m21e sec:sbc #13+128:sta mpdb:sty sma
+ 2125 lda lseit:sta int1:lda #0:sta int1+1
+ 2130 lda #mdiranz:ldx #0:jsr mult:clc:adc sma:bcc m21d1:inx
+ 2140 m21d1 sta int1:stx int1+1
+ 2141 lda #19:ldx #0:jsr mult
+ 2142 clc:adc #<liste:sta lzei:txa:adc #>liste:sta lzei+1
+ 2145 lda mpdb:beq m21fb
+ 2147 eor #$80:bne m21fa
+ 2149 bit mpdf:bvc m21f:bvs m21ax
+ 2152 m21fa bit mpdf:bvs m21f
+ 2155 m21fb ldy #11:lda (lzei),y:and #$10:bne m21g:m21a2a bne m21a2
+ 2156 lda mpdb:beq m21ax
+ 2157 lda mpdf:bpl m21ax
+ 2160 ldy #16:lda (lzei),y:eor #128:sta (lzei),y
+ 2170 ldy #2:lda (lmzei),y:eor #$1e:sta (lmzei),y
+ 2180 lda #17 ;"{down}":jsr wexloop:jmp m21al
+ 2190 m21ax jmp m21a
+ 2200 m21g lda mpdb:bne m21ax
+ 2210 jsr lzeibuf:jsr chdir:bne m21a2a
+ 2220 jsr wclose:jsr gtpsdir:bne m21a2a:jmp m21aa
+ 2499 ;****
+ 2500 gtpcdir sta gtpd:lda #1:jsr prntcmd
+ 2501 lda #<isnpt:ldy #>isnpt:jsr winput
+ 2502 bcc gtpc1:rts
+ 2503 gtpc1 stx lzei:sty lzei+1
+ 2505 cmp #0:bne gpdaa:lda #"*":sta iobuf:sta iobuf+2
+ 2507 lda #0:sta iobuf+3:lda #".":sta iobuf+1
+ 2508 lda #<iobuf:sta lzei:lda #>iobuf:sta lzei+1
+ 2510 gpdaa ldy #0
+ 2512 gpdad lda (lzei),y:beq gpdab:cmp #backs:beq gpdac:iny:bne gpdad
+ 2513 gpdac lda #enillnam:rts
+ 2550 gpdab lda #<iobuf:ldy #>iobuf:ldx #$20:jsr namedtp
+ 2551 beq gpda:cmp #ennotfnd:bne gpde2
+ 2552 gpda
+ 2561 clc:jsr sgdta:sta dtadr:sty dtadr+1
+ 2562 ldy #dsattr-1
+ 2563 gpdb lda (dtadr),y:sta pcsuch,y:dey:bpl gpdb
+ 2564 ldx #24:ldy #0:clc:jsr wcursor:lda #<oldsize:ldy #>oldsize:jsr gtdskfr
+ 2565 gpde2 bne gpde1:ldx #0:ldy #3
+ 2566 gpdax1 lda oldsize,y:jsr hexbuf:dey:bpl gpdax1
+ 2567 lda #0:sta iobuf,x:lda #<iobuf:ldy #>iobuf:jsr textout
+ 2568 lda #<dirbfrei:ldy #>dirbfrei:jsr textout
+ 2569 gtpsdir lda #0:sta lanz
+ 2575 lda #<pcdta:ldy #>pcdta:sec:jsr sgdta
+ 2577 jsr stline
+ 2578 lda #<liste:sta lzei:ldy #>liste:sty lzei+1
+ 2579 lda #<pcdta:ldy #>pcdta:sec:jsr sgdta
+ 2580 lda gtpd:bmi gpd1
+ 2590 lda #"*":sta pcdta+dsname:sta pcdta+dsext
+ 2600 lda #$10;subdirs:sta pcdta+dsattr
+ 2610 jsr sfirst:jsr gpdloop
+ 2611 cmp #ennotfnd:gpde1 bne gpde
+ 2612 ldy lanz:beq gpd1
+ 2613 dey:ldx #0:lda #1:jsr sort
+ 2625 gpd1 ldy #dsattr-1:gpdc lda pcsuch,y:sta pcdta,y:dey:bpl gpdc
+ 2627 lda lanz:sta panzsub
+ 2630 lda #$20:sta pcdta+dsattr
+ 2639 jsr sfirst
+ 2650 jsr gpdloop:cmp #ennotfnd:bne gpde
+ 2655 ldx panzsub:cpx lanz:beq gpd3
+ 2657 ldy lanz:dey:lda #1:jsr sort
+ 2660 gpd3 lda #0:gpde rts
+ 2670 ;****
+ 3000 gpdl0 jsr snext
+ 3010 gpdloop bne gpde
+ 3020 ldx #dgname:ldy #0
+ 3030 gpdl1 lda pcdta,x:sta (lzei),y:inx:iny:cpy #8:bne gpdl1
+ 3040 ldx #dgext
+ 3050 gpdl2 lda pcdta,x:sta (lzei),y:inx:iny:cpy #11:bne gpdl2
+ 3060 ldx #dgattr
+ 3070 lda pcdta,x:sta (lzei),y:iny
+ 3080 ldx #dgsize
+ 3090 gpdl3 lda pcdta,x:sta (lzei),y:inx:iny:cpy #16:bne gpdl3
+ 3091 lda #0:sta (lzei),y:iny
+ 3092 ldx #dgclus:lda pcdta,x:sta (lzei),y:iny:inx
+ 3093 lda pcdta,x:sta (lzei),y
+ 3100 lda #19:clc:adc lzei:sta lzei:bcc gpdlx
+ 3110 inc lzei+1
+ 3120 gpdlx inc lanz
+ 3125 jsr testlist:bcc gpdl0a:lda #32:rts
+ 3130 gpdl0a jmp gpdl0
+ 3299 ;********
+ 3300 iniplist lda lseit:sta int1:lda #0:sta int1+1
+ 3310 lda #mdiranz:ldx #0:jsr mult
+ 3320 sta int1:lda lanz:sec:sbc int1
+ 3330 cmp #mdiranz:bcc ipl1:beq ipl1
+ 3340 lda #mdiranz
+ 3350 ipl1 sta dirmenu:sta lmanz
+ 3360 lda #mdirtbrt:sta dirmenu+1
+ 3370 lda #3:sta dirmenu+2:lda #6:sta dirmenu+3
+ 3380 lda #0:sta int1+1:lda #19:ldx #0:jsr mult
+ 3390 clc:adc #<liste:sta lzei:txa:adc #>liste:sta lzei+1
+ 3400 lda #<dirmenu+4:sta lmzei:lda #>dirmenu+4:sta lmzei+1
+ 3410 ipl2 lda #" ":sta iobuf:sta iobuf+1:sta iobuf+2
+ 3420 ldy #7:ipl3 lda (lzei),y:sta iobuf+3,y:dey:bpl ipl3
+ 3430 lda #" ":sta iobuf+3+8
+ 3440 ldy #8:ipl4 lda (lzei),y:sta iobuf+4,y:iny:cpy #11:bne ipl4
+ 3445 lda #" ":sta iobuf+15:sta iobuf+16
+ 3450 ldx #17:lda (lzei),y:and #$10:beq ipl7
+ 3460 lda #"+":sta iobuf+1
+ 3472 ipl8 lda sdirt-17,x:sta iobuf,x:beq iplse:inx:bne ipl8
+ 3480 ipl7 ldy #16:lda (lzei),y:bpl ipl7a:lda #">":sta iobuf+1
+ 3489 ipl7a ldy #15
+ 3490 ipl6 lda (lzei),y:jsr hexbuf:dey:cpy #11:bne ipl6
+ 3550 iplse lda #" ":ipls1 sta iobuf,x:inx:cpx #mdirtbrt:bne ipls1
+ 3555 ldy #mdirtbrt:ipls0 lda iobuf-1,y:sta (lmzei),y:dey:bne ipls0
+ 3557 lda #128:sta (lmzei),y
+ 3560 lda #19:clc:adc lzei:sta lzei:bcc ipls2
+ 3570 inc lzei+1:ipls2
+ 3580 lda lmzei:clc:adc #mdirtbrt+1:sta lmzei:bcc ipls3
+ 3590 inc lmzei+1:ipls3 dec lmanz:beq m24aa:jmp ipl2
+ 3600 m24aa rts
+ 3699 ;********
+ 4000 mpm26 ; delete
+ 4010 lda #128:ldx #7
+ 4012 jsr mdirpin
+ 4020 bne m24aa
+ 4024 lda lanz:beq m24aa
+ 4027 jsr asksure:bcs m24aa
+ 4030 lda #<liste:sta lzei:lda #>liste:sta lzei+1
+ 4040 m24b ldy #16:lda (lzei),y:bpl m24c
+ 4050 jsr lzeibuf
+ 4110 ldx #$20:jsr delete
+ 4120 bne m24x
+ 4130 m24c lda #19:clc:adc lzei:sta lzei:bcc m24f:inc lzei+1
+ 4140 m24f dec lanz:bne m24b
+ 4150 lda #0:rts
+ 4200 m24x jsr error:bcc m24c
+ 4210 lda #enbreak:rts
+ 4299 ;****
+ 4300 lzeibuf ldy #0:ldx #0
+ 4310 m24d lda (lzei),y:sta iobuf,x:iny:inx:cpx #8:bne m24d
+ 4320 lda #".":sta iobuf,x:inx
+ 4330 ldy #8
+ 4340 m24e lda (lzei),y:sta iobuf,x:iny:inx:cpx #12:bne m24e
+ 4350 lda #0:sta iobuf,x
+ 4360 lda #<iobuf:ldy #>iobuf:rts
+ 4499 ;********
+ 4500 mpm23 ; pfad:lda #4:jsr prntcmd
+ 4510 lda #<ismpt:ldy #>ismpt:jsr winput
+ 4520 bcs mp23a:txa:jsr chdir:mp23a rts
+ 4599 ;********
+ 4600 mpm24 ; md:lda #5:jsr prntcmd
+ 4610 lda #<isnpt:ldy #>isnpt:jsr winput
+ 4620 bcs mp23a:txa:jmp mkdir
+ 4699 ;********
+ 4700 mpm25 ; rd
+ 4710 ldx #6:lda #64:jsr mdirpin:bne m25a
+ 4711 lda lanz:beq m25a
+ 4712 jsr asksure:bcs m25a
+ 4715 ldy #11:lda (lzei),y:and #$10:beq m25e
+ 4720 jsr lzeibuf:jmp rmdir
+ 4730 m25e lda #enillnam:m25a rts
+ 4799 ;********
+ 4800 error jsr fehlout:jsr wclrcmd
+ 4804 lda #<iobuf:ldy #>iobuf:jsr wprntcmd
+ 4810 errorq lda #<mwt:ldy #>mwt:jsr wopenmsg
+ 4820 errr1 jsr wgetkey:beq errr1
+ 4830 cmp #3:beq errr2:cmp #13:bne errr1
+ 4840 errr2 pha:jsr wclose:pla
+ 4850 eor #8:sbc #8:rts
+ 4899 ;********
+#endif
+ 4900 hexbuf pha:lsr:lsr:lsr:lsr
+ 4910 jsr hexnbuf
+ 4920 pla:and #$0f
+ 4930 hexnbuf clc:adc #"0":cmp #"9"+1
+ 4940 bcc hexnb1:adc #6
+ 4950 hexnb1 sta iobuf,x:inx:rts
+// 4960 .if fmn:.goto 6000
+#if fmn-1
+ 4999 ;********
+ 5000 testlist lda lzei+1:cmp #>listend
+ 5010 bne teli1
+ 5020 lda lzei:cmp #<listend
+ 5030 teli1 rts
+ 5099 ;********
+ 5100 mpm27 lda #8:jsr prntcmd
+ 5105 lda #<isnpt:ldy #>isnpt:jsr winput
+ 5110 bcs teli1:stx czei:sty czei+1
+ 5120 jsr asksure:bcc m27a:rts
+ 5130 m27a lda czei:ldy czei+1:jmp pformat
+#endif
+ 6000 .end
+

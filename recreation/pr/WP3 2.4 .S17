@@ -1,0 +1,167 @@
+
+
+;WP3 2.4 .S17 ==0801==
+//  900 .if fmn:.goto 3320
+#if fmn-1
+ 1000 sortinit
+ 1001 mpm51 jsr hk1clr:lda #"+":sta hk11
+ 1005 lda #0:sta sofl:rts
+ 1010 mpm52 jsr hk1clr:lda #"+":sta hk12
+ 1015 lda #128:sta sofl
+ 1020 lda #0:sta sonk:rts
+ 1030 mpm53 jsr hk1clr:lda #"+":sta hk13
+ 1035 lda #128:sta sofl
+ 1040 lda #1:sta sonk:lda #0:rts
+ 1050 mpm54 jsr hk1clr:lda #"+":sta hk14
+ 1055 lda #128+64+32:sta sofl
+ 1060 lda #2:sta sonk:lda #0:rts
+ 1070 mpm55 lda sofl:eor #32:sta sofl
+ 1080 lda #0:rts
+ 1200 hk1clr lda #" "
+ 1210 sta hk11:sta hk12:sta hk13
+ 1220 sta hk14:rts
+ 1999 ;********
+ 2000 sort stx sofirst
+ 2010 sty solast:cpy sofirst:beq sortr
+ 2015 sta int1
+ 2020 lda sonk:asl:asl:ora int1
+ 2030 tax:lda soname,x:sta sokrit
+ 2040 inx:inx:lda soname,x:sta sokend
+ 2050 ldx int1:lda sollen,x:sta soelen
+ 2060 bit sofl:bmi sort1
+ 2065 sortr lda #0:rts
+ 2070 sort1 lda soelen:sta int1
+ 2080 ldx #0:stx int1+1:lda sofirst
+ 2090 jsr mult
+ 2092 clc:adc #<liste:sta sofadr
+ 2094 txa:adc #>liste:sta sofadr+1
+ 2100 sortloop lda sofl:and #$ff-1
+ 2110 sta sofl:lda sofadr
+ 2120 sta lzei:lda sofadr+1:sta lzei+1
+ 2130 lda sofirst:sta socount
+ 2140 soloop lda lzei:clc:adc soelen
+ 2150 sta lmzei:lda lzei+1:adc #0
+ 2160 sta lmzei+1
+ 2170 bit sofl:bvs solow
+ 2180 ldy sokrit
+ 2190 sol1 lda (lzei),y:cmp (lmzei),y
+ 2200 bcc solkm:bne solgm
+ 2210 iny:cpy sokend:bne sol1
+ 2220 beq solmg
+ 2230 solow ldy sokend
+ 2240 sol2 cpy sokrit:beq solmg
+ 2250 dey:lda (lzei),y:cmp (lmzei),y
+ 2260 beq sol2:bcs solgm
+ 2270 solkm lda sofl:and #32:beq solmg
+ 2280 bne sochange
+ 2290 solgm lda sofl:and #32:bne solmg
+ 2300 sochange ldy #0:soc1
+ 2310 lda (lzei),y:tax:lda (lmzei),y
+ 2320 sta (lzei),y:txa:sta (lmzei),y
+ 2330 iny:cpy soelen:bne soc1
+ 2340 lda sofl:ora #1:sta sofl
+ 2350 solmg lda lmzei:sta lzei
+ 2360 lda lmzei+1:sta lzei+1
+ 2370 inc socount:lda socount
+ 2380 cmp solast:bne soloop
+ 2390 lda sofl:and #1:beq sortrr
+ 2395 jmp sortloop
+ 2400 sortrr lda lzei:clc:adc soelen
+ 2410 sta lzei:bcc sortr1:inc lzei+1
+ 2450 sortr1 lda #0:rts
+ 2999 ;********
+ 3000 mpm45 jsr hk2clr:lda #"+":sta hk21
+ 3005 lda #128:sta cvfl:lda #0:rts
+ 3010 mpm46 jsr hk2clr:lda #"+":sta hk22
+ 3015 lda #64:sta cvfl:lda #0:rts
+ 3020 convinit
+ 3030 mpm47 jsr hk2clr:lda #"+":sta hk23
+ 3040 lda #0:sta cvfl:rts
+ 3050 hk2clr lda #" ":sta hk21:sta hk22:sta hk23:rts
+ 3100 conv ldy cvfl:bne conv1
+ 3110 rts:conv1
+ 3120 sta int1:stx int1+1
+ 3130 sta int2:stx int2+1
+ 3140 lda #<buffer:sta rwbzei
+ 3150 lda #>buffer:sta rwbzei+1
+ 3160 ldy #0
+ 3170 cv2 lda (rwbzei),y
+ 3180 jsr bytconv
+ 3190 sta (rwbzei),y
+ 3200 iny:bne cv3:inc rwbzei+1:cv3
+ 3210 lda int1:bne cv4
+ 3220 dec int1+1:cv4 dec int1
+ 3230 lda int1:ora int1+1:bne cv2
+ 3240 lda int2:ldx int2+1:rts
+ 3300 bytconv ldx cvfl
+ 3310 cpx #128:bne bcbmasc
+#endif
+ 3320 basccbm cmp #65:bcc bcvr
+ 3330 cmp #91:bcc bcvo
+ 3340 cmp #97:bcc bcvr
+ 3350 cmp #123:bcs bcvr
+ 3365 bcvx eor #$20
+ 3370 bcvr rts
+ 3380 bcvo ora #$80:rts
+ 3400 bcbmasc
+ 3410 cmp #65:bcc bcvr
+ 3420 cmp #91:bcc bcvx
+ 3430 cmp #97:bcc bcvr
+ 3440 cmp #123:bcc bcvx
+ 3450 cmp #128+65:bcc bcvr
+ 3460 cmp #128+91:bcs bcvr
+ 3470 and #$7f:rts
+// 3480 .if fmn:.goto 10000
+#if fmn-1
+ 3999 ;********
+ 4000 hkcclr lda #" ":sta hk51
+ 4010 sta hk52:sta hk53:rts
+ 4020 hkpclr lda #" ":sta hk56
+ 4030 sta hk57:sta hk58:rts
+ 4099 ;****
+ 4100 mprtinit jsr mprtoff
+ 4105 mpout jsr hkcclr:jsr hkpclr
+ 4110 lda prtfl:and #3
+ 4120 ldx #"+":tay:bne mpi1
+ 4130 stx hk51:beq mpi4
+ 4140 mpi1 dey:bne mpi2
+ 4150 stx hk53:beq mpi4
+ 4160 mpi2 dey:bne mpi4
+ 4170 stx hk52
+ 4180 mpi4 lda #" ":sta hk54:sta hk55
+ 4190 lda prtfl:and #%00001000:beq mpi5
+ 4200 stx hk54
+ 4210 mpi5 lda prtfl:and #%00100000
+ 4220 beq mpi6:stx hk55
+ 4230 mpi6 lda prtdev:and #63:sec:sbc #2
+ 4240 tay:bne mpi7
+ 4250 stx hk56:beq mpi9
+ 4260 mpi7 dey:bne mpi8
+ 4270 stx hk57:beq mpi9
+ 4280 mpi8 dey:bne mpi9
+ 4290 stx hk58
+ 4300 mpi9 lda #0:rts
+ 4399 ;****
+ 4400 mppnokon lda prtfl:and #255-3
+ 4410 sta prtfl:jmp mpout
+ 4420 mppacbm lda prtfl:and #255-3
+ 4430 ora #2:sta prtfl:jmp mpout
+ 4440 mppcasc lda prtfl:and #255-3
+ 4450 ora #1:sta prtfl:jmp mpout
+ 4499 ;****
+ 4500 mppcr lda prtfl:eor #8:sta prtfl
+ 4510 jmp mpout
+ 4520 mpplf lda prtfl:eor #32:sta prtfl
+ 4530 jmp mpout
+ 4599 ;****
+ 4600 mpp232 lda #2:sta prtdev:jmp mpout
+ 4610 mppiec lda #3:sta prtdev:jmp mpout
+ 4620 mppcentr lda #4:sta prtdev:jmp mpout
+ 4699 ;****
+ 4700 mprton lda prtfl:ora #128
+ 4710 sta prtfl:rts
+ 4720 mprtoff lda prtfl:and #127
+ 4730 sta prtfl:rts
+#endif
+10000 .end
+

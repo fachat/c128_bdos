@@ -1,0 +1,35 @@
+
+
+;BDU 1.3 .S2  ==0801==
+ 2305 ;********** arithmetik
+ 2310 ; int1 / a,y = a,y rest int1
+ 2320 div stx int2+1:sta int2:sty abuf:ldx #1:lda #0:sta int3:sta int3+1
+ 2330 div1 lda int2:asl:tay:lda int2+1:rol:bcs div3
+ 2340 cmp int1+1:bcc div2:bne div3
+ 2350 cpy int1:bcc div2:bne div3
+ 2360 div2 sta int2+1:sty int2:inx:bne div1
+ 2370 div3 dex:bpl div6:ldy abuf:lda int3:ldx int3+1:rts
+ 2380 div6 lda int1+1:cmp int2+1:bcc div4:bne div5
+ 2390 lda int1:cmp int2:bcc div4
+ 2400 div5 lda int1:sec:sbc int2:sta int1:lda int1+1:sbc int2+1:sta int1+1
+ 2410 sec:.byt $24:div4 clc:rol int3:rol int3+1
+ 2420 lsr int2+1:ror int2:jmp div3
+ 2450 ;****
+ 2490 ; int1 * a,y = a,y
+ 2500 mult sta int2
+ 2510 lda #0:sta int3:sta int3+1
+ 2520 mul1 txa:lsr:tax:ror int2:ora int2:bcs mul2:beq multe
+ 2530 bcc mul3
+ 2540 mul2 lda int3:clc:adc int1:sta int3:lda int3+1:adc int1+1:sta int3+1
+ 2550 mul3 asl int1:rol int1+1:jmp mul1
+ 2555 multe lda int3:ldx int3+1
+ 2560 sta int1:stx int1+1:rts
+ 2561 ;****
+ 2562 add clc:adc int1:sta int1:txa:adc int1+1:sta int1+1:tax:lda int1:rts
+ 2563 ;****
+ 2564 nlsr stx int2+1:nlsr1 lsr int2+1:ror:dey:bne nlsr1:ldx int2+1:rts
+ 2565 ;****
+ 2566 sub sec:sbc int1:sta int1:txa:sbc int1+1:sta int1+1:tax:lda int1:rts
+ 2567 ;****
+ 2568 nasl stx int2+1:nasl1 asl:rol int2+1:dey:bne nasl1:ldx int2+1:rts
+

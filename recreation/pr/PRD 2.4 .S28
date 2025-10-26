@@ -1,0 +1,112 @@
+
+
+;PRD 2.4 .S28 ==0801==
+  130 prblen .word 0
+  140 ddtp
+//  150 .byt 0:.if *-ddtp-dtplen :.goto 150
+	.dsb dtplen,0
+  190 fformat  .byt 0
+  250 fadr     .word 0
+ 1000 iecunit  .byt 0
+ 1001 prtdev   .byt 0
+ 1002 prtfl    .byt 0
+ 1003 prtdiv   .byt 0
+ 1004 vchout   .word 0
+// 1005 .if fci:.goto 1340
+#if fci-1
+ 1010 dosd0    .word 0
+ 1020 iecd0    .word 0
+ 1030 drvd0    .word 0
+ 1040 ;*********
+ 1060 dircount .word 0
+ 1070 dint1    .word 0
+ 1080 dint2    .word 0
+ 1090 dint3    .word 0
+ 1100 dabuf    .byt 0
+ 1110 dword    .word 0,0
+ 1120 dcl      .word 0
+ 1130 dpa      .word 0
+ 1160 cnt      .byt 0
+ 1170 handle   .byt 0
+ 1180 handl2   .byt 0
+ 1200 st1      .byt 0
+ 1210 flag     .byt 0
+ 1220 dr1      .byt 0
+ 1230 dr2      .byt 0
+ 1240 nadr     .word 0
+ 1260 fad2     .word 0
+ 1270 tplen    .word 0
+ 1280 fl1      .word 0
+ 1290 laenge   .byt 0,0,0,0
+ 1300 pblock   .word 0,0,0,0,0
+ 1305 llvec    .word 0
+ 1310 clitcol  .byt 0
+ 1320 clibcol  .byt 0
+ 1330 ;********
+#endif
+// 1340 .if fmn :.goto 1680
+#if fmn-1
+// 1350 .if mix :.goto 1400
+#if mix-1
+ 1360 int1     .word 0
+ 1370 int2     .word 0
+ 1380 int3     .word 0
+// 1390 .goto 1430
+#else
+ 1400 int1     =dint1
+ 1410 int2     =dint2
+ 1420 int3     =dint3
+#endif
+ 1430 wmenu    .byt 0
+ 1440 wza      .byt 0
+ 1450 sma      .byt 0
+ 1460 wsmenu   .byt 0
+ 1470 smf      .byt 0
+ 1480 oldsize  .byt 0,0,0,0
+ 1490 oldhdl   .byt 0
+ 1500 olderr   .byt 0
+ 1510 newhdl   .byt 0
+ 1520 olddrv   .byt 0
+ 1530 newdrv   .byt 0
+ 1540 ccnt     .byt 0,0
+ 1550 gtpd     .byt 0
+ 1560 mpdb     .byt 0
+ 1570 mpdcmd   .byt 0
+ 1580 cdir     .word 0
+ 1590 gdb      .byt 0
+ 1600 lanz     .byt 0
+ 1610 lmanz    .byt 0
+ 1620 mpdf     .byt 0
+ 1630 lseit    .byt 0
+ 1640 abuf     .byt 0
+ 1650 iecdrive .byt 0
+ 1655 panzsub  .byt 0
+ 1660 menutcol .byt 0
+ 1670 menubcol .byt 0
+ 1675 cvfl     .byt 0
+#endif
+// 1680 .if fmn:.goto 1770
+#if fmn-1
+ 1681 sofl     .byt 0
+ 1682 sonk     .byt 0
+ 1683 sofirst  .byt 0
+ 1684 solast   .byt 0
+ 1685 socount  .byt 0
+ 1686 sokrit   .byt 0
+ 1687 sokend   .byt 0
+ 1688 soelen   .byt 0
+ 1689 sofadr   .word 0
+ 1690 dirmenu
+// 1691 .byt 0:.if *-dirmenu-mdirtlen:.goto 1691
+	.dsb mdirtlen,0
+ 1700 pcsuch
+// 1710 .byt 0:.if *-pcsuch-dsattr:.goto 1710
+	.dsb dsattr,0
+ 1750 pcdta   =ddtp
+ 1760 liste   =*
+#endif
+ 1770 buffer  =bufanf
+ 1790 dbuf    =$0100
+ 1800 listend =bufanf
+ 1810 .end
+

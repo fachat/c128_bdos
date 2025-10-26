@@ -1,0 +1,476 @@
+
+
+
+
+                                  BDOS V1.31 
+
+
+                         Anleitung f}r Programmierer
+
+
+    Mit diesem Programmpaket k|nnen Sie auf einfache Weise IBM-Disketten
+    auf Ihrem Commodore 128 mit VC1571 verwalten, lesen und beschreiben.
+
+
+    Das Programm BDOS kann mit der Floppy VC1571 ein- und doppelseitige
+    IBM-Disketten mit 40 Tracks , also IBM-Disketten mit 180 bzw 360 kByte
+    lesen und beschreiben.
+    Aufgeteilt ist das Programm in 2 Teile: Die Shell "PROMPT" und das
+    'Betriebssystem' "BDOS". Optional ist die "RAMDISK" verf}gbar, die
+    einen Speicherplatz von 227 Blocks aus BANK 1 des C128 bietet.
+    Au~erdem die Programme "SHOW.RWABS" und "SHOW.FLOPRW", die sich in die
+    entsprechenden Routinen einklinken und die Parameter des Aufrufs auf
+    dem Bildschirm anzeigen. Die drei letztgenannten Programme kann man
+    mit dem Befehl "SYS" aktivieren. Die Ramdisk wird aber auch direkt
+    beim starten mit "RUN ME" aktiviert.
+    Alle Teile sind komplett in Maschinensprache geschrieben. Alle
+    Programme liegen in Bank 0. Laden und Speichern ist bei DREAD/DWRITE
+    sowie RWABS und FLOPRW in eine beliebige Bank m|glich. Dabei wird als
+    Parameter f}r die Bank der Wert angegeben, der in das Configuration
+    Register geschrieben wird.
+
+
+
+
+                                  PROMPT 2.1 
+
+
+
+
+    Das Programm PROMPT 2.1 haben Sie schon im ersten Teil der
+    Beschreibung kennengelernt. Es bildet die Schnittstelle zwischen
+    Benutzer und eigentlichem Betriebssystem. D.h. es wertet die
+    Tastaturkommandos aus und f}hrt sie unter Zuhilfenahme des
+    Betriebssystems "BDOS" aus. Um das Programm zu starten, mu~ BDOS
+    bereits initialisiert sein. Dann wird das Programm mit             
+    JSR STARTADRESSE gestartet. Ein Aufruf aus Basic ist nicht m|glich, da
+    BDOS eine Speicherkonfiguration herstellt und zum Betrieb erwartet, in
+    der das Basic-ROM nicht verf}gbar ist.
+
+
+
+
+                                  BDOS 1.42 
+
+
+
+    Das Programm BDOS ist das eigentlich Betriebssystem, das den
+    Datenverkehr mit der Floppy regelt.
+
+
+
+                                    - 7 -
+     
+
+
+
+
+
+    Um es auch bei sp{teren [nderungen noch kompatibel zu halten, werden
+    alle Routinen }ber eine JUMP-Tabelle angesprungen, wobei die meisten
+    der Jumps indirekt, d.h. }ber eine Adresstabelle gef}hrt sind.
+    Initialisiert wird BDOS durch JSR STARTADRESSE. Dann stehen die in
+    Tabelle 9 aufgef}hrten Routinen zur Verf}gung. Doch vorher etwas
+    Allgemeines:
+    Fast alle Routinen liefern einen Fehlercode zur}ck. Bei Fehler ist das
+    ZERO-Flag gel|scht, d.h. man schreibt am einfachsten nach dem
+    JSR-Befehl "BNE FEHLERROUTINE". Au~erdem enth{lt der Akkumulator den
+    Fehlercode, den Sie Tabelle 1 entnehmen k|nnen.
+
+    In Tabelle 2 finden Sie die Routinen mit Adresse relativ zur
+    Startadresse, Name, Direkt oder indirekter Sprung und
+    Kurzbeschreibung.
+
+
+
+     Aufbau der Diskette 
+
+
+
+    Wie ist nun so eine Diskette aufgebaut, mit der das Programm
+    fertigwerden mu~? 
+    F}r die physikalische Verteilung auf der Diskette ist der
+    Disk-Controller WD1770 in der VC1571 zust{ndig. Dieses IC ist ein
+    Standardprodukt und wird, in abgewandelter Form, z.B. auch im Atari ST
+    benutzt.
+    Die Diskette wird, um Speicherplatz zu gewinnen und l{stiges Umdrehen
+    zu verhindern, im allgemeinen zweiseitig beschrieben.
+    [ltere IBM (-Kompatible) Laufwerke k|nnen nur einseitig lesen und
+    schreiben. Doch auch BDOS bietet dies und damit die M|glichkeit, mit
+    einseitigen Disketten Daten auszutauschen.
+    Der Schreib-Lese-Kopf des Laufwerks (bei doppelseitigen Laufwerken je
+    einer pro Seite) kann im 'Fenster' der Diskette in bestimmten
+    Abst{nden hin- und herfahren. Er belegt beim Schreiben nur einen
+    kleinen radialen Streifen auf der Diskette, der auch Spur oder 'Track'
+    genannt wird. Die Abst{nde, mit denen der Schreib-Lese-Kopf hin- und
+    her f{hrt, bestimmen die Anzahl der Spuren auf der Diskette und damit
+    die Speicherkapazit{t; je gr|~er die Abst{nde, desto weniger
+    Speicherplatz. Dieser Abstand h{ngt von verschiedenen Faktoren ab,
+    unter anderem von der Breite des Schreib-Lese-Kopfes. Fr}her konnte
+    man nur 40 Spuren auf eine Diskette bringen, heute Dank verbesserter
+    Technologie schon 80 und mehr. Die VC1570/1571 bieten dem Anwender nur
+    die M|glichkeit, 40 Spuren zu benutzen, aber die 'gro~en' Laufwerke
+    mit 80 Spuren k|nnen normalerweise 40-Spur Disketten mindestens Lesen.
+    Jede Spur ist wiederum aufgeteilt in einzelne Sektoren, die auf der
+    einen Spur wie auf einer Perlenkette hintereinandergereiht sind. Im
+    allgemeinen werden 9 Sektoren pro Spur verwendet, andere Formate sind
+    m|glich.
+    Der Sektor besteht aus einem Vorspann, in dem u.a. zur Identifikation
+    der Track (Spur) und die Nummer des Sektors auf der Spur enthalten
+    sind. Dann folgen die Datenbytes, deren Anzahl von Diskette zu
+    Diskette unterschiedlich sein kann. Das Ganze wird mit einer
+    Checksumme, mit der der Controller feststellt, ob die Daten korrekt
+    sind, abgesichert.
+    Man kann also die Daten auf einer Diskette mit der Angabe von  Seite ,
+     Spur  und  Sektor  auf der Spur genau lokalisieren. Dies ist in der
+    BDOS-Funktion FLOPRW realisiert, bei der man den entsprechenden Sektor
+    laden oder schreiben kann.
+
+
+
+
+                                    - 8 -
+     
+
+
+
+
+
+    Die Nummerierung im IBM-Format erfolgt nach folgendem Schema: 
+    Seite 0 (Unterseite) oder Seite 1 (Oberseite)
+    Track 0 (au~en) bis Track 40 (oder 80, innen)
+    Sektor 1 bis Sektor 9 (oder auch 8 oder 10)
+    Wie findet sich der Controller einerseits und BDOS andererseits in
+    dieser Vielfalt von m|glichen Formaten zurecht? F}r den Controller
+    existiert der Befehl QUERY, mit dem er sich auf das aktuelle
+    Diskettenformat einstellt. Deshalb mu~ dieser Befehl nach jedem
+    Disketten-Wechsel ausgef}hrt werden. Dieser Befehl bringt aber nur den
+    Track, die Sektorgr|~e und die Anzahl Sektoren pro Spur als
+    Information zur}ck. F}r BDOS reicht das nicht aus. Mit diesen
+    Informationen kann man aber schon den Befehl geben, den einen Sektor
+    zu lesen, der auf allen Disketten an der gleichen Stelle liegt: Seite
+    0, Track 0 und Sektor 1. Dieser Sektor wird vom IBM-DOS und somit von
+    BDOS dazu benutzt, alle notwendigen Informationen }ber das Format
+    aufzuzeichnen. F}r den IBM besteht noch die M|glichkeit, in diesem
+    Sektor ein Boot-Programm unterzubringen, das sofort nach laden des
+    Sektors gestartet wird. Der Boot-Sektor ist in Tabelle 4 dargestellt.
+    Die Daten sind allerdings in einer Form abgespeichert, die f}r das
+    System nicht optimal ist. Deshalb berechnet man mit der Routine GETBPB
+    den sogenannten BIOS-PARAMETER-BLOCK (BPB, Tabelle 5), der die
+    erforderlichen Daten in vern}nftigerer Form enth{lt. Die Routine
+    GETBPB l{dt nur den Boot-Sektor und berechnet den BPB. F}r die Arbeit
+    mit Verzeichnissen und Dateien mu~ der BPB }ber die Routine SGDRIVE
+    aktualisiert werden. Damit werden alle relevanten Daten f}r
+    Verzeichnisse (Pfad), Dateien und Pufferverwaltung }bernommen.
+    Andernfalls kann es zu Datenverlusten kommen! 
+    Um den Zugriff auf die Diskette zu erleichtern und den [rger mit den
+    verschiedenen Formaten zu umgehen, f}hrt man eine logische
+    Sektornummer ein. Diese logische Sektornummer ist die Adresse des
+    Sektors auf der Diskette, wie sie von der Routine RWABS ben|tigt wird.
+    Der Anwender hat sich nicht mehr mit den Parametern Seite, Track und
+    Sektor herumzuschlagen. F}r ihn existiert nur noch eine Sektornummer
+    von 0 bis BTSEC-1 (Anzahl Sektoren aus dem Boot-Sektor). Die
+    Nummerierung erfolgt so:
+    logSektor=Track*BPSPTS+Seite*BPSPT+Sektor-1
+    (BPSPTS und BPSPT aus dem BPB)
+    D.h. da~ zuerst die Unterseite und dann die Oberseite des Tracks
+    gelesen wird und dann auf den n{chsten Track gesprungen wird.
+    Damit w{re der Sektorm{~ige Zugriff gekl{rt. Die Diskette mit
+    Directory und Files ben|tigt aber noch weitere Informationen, da auch
+    dort verschiedene Formate existieren. Dazu werden Ihnen bestimmt
+    verschiedene Werte im Boot-Sektor oder BPB aufgefallen sein.
+    Nach Tabelle 3 kommt in der Reihenfolge der logischen Sektornummer
+    nach dem Boot-Sektor die FILE-ALLOCATION-TABLE (FAT), doch dazu kommen
+    wir sp{ter. Vor den Daten folgt dann noch das Hauptverzeichnis. Dessen
+    Gr|~e wird von BTDIR im Boot-Sektor festgelegt. Dieser Wert gibt die
+    Anzahl der m|glichen Eintr{ge oder Dateien im Hauptverzeichnis an.
+    Jeder Eintrag ben|tigt 32 Byte (Tabelle 8). Daraus l{~t sich dann die
+    Gr|~e des Verzeichnisses in Sektoren ausrechnen.
+    Die Startadresse der Datei wird dort aber nicht mit der logischen
+    Sektornummer angegeben, wie man es vielleicht erwartet hatte. Es
+    taucht hier der Begriff CLUSTER auf, der in der Datei-Verwaltung eine
+    wichtige Rolle spielt. Ein Sektor ist die gebr{uchliche physikalische
+    Einheit auf der Diskette. Der Cluster }bernimmt diese Funktion f}r die
+    Verwaltung. Er besteht normalerweise aus zwei Sektoren, deren logische
+    Sektornummer hintereinander liegt. Disketten mit 180kByte (40 Tracks,
+    einseitig) haben meist Cluster mit nur einem Sektor.
+
+
+
+
+                                    - 9 -
+     
+
+
+
+
+
+    Da der Cluster eine 'Einheit' ist, wird f}r jedes File mindestens ein
+    Cluster belegt. Wo wird der Cluster belegt? Jetzt kommen wir zur
+    FILE-ALLOCATION-TABLE oder FAT. Dies ist eine Liste aller Cluster der
+    Diskette, in der jedem Cluster die Nummer des Folgeclusters in der
+    Datei zugeordnet wird. Im Klartext:
+    Wenn eine Datei im Cluster 4 beginnt, steht am 4. Platz in der FAT der
+    Folgecluster, d.h. der zweite Cluster der Datei z.B. eine 5. Folgt auf
+    diesen Cluster kein neuer Cluster mehr folgt, steht als Folgecluster
+    eine -9 (=(F)FF7h) in der FAT. Beim Lesen einer Datei hangelt sich das
+    System also anhand der FAT in der Datei weiter. Eine -1 kennzeichnet
+    einen zerst|rten Cluster. Diese Angabe in Minus-Zahlen hat damit zu
+    tun, da~ auch f}r die FAT zwei verschiedene Formate existieren. Das
+    eine Format benutzt f}r seine FAT-Eintr{ge eine Zahl mit 12 Bit, das
+    andere eine Zahl mit 16 Bit. Die gebr{uchlichere Form ist die mit
+    12Bit. Deshalb wird dieses Format als Standard benutzt. Das System
+    versteht aber auch 16 Bit FATs, wenn das entsprechende Flag im BPB
+    gesetzt ist. Der 16 Bit-Eintrag zeichnet sich durch eine gr|~ere
+    Speicherkapazit{t aus, ben|tigt aber mehr Platz, weshalb auf normalen
+    Disketten in der Regel der 12 Bit-Eintrag benutzt wird. Der ist
+    }brigens etwas kompliziert aufgebaut: Je zwei Eintr{ge bilden 3 Byte
+    nach folgender Vorschrift:
+    Eintrag 1: 123h
+    Eintrag 2: 456h
+    Byte FAT: 23 61 45h
+    Die Nummerierung weist die Besonderheit auf, da~ der erste
+    Datencluster der Diskette immer die Nummer 2 hat, ohne R}cksicht auf
+    Sektornummer o.{. In der FAT sind die Positionen 0 und 1 mit FFFFh
+    belegt.
+    Wie man aus der Struktur der Datei ableitet, ist die Datei auf der
+    Diskette verloren, wenn der Zusammenhalt der Cluster auf der Diskette
+    in der FAT zerst|rt ist. Um diesem Fall X vorzubeugen, gibt es zwei
+    FATs auf der Diskette. Diese liegen (Tabelle 3) allerdings
+    hintereinander und meist auf dem gleichen Track, weshalb im Fall X
+    dann wahrscheinlich beide FATs zugleich zerst|rt werden.
+
+
+
+    Die Routinen
+
+
+
+    Soviel zum Aufbau der Diskette. Wie l{~t sich nun mit den vorhandenen
+    Systemroutinen die Diskette verwalten? Dazu sind die Routinen in
+    verschiedene Gruppen eingeteilt. Die Systemgruppe besteht aus
+    folgenden Routinen:
+    INIT      EXIT      QUERY     MEDIACH   GETBPB    FLOPRW    (RWABS)  
+    FLOPFMT   VERSION
+    Die genaue Beschreibung finden in Tabelle 9. Die Routine QUERY mu~
+    nach jedem Diskettenwechsel ausgef}hrt werden, um dem Controller die
+    M|glichkeit zu geben, das neue Format festzustellen. Die Routine RWABS
+    steht in Klammern, da sie mit der logischen Sektornummer arbeitet. Um
+    diese auf die physikalische Adresse umzurechnen, ben|tigt das System
+    allerdings den BPB, der mit der Routine SGDRIVE geholt werden mu~.
+    GETBPB liest allein den Boot-Sektor und errechnet den BPB, wobei
+    allerdings nicht die Systemvariablen des Laufwerks aktualisiert
+    werden, wie das bei SGDRIVE der Fall ist.
+
+
+
+
+
+
+                                    - 10 -
+     
+
+
+
+
+
+    Allein mit der Systemgruppe kann man schon einen einfachen
+    Disk-Monitor schreiben. Doch um Diskettenverzeichnisse auszuwerten,
+    braucht man die Directory-Gruppe:
+    SGDTA     SGDRIVE   GTPATH    SFIRST    SFIRSO    SNEXT     CHDIR    
+    NAMEDTP   WRENTRY   DELETE    DCREATE   MKDIR     RMDIR
+    In dieser Gruppe dreht sich fast alles um den DISK-TRANSFER-PUFFER
+    (DTP, Tabelle 6). Dieser Puffer wird zur ]bergabe von Daten des
+    Verzeichnisses mit dem Programm benutzt. Um die M|glichkeit des
+    einfachen Umschaltens von Verzeichnissen nutzen zu k|nnen, kann mit
+    der Routine SGDTA dem System die Adresse des aktuellen DTPs mitgeteilt
+    werden. SGDRIVE dient zur Bestimmung des aktuellen Laufwerks, auf den
+    sich alle h|heren Routinen beziehen, falls es nicht in einem Namen mit
+    Laufwerksangabe anders bestimmt wird. D.h. bevor eine der anderen
+    Routinen durchgef}hrt wird, mu~ diese Routine benutzt werden. Dabei
+    entf{llt die Routine QUERY, da von SGDRIVE getestet wird, ob die
+    Diskette gewechselt wurde und in diesem Falle automatisch ein QUERY
+    durchf}hrt und der BPB f}r das System berechnet wird.
+    Wie beim IBM verwaltet BDOS die Diskette mit Unterverzeichnissen. Dies
+    erfordert einige Befehle, die beim Commodore nicht bekannt sind. Die
+    Unterverzeichnisse liegen verstreut auf der Diskette und werden wie
+    eine Datei verwaltet. Der interne Aufbau entspricht allerdings dem
+    Hauptverzeichnis. Die Unterverzeichnisse sind in einer Art
+    Baumstruktur verbunden. In jedem Unterverzeichnis existiert ein
+    Eintrag mit dem Namen "..", der auf das }bergeordnete Verzeichnis
+    zeigt. In jedem Verzeichnis k|nnen Unterverzeichnisse enthalten sein.
+    Der Weg, der vom Hauptverzeichnis die Namen der Unterverzeichnisse bis
+    hin zum aktuellen Verzeichnis enth{lt, hei~t PFAD. Die Namen der
+    Verzeichnisse werden mit dem 'Backslash' getrennt. Die Routine GTPATH
+    liefert alle Informationen }ber das aktuelle Verzeichnis. Wenn man die
+    Adresse eines neuen Pfades der Routine CHDIR }bergibt, wird dieses
+    Verzeichis als aktuelles Verzeichnis }bernommen. Es wird nach dem
+    Namen aber vom aktuellen Verzeichnis ausgegangen, d.h. der erste Namen
+    im }bergebenen Pfad mu~ als Unterverzeichnis im aktuellen Verzeichnis
+    enthalten sein. Man kann mit z.B. "C:" am Anfang des Pfades ein
+    anderes Laufwerk angeben und als aktuelles Laufwerk ausw{hlen.
+    Au~erdem sagt ein Backslash vor dem Namen des ersten Verzeichnisses
+    (nach dem Laufwerk), da~ nicht das aktuelle Verzeichnis als
+    Ausgangsverzeichnis gilt, sondern das Hauptverzeichnis. Mit der
+    Routine NAMEDTP kann eine Datei (oder Unterverzeichnis) gesucht
+    werden. Dazu gibt man noch das Attribut an, dem die Datei entsprechen
+    mu~. Dann liefert es den Startcluster der Datei, des Verzeichnisses,
+    in der die Datei enthalten ist, das Laufwerk und den Pfad wieder.
+    Dieser Pfad wird allerdings nicht }bernommen sondern nur das Laufwerk.
+    Die Unterverzeichnisse lassen sich mit den Routinen MKDIR erstellen
+    und mit RMDIR (MakeDir und RemakeDir) wieder l|schen. Allerdings mu~
+    das Verzeichnis dazu leer sein und es darf nicht das aktuelle
+    Verzeichnis sein. Um in einem bestimmten Verzeichnis nun nach einem
+    bestimmten Eintrag zu suchen, gibt es die Funktionen SFIRST und
+    SFIRSO. Diese Routinen suchen das Verzeichnis nach einem Eintrag ab,
+    der der Suchmaske aus DSNAME, DSEXT und DSATTR entspricht. Wenn ein
+    Eintrag gefunden wurde, werden die DG-Parameter im DTP gesetzt, die
+    das Programm dann weiter verwenden kann. SFIRST sucht nach dieser
+    Maske im Hauptverzeichnis. Mit SFIRSO kann man in einem beliebigen
+    Verzeichnis suchen, und es besteht die M|glichkeit, zum Anlegen einer
+    neuen Datei nach einem leeren Eintrag zu suchen.
+
+
+
+
+
+
+
+                                    - 11 -
+     
+
+
+
+
+
+    In der Suchmaske k|nnen auch die Joker "*" und "?" verwendet werden
+    (nicht GSATTR). Das hei~t, da~ mehrere Dateien auf die Suchmaske
+    passen k|nnen. SFIRST/O suchen aber nur den ersten passenden Eintrag
+    im Verzeichnis. Um weitere passende Eintr{ge zu suchen, gibt es die
+    Routine SNEXT. Sie sucht immer den n{chsten Eintrag, der auf die
+    Suchmaske passt. Falls kein Eintrag mehr gefunden wird, kommt ein
+    EntryNotFound-Fehler. Diese Routine ben|tigt zur ersten Durchf}hrung
+    die Initialisierung des DTP durch SFIRST/O. Im Klartext: F}r den
+    ersten Eintrag benutzt man immer SFIRST oder SFIRSO, alle weiteren
+    sucht man mit SNEXT (siehe auch Beispielprogramm Inhaltsverzeichis).
+    Hat man eine Datei gefunden und ge{ndert (z.B. Gr|~e und Datum) kann
+    man den Eintrag mit WRENTRY auf Diskette schreiben, allerdings m}ssen
+    vom Lesen mit SFIRST/O oder SNEXT alle Parameter gesetzt sein und es
+    darf keinen Diskettenwechsel gegeben haben. Mit der Routine DCREATE
+    wird z.B. eine Datei mit der L{nge Null erstellt und im Verzeichnis
+    speichert: Zuerst mit SFIRSO einen leeren Eintrag suchen, den Namen
+    und die L{nge in DGNAME/DGEXT und DG.. eintragen und mit WRENTRY
+    abspeichern. DELETE l|scht alle Dateien, die auf die Suchmaske im DS..
+    passen, indem es die Eintr{ge sucht, in DGNAME den ersten Buchstaben
+    mit Null }berschreibt und wieder mit WRENTRY speichert. Au~erdem
+    l|scht es nat}rlich die Cluster, die von den Dateien vorher belegt
+    wurden. Damit kommen wir zur n{chsten Gruppe, den Cluster-Routinen:
+    SGNEXCL   SFRCLUS   GTDSKFR
+    Diese Befehle }bernehmen die Verwaltung der FAT. Mit SGNEXCL kann man
+    f}r einen Cluster aus der FAT den Folgecluster in der Datei lesen. Man
+    kann aber auch einen neuen Folgecluster setzen, um eine Datei z.B. zu
+    erweitern. Dazu dient auch SFRCLUS, mit der man einen freien Cluster
+    suchen kann und die Nummer des Clusters oder DiskFull-Fehler erh{lt.
+    Mit GTDSKFR kann man letztendlich die Anzahl der freien Bytes auf der
+    Diskette berechnen.
+    Diese Routinen werden auch von der n{chsten (und bis jetzt letzten)
+    Gruppe von Befehlen aufgerufen: Die Gruppe der File-Routinen:
+    DOPEN     DCLOSE    DREAD     DWRITE    LSEEK
+    Mit diesen Befehlen kann man normale Dateien verwalten. Um eine Datei
+    zu benutzen, mu~ man sie als erstes mit DOPEN er|ffnen. Damit erh{lt
+    man die Adresse des FILE-PARAMETER-BLOCKs, in dem alle wichtigen Daten
+    der Datei enthalten sind. Unter anderem findet sich die Handle-Nummer,
+    die f}r das System die Funktion der File-Nummer im Commodore-Basic
+    erf}llt. Diese Nummer wird bei allen anderen Funktionen angegeben, und
+    das System wei~, woher es die Daten f}r die bestimmte Funktion nehmen
+    mu~. Mit DREAD kann man aus der Datei eine bestimmte Anzahl von Bytes
+    aus der Datei beliebig in den Speicher laden. Mit DWRITE schreibt man
+    die Daten vom Speicher auf die Diskette. DREAD und DWRITE arbeiten
+    Sequentiell, d.h. es gibt einen Zeiger im FPB, der auf die Position in
+    der Datei zeigt. Dieser Zeiger wird bei DREAD/DWRITE immer um die
+    Anzahl der gelesenen/geschriebenen Bytes erh|ht. Dieser Zeiger gibt
+    dann die Adresse f}r den n{chsten DREAD/DWRITE. Um einen relativen
+    Dateizugriff zu erm|glichen, gibt es LSEEK. Damit kann dieser Zeiger
+    beliebig in der Datei verschoben werden. Entweder gibt man die neue
+    Position absolut oder relativ zur aktuellen Position an. Die Routine
+    berechnet alle n|tigen Parameter neu.
+    Um sich jetzt im Umgang mit den Routinen zu }ben, m|gen die
+    Beispielprogramme eine Hilfe sein, mit denen die wichtigsten
+    Funktionen erl{utert werden.
+
+
+
+
+
+
+
+
+                                    - 12 -
+     
+
+
+
+
+
+    Das System ist in dieser Form in sich abgeschlossen. Es sind aber
+    schon weitere Routinen und Projekte in der Planung, die aber durch die
+    Jump-Tabelle leicht einzuf}hren sind, z.B. eine ROM-Disk, mit der man
+    diverse Programme auf EPROM speichern kann. Auch ein Bildschirm-,
+    Tastatur- und Druckertreiber sind geplant, zur Zeit aber nur auf dem
+    Papier. Das Wesentliche an dem System, die IBM-Disketten zu verwalten,
+    ber}hren diese Routinen nicht. Aus der Idee mit den IBM-Disketten ist
+    BDOS entstanden und wird, falls ich nicht aus Faulheit auf einen
+    gr|~eren Computer umsteige, noch um einiges mehr bereichert werden.
+    Doch dazu sp{ter mehr.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                    - 13 -
+     

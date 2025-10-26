@@ -1,0 +1,258 @@
+
+
+;BD4 1.42.S72 ==0801==
+  100 d4v ldy #3:lda #0:d4v1 sta int3,y:dey:bpl d4v1:ldx #0:stx abuf
+  110 ldy #3:d4v2 ora int2,y:dey:bpl d4v2:beq d4verr
+  120 d4v3 ldy #3:d4v3a lda int2,y:cmp int1,y
+  130 bcc d4v3b:bne d4v5:dey:bpl d4v3a
+  140 d4v3b asl int2:rol int2+1:rol int2+2:rol int2+3:bcs d4verr
+  150 inc abuf:bne d4v3
+  160 d4v5 ldx abuf:cpx #0:beq d4vok
+  170 lsr int2+3:ror int2+2:ror int2+1:ror int2
+  180 dec abuf
+  190 ldy #3:d4v6 lda int2,y:cmp int1,y:bcc d4v6a:bne d4v8
+  200 dey:bpl d4v6
+  210 d4v6a ldx #4:ldy #0:sec:d4v7 lda int1,y:sbc int2,y:sta int1,y
+  220 iny:dex:bne d4v7
+  230 sec:.byt $24
+  240 d4v8 clc
+  250 rol int3:rol int3+1:rol int3+2:rol int3+3
+  260 jmp d4v5
+  270 d4vok clc:rts:d4verr sec:rts
+  299 ;**********
+  999 ;**********
+ 1000 popen sta fp1:sty fp1+1
+ 1020 lda #<fpbt;file par block tabelle
+ 1030 ldy #>fpbt
+ 1040 sta fpzei:sty fpzei+1:ldx #fpbanz
+ 1050 open2 ldy #fpname:lda (fpzei),y:beq fpok
+ 1060 lda #<fpblen:clc:adc fpzei:sta fpzei:lda fpzei+1:adc #>fpblen
+ 1070 sta fpzei+1:open1 dex:bne open2
+ 1080 jmp tmnyfile
+ 1090 fpok ldy #fphandle:txa:sta (fpzei),y
+ 1100 ldx #$20:lda fp1:ldy fp1+1:jsr namedtp:bne fperr
+ 1105 stx bfzei:sty bfzei+1
+ 1160 clc:jsr sgdta:sta bfzei:sty bfzei+1
+ 1170 ldy #dtplen-1:opdtp lda (bfzei),y:sta (fpzei),y:dey:bpl opdtp
+ 1200 lda #0:ldy #fpos
+ 1210 op4 sta (fpzei),y
+ 1220 iny:cpy #fpos+4:bcc op4
+ 1230 jsr fcalcpos:bne fperr
+ 1247 lda #0:ldy #fpflag:sta (fpzei),y
+ 1250 ldx fpzei:ldy fpzei+1:lda #0:rts
+ 1260 fperr pha:ldy #fpname:lda #0:sta (fpzei),y:pla:rts
+ 1299 ;**********
+ 1300 sfpzei lda #<fpblen:sta int1:lda #>fpblen:sta int1+1
+ 1310 stx int2:lda #fpbanz:sec:sbc int2:ldx #0:jsr mult:sta int1:stx int1+1
+ 1320 lda #<fpbt:ldx #>fpbt:jsr add
+ 1330 sta fpzei:stx fpzei+1
+ 1332 ldy #fpname:lda (fpzei),y:beq sfpze:lda #0:rts
+ 1334 sfpze jmp filnopen
+ 1340 sbfzei ldy #fpbuf:lda (fpzei),y
+ 1347 tay:lda #0:tax:jsr bfzset
+ 1350 lda bf1z:ldx bf1z+1
+ 1360 sta int1:stx int1+1
+ 1361 sta bfzei:stx bfzei+1:rts
+ 1364 sbfbzei jsr sbfzei
+ 1365 ldy #fpbyt+1:lda (fpzei),y:dey:tax:lda (fpzei),y
+ 1370 jsr add:sta bfzei:stx bfzei+1:rts
+ 1999 ;**********
+ 2000 pread jsr sfpzei:beq prok1:prer1 rts
+ 2010 prok1 ldy #fpdrive:lda (fpzei),y:sec:jsr sgdrive:bne prer1
+ 2011 clc:jsr sgdrive:ldy #4:jsr sfrbuf:bne prer1:txa:ldy #fpbuf:sta (fpzei),y
+ 2015 ldy #fpadr:lda (fpzei),y:sta przei
+ 2020 iny:lda (fpzei),y:sta przei+1
+ 2025 ldy #fpbank:lda (fpzei),y:sta przbank
+ 2050 pread0 ldy #fpbyt+1:lda (fpzei),y:dey:ora (fpzei),y:bne pread1
+ 2060 ; sektor an original adresse laden
+ 2065 ldy #fpanz+1:lda (fpzei),y:cmp bpb+bprecsiz+1:bcc pread1; war nix
+ 2066 bne pre2:dey:lda (fpzei),y:cmp bpb+bprecsiz
+ 2067 bcc pread1; anz kleiner als sektor
+ 2070 pre2 jsr prset
+ 2110 lda #0:sta abspar+aprwflag
+ 2115 sta abspar+apanz+1:lda #1:sta abspar+apanz
+ 2140 lda #<abspar:ldy #>abspar:jsr rwabs; sektor direkt in speicher lesen
+ 2150 bne prend
+ 2160 lda bpb+bprecsiz:ldx bpb+bprecsiz+1:jmp readadd
+ 2170 pread1 jsr bufload:bne prend
+ 2180 pread2 lda #<przei:jsr bsadr
+ 2190 sei:ldy #0:lda (bfzei),y:ldx przbank:jsr bstash:cli
+ 2210 pre2b lda #1:ldx #0
+ 2220 readadd jsr addbfpr:bne prenda:bcs pread0:bcc pread2
+ 2222 prenda cmp #1:bne prend:lda #0
+ 2230 prend pha:ldy #fpbuf:lda (fpzei),y:tax:jsr rlbuf
+ 2240 ldy #fpanz:lda (fpzei),y:tax:iny:lda (fpzei),y:tay:pla:rts
+ 2999 ;**********
+ 3000 pclose jsr sfpzei:bne plse
+ 3005 pha:ldy #fpflag:lda (fpzei),y:beq pclo1
+ 3007 lda fpzei:ldy fpzei+1:sec:jsr sgdta:jsr wrentry:jsr writfat
+ 3010 pclo1 ldy #fpname:lda #0:sta (fpzei),y:pla:plse rts
+ 3999 ;**********
+ 4000 plseek jsr sfpzei:bne plse:ldy #fpshift
+ 4010 pls1 lda (fpzei),y:sta int1-fpshift,y
+ 4020 iny:cpy #fpshift+4:bcc pls1
+ 4030 ldy #fpdir:lda (fpzei),y:beq plsnew
+ 4040 cmp #2:bcs plsub
+ 4050 ldy #fpos:ldx #4:clc
+ 4060 plsa1 lda (fpzei),y:adc int1-fpos,y:sta (fpzei),y:iny:dex:bne plsa1
+ 4070 beq plset
+ 4080 plsub ldy #fpos:ldx #4:sec
+ 4090 plsu1 lda (fpzei),y:sbc int1-fpos,y:sta (fpzei),y:iny:dex:bne plsu1
+ 4100 beq plset
+ 4110 plsnew ldy #fpos:ldx #4
+ 4120 plsn1 lda int1-fpos,y:sta (fpzei),y:iny:dex:bne plsn1
+ 4130 plset jsr wcalcpos:jmp writfat
+ 4999 ;**********
+ 5000 pwrite jsr sfpzei:beq pwok1:pwer1 rts
+ 5010 pwok1 ldy #fpdrive:lda (fpzei),y:sec:jsr sgdrive:bne pwer1
+ 5011 clc:jsr sgdrive:ldy #4:jsr sfrbuf:bne pwer1:txa:ldy #fpbuf:sta (fpzei),y
+ 5015 ldy #fpadr:lda (fpzei),y:sta przei
+ 5020 iny:lda (fpzei),y:sta przei+1
+ 5030 ldy #fpbank:lda (fpzei),y:sta przbank
+ 5050 pwrit0 ldy #fpbyt+1:lda (fpzei),y:dey:ora (fpzei),y:bne pwrit1
+ 5060 ; sektor von original adresse speichern
+ 5065 ldy #fpanz+1:lda (fpzei),y:cmp bpb+bprecsiz+1:bcc pwrit1; war nix
+ 5066 bne pwe2:dey:lda (fpzei),y:cmp bpb+bprecsiz
+ 5067 bcc pwrit1; anz kleiner als sektor
+ 5070 pwe2 jsr sbfzei
+ 5080 lda #<przei:jsr bfadr:sei
+ 5100 ldx bpb+bprecsiz+1:beq pwe3
+ 5110 stx int1:ldy #0:pwe2a ldx przbank
+ 5112 jsr bfetch:sta (bfzei),y:iny:bne pwe2a
+ 5115 inc przei+1:inc bfzei+1:dec int1:bne pwe2a
+ 5120 pwe3 ldy bpb+bprecsiz:beq pwe2d:pwe2c dey
+ 5122 ldx przbank:jsr bfetch:sta (bfzei),y:cpy #0:bne pwe2c
+ 5160 pwe2d cli:lda bpb+bprecsiz:ldx bpb+bprecsiz+1:jmp writadd
+ 5170 pwrit1 jsr bufload:bne pwend
+ 5180 pwrit2 lda #<przei:jsr bfadr
+ 5190 sei:ldy #0:ldx przbank:jsr bfetch:sta (bfzei),y:cli
+ 5210 pwe2b lda #1:ldx #0
+ 5220 writadd jsr waddbfpr:bne pwenda:bcs pwrit0:bcc pwrit2
+ 5222 pwenda cmp #1:bne pwend:lda #0
+ 5230 pwend pha:jsr bufwrite:ldy #fpbuf:lda (fpzei),y:tax:jsr rlbuf
+ 5240 ldy #fpanz:lda (fpzei),y:tax:iny:lda (fpzei),y:tay:pla:rts
+ 9999 ;**********
+10000 fcerr jmp parrange
+10005 fcalcpos ldx #0:.byt $2c
+10007 wcalcpos ldx #<-1
+10009 stx addprf:ldy #fpos
+10010 fcp1 lda (fpzei),y:sta int1-fpos,y:iny:cpy #fpos+4:bne fcp1
+10020 lda #0:sta int2+2:sta int2+3
+10030 lda bpb+bpclsizb:sta int2:lda bpb+bpclsizb+1:sta int2+1
+10040 jsr d4v:bcs fcerr
+10050 lda int3+2:ora int3+3:bne fcerr
+10060 lda int3:sta fcpc:lda int3+1:sta fcpc+1
+10070 lda #0:sta int2+2:sta int2+3
+10080 lda bpb+bprecsiz:sta int2:lda bpb+bprecsiz+1:sta int2+1
+10090 jsr d4v:bcs fcerr
+10100 ldy #fpsec:lda int3:sta (fpzei),y:iny:lda int3+1:sta (fpzei),y
+10110 ldy #fpbyt:lda int1:sta (fpzei),y:iny:lda int1+1:sta (fpzei),y
+10120 ldy #fpstart:lda (fpzei),y:tax:iny:lda (fpzei),y:tay
+10122 fcnex tya:ldy #fpclus+1:sta (fpzei),y:dey:txa:sta (fpzei),y
+10130 lda fcpc:ora fcpc+1:beq fca1
+10140 ldy #fpclus+1:lda (fpzei),y:tax
+10150 dey:lda (fpzei),y:clc:jsr sgnexcl:bne fcnf
+10160 fcdec lda fcpc:bne fca2:dec fcpc+1:fca2 dec fcpc
+10170 jmp fcnex
+10180 fca1 ldx #3:ldy #fpos+3:fcb1 lda (fpzei),y:sta int1,x:dey:dex:bpl fcb1
+10182 ldx #3:ldy #fpsize+3
+10184 fcb2 lda (fpzei),y:cmp int1,x:bcc fcbnew:bne fcbe
+10186 dey:dex:bpl fcb2:fcbe lda #0:rts
+10188 fcbnew ldx #3:ldy #fpsize+3
+10190 fcb3 lda int1,x:sta (fpzei),y:dey:dex:bpl fcb3
+10200 ldy #fpflag:lda #1:sta (fpzei),y:bne fcbe
+10210 fcnf lda addprf:bne fcnf1:jmp clusnfnd
+10220 fcnf1 ldy #fpclus+1:lda (fpzei),y:tax:dey:lda (fpzei),y
+10230 jsr fextend:beq fcdec:rts
+10999 ;*********
+11999 ;*********
+12000 prset ; setzt parameter aprecord,apdrive,apbuffer aus fpb
+12010 ldy #fpclus+1:lda (fpzei),y:tax:dey:lda (fpzei),y
+12020 jsr clusec; in sektor-adr wandeln
+12030 ldy #fpsec:clc:adc (fpzei),y
+12040 sta abspar+aprecord
+12050 iny:txa:adc (fpzei),y:sta abspar+aprecord+1
+12060 ldy #fpdrive:lda (fpzei),y:sta abspar+apdrive
+12065 lda przbank:sta abspar+apbank
+12070 lda przei:sta abspar+apbuffer:lda przei+1:sta abspar+apbuffer+1
+12080 rts
+12999 ;*********
+13010 bufwrite lda #1:.byt $2c
+13020 bufload lda #0:sta abspar+aprwflag
+13040 jsr prset
+13050 jsr sbfzei
+13060 lda bfzei:sta abspar+apbuffer
+13070 lda bfzei+1:sta abspar+apbuffer+1
+13075 lda #prgbank:sta abspar+apbank
+13080 ldy #fpbuf:lda (fpzei),y:tax
+13100 jsr bfcfabs:bne buflerr
+13110 jsr sbfbzei:lda #0:buflerr rts
+13999 ;**********
+14010 waddbfpr ldy #<-1:.byt $2c
+14020 addbfpr  ldy #0:sty addprf:sta int1:sta int1+2
+14030 stx int1+1:stx int1+3
+14040 ; adresse erhoehen
+14050 ldy #fpadr+1:lda (fpzei),y:tax:dey:lda (fpzei),y:jsr add
+14060 sta (fpzei),y:sta przei:iny:txa:sta (fpzei),y:sta przei+1
+14063 ; position erhoehen
+14066 ldy #fpos
+14070 faddc2 lda (fpzei),y:sta int2-fpos,y:iny:cpy #fpos+4:bcc faddc2
+14073 lda int1+2:clc:adc int2:sta int2:lda int1+3:adc int2+1:sta int2+1
+14076 bcc faddc3:inc int2+2:bne faddc3:inc int2+3
+14080 faddc3 ldy #fpos
+14083 faddc4 lda int2-fpos,y:sta (fpzei),y:iny:cpy #fpos+4:bcc faddc4
+14086 ; groesse kontrollieren
+14090 ldy #fpsize+3:ldx #4
+14093 faddc5 lda int2-fpsize,y:cmp (fpzei),y:bcc faddc6:bne faddc5a
+14096 dey:dex:bne faddc5:;beq faddc6
+14100 faddc5a lda addprf:bne faddc5b:jmp eof
+14110 faddc5b ldy #fpsize:faddc5c lda int2-fpsize,y:sta (fpzei),y
+14113 iny:cpy #fpsize+4:bne faddc5c
+14120 lda #1:ldy #fpflag:sta (fpzei),y
+14170 ; byte im sektor erhoehen
+14180 faddc6 lda int1+2:sta int1
+14190 lda int1+3:sta int1+1
+14200 ldy #fpbyt+1:lda (fpzei),y:tax:dey:lda (fpzei),y
+14210 jsr add:bcc addovre:jmp parrange
+14220 ; durch anzahl byte/sektor teilen
+14230 addovre lda bpb+bprecsiz:ldx bpb+bprecsiz+1:jsr div
+14240 sta int2+2:stx int2+3
+14250 ; rest neue pos byte
+14260 ldy #fpbyt:lda int1:sta (fpzei),y:iny:lda int1+1:sta (fpzei),y
+14270 ; neuer sektor und schreiben, dann sektor speichern
+14280 lda int2+2:ora int2+3:beq wadd1:lda addprf:beq wadd1
+14290 jsr bufwrite
+14300 wadd1 jsr sbfbzei
+14310 ; kein neuer sektor , dann ende
+14320 addnex lda int2+2:ora int2+3:beq addok
+14330 lda int2+2:sta int1:lda int2+3:sta int1+1
+14340 ldy #fpsec+1:lda (fpzei),y:tax:dey:lda (fpzei),y:jsr add
+14350 lda bpb+bpclsiz:ldx bpb+bpclsiz+1:jsr div
+14360 sta int3+2:stx int3+3
+14370 ldy #fpsec:lda int1:sta (fpzei),y:iny:lda int1+1:sta (fpzei),y
+14380 addclus lda int3+2:ora int3+3:beq addcok
+14390 ldy #fpclus+1:lda (fpzei),y:dey:tax:lda (fpzei),y
+14400 clc:jsr sgnexcl:bne faddcnf
+14410 tya:ldy #fpclus+1:sta (fpzei),y:dey:txa:sta (fpzei),y
+14420 lda int3+2:bne faddc1:dec int3+3:faddc1 dec int3+2
+14430 jmp addclus
+14440 faddcnf ldx addprf:bne faddcw:cmp #0:rts:faddcw jmp faddcww
+14450 ; jetzt 'verwaltung' addieren
+14460 addcok lda #1:.byt $2c:addok lda #0
+14470 sta int3+3
+14590 ; anzahl erniedrigen
+14600 ldy #fpanz:sec:lda (fpzei),y:sbc int1+2
+14610 sta (fpzei),y:iny:lda (fpzei),y:sbc int1+3
+14620 sta (fpzei),y
+14630 bcc faende:dey:ora (fpzei),y:bne faen1
+14640 faende lda #1:.byt $2c
+14650 faen1 lda #0
+14690 pha
+14700 ldy #fpanz:lda (fpzei),y:tax:iny:lda (fpzei),y:tay
+14710 lda int3+3:beq faen5
+14720 sec:.byt $24:faen5 clc:pla:rts
+14770 faddcww cmp #enclnf:beq facw1:facw2 rts
+14780 facw1 ldy #fpclus+1:lda (fpzei),y:tax:dey:lda (fpzei),y
+14790 jsr fextend
+14800 bne facw2:jmp addclus
+

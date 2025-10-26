@@ -1,0 +1,53 @@
+
+
+;BDE 1.4 .S14 ==0801==
+  100 enok     =0
+  110 ennotimp =<-1
+  120 entxrx   =<-2
+  130 enslow   =<-3
+  140 engcr    =<-4
+  150 enprange =<-5
+  160 enclnf   =<-6
+  170 endnfnd  =<-7
+  180 enactdir =<-8
+  190 ennotfnd =<-9
+  200 enpovr   =<-10
+  210 enillnam =<-11
+  220 endskful =<-12
+  230 enfexist =<-13
+  240 ennempty =<-14
+  250 enilldrv =<-15
+  260 endnrdy  =<-16
+  270 entmnyf  =<-17
+  280 enfopen  =<-18
+  290 enfnopen =<-19
+  300 eneof    =<-20
+  310 ennbfre  =<-21
+  311 enbreak  =<-22
+#if 1-prg
+  330 ;**********
+  340 error0   lda #enok      :.byt $2c
+  350 notimpl  lda #ennotimp  :.byt $2c; uebertragung not ok
+  360 notready lda #entxrx    :.byt $2c; disk not ready
+  370 notfast  lda #enslow    :.byt $2c; keine schnelle floppy
+  380 notmfm   lda #engcr     :.byt $2c; keine mfm-diskette
+  390 parrange lda #enprange  :.byt $2c; parameter out of range
+  400 clusnfnd lda #enclnf    :.byt $2c; kein folgecluster gefunden
+  410 dirnfnd  lda #endnfnd   :.byt $2c; pfad nicht gefunden
+  420 eactdir  lda #enactdir  :.byt $2c; bei rmdir aktuelles dir zum loeschen
+  430 enotfnd  lda #ennotfnd  :.byt $2c; entry not found
+  440 pathovrf lda #enpovr    :.byt $2c; path zu lang
+  450 illname  lda #enillnam  :.byt $2c; illegaler name
+  460 diskfull lda #endskful  :.byt $2c; diskette voll
+  470 filexist lda #enfexist  :.byt $2c; file existiert schon
+  480 notempty lda #ennempty  :.byt $2c; subdir bei rmdir nicht leer
+  490 illdrv   lda #enilldrv  :.byt $2c; illegal drive n
+  500 dnotrdy  lda #endnrdy   :.byt $2c; drive not ready
+  510 tmnyfile lda #entmnyf   :.byt $2c; zu viele files
+  520 fileopen lda #enfopen   :.byt $2c; file schon geoeffnet
+  530 filnopen lda #enfnopen  :.byt $2c; file noch nicht offen
+  540 eof      lda #eneof     :.byt $2c; end of file
+  550 nobffre  lda #ennbfre   :.byt $2c; kein disk-puffer mehr
+  555 break    lda #enbreak   :        ; unterbrechung
+  560 diskerr  cmp #0:rts
+#endif

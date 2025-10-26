@@ -1,0 +1,130 @@
+
+
+;BDS 1.44.S24 ==0801==
+   10 dfval  =%10000000
+   20 dfwrit =%01000000
+  100 pathlen =64
+  110 ;****  struktur versions-block
+  120 vever    =0  ;2 byte version
+  130 vebufanz =2  ;bufanz
+  140 vepathle =3  ;pathlen
+  150 veanzdrv =4  ;anzdrv
+  160 vefpbanz =5  ;fpbanz
+  170 vejmpadr =6  ;adresse jmp-tabelle
+  180 vetext   =16 ;text by a.fachat
+  190 ;****  struktur pblock fuer floprw
+  200 pbrwflag =0  ;byte
+  210 pbdrive  =1  ;byte
+  220 pbside   =2  ;byte
+  230 pbtrack  =3  ;byte
+  240 pbsector =4  ;byte
+  250 pbbuffer =5  ;word
+  260 pbbank   =7  ;byte
+  270 ;****  struktur bios-parameter-block (32 byte)
+  280 bprecsiz =0  ;word
+  290 bpclsiz  =2  ;word
+  300 bpclsizb =4  ;word
+  310 bprdlen  =6  ;word
+  320 bpfsiz   =8  ;word
+  330 bpfatrec =10 ;word
+  340 bpdatrec =12 ;word
+  350 bpnumcl  =14 ;word
+  360 bflags   =16 ;word
+  370 bptracks =18 ;word
+  380 bpsides  =20 ;word
+  390 bpspts   =22 ;word
+  400 bpspt    =24 ;word
+  410 bphidden =26 ;word
+  420 bpserial =28 ;3 byte
+  430 bpbval   =31 ;byte
+  431 bpbfat   =32 ;byte
+  432 bpbflag  =33 ;byte:bpblen =34
+  440 bpdirclu =34 ;word
+  450 bppath   =36 ;64 byte
+  460 bpplen   =bppath+pathlen
+  470 ;**** struktur boot-sektor (8-29)
+  480 btserial =8  ;3 byte
+  490 btbps    =11 ;word
+  500 btspc    =13 ;byte
+  510 btres    =14 ;word
+  520 btfat    =16 ;byte
+  530 btdir    =17 ;word
+  540 btsec    =19 ;word
+  550 btmedia  =21 ;byte
+  560 btspf    =22 ;word
+  570 btspt    =24 ;word
+  580 btside   =26 ;word
+  590 bthid    =28 ;word
+  600 ;**** struktur abspar
+  610 aprwflag =0  ;byte
+  620 apdrive  =1  ;byte
+  630 aprecord =2  ;word
+  640 apanz    =4  ;word
+  650 apbuffer =6  ;word
+  660 apbank   =8  ;byte
+  670 ;**** struktur disk-transfer-puffer
+  680 dsname   =0  ;name 8 byte
+  690 dsext    =8  ;ext 3 byte
+  700 dsattr   =11 ;fileattribut als suchmaske
+  710 dgname   =12 ;gefundener name
+  720 dgext    =20 ;gefundene ext
+  730 dgattr   =23 ;gefundenes attr
+  740 dgclus   =24 ;first cluster
+  750 dgsize   =26 ;groesse
+  760 dgsec    =30 ;sekunden
+  770 dgmin    =31 ;minuten
+  780 dghour   =32 ;stunden
+  790 dgday    =33 ;tag
+  800 dgmonth  =34 ;monat
+  810 dgyear   =35 ;jahr-1980
+  820 dtpos    =36 ;nummer des dir-eintrags
+  830 dtflag   =37 ;flag fuer leeren/gueltigen eintrag suchen
+  840 dtanz    =38 ;max anz eintraege in 1 block
+  850 dtdrv    =39 ;drive
+  860 dtclus   =40 ;aktueller cluster
+  870 dtsec    =42 ;aktueller sektor (im cluster)
+  880 dtstart  =44 ;startcluster des dir
+  890 dtplen   =46 ;laenge des dtp
+  900 ;**** struktur dir-eintrag
+  910 dename   =0  ;name 8 byte
+  920 deext    =8  ;ext 3 byte
+  930 deattr   =11 ;fileattribut als suchmaske
+  940 deuhr    =22 ;uhrzeit
+  950 dedate   =24 ;datum
+  960 defclus  =26 ;erster cluster
+  970 desize   =28 ;file-laenge
+  980 ;**** struktur file-parameter-block
+  990 fpname   =dgname    ;name
+ 1000 fpext    =dgext     ;extension
+ 1010 fpdrive  =dtdrv     ;drive
+ 1020 fphandle =dtplen+0  ;file-handle nr
+ 1030 fpos     =dtplen+1  ;position read-write in datei
+ 1040 fpsize   =dgsize    ;groesse der datei
+ 1050 fpstart  =dgclus    ;startcluster der datei
+ 1060 fpclus   =dtplen+5  ;aktueller cluster
+ 1070 fpsec    =dtplen+7  ;aktueller sektor im cluster
+ 1080 fpbyt    =dtplen+9  ;aktuelles byte im sektor
+ 1090 fpanz    =dtplen+11 ;anzahl zu lesender byte
+ 1100 fpadr    =dtplen+13 ;adresse fuer read-write
+ 1110 fpshift  =dtplen+15 ;anzahl fuer lseek
+ 1120 fpdir    =dtplen+19 ;flag fuer lseek
+ 1130 fpbuf    =dtplen+20 ;puffer-nr
+ 1140 fpflag   =dtplen+21 ;flag fuer wrentry bei close
+ 1150 fpbank   =dtplen+22 ;bank fuer r/w
+ 1160 fpblen   =dtplen+23 ;laenge des fpb
+ 1170 ;**** struktur getname-transfer-puffer
+ 1180 gndrive  =0  ;drive
+ 1190 gnflag   =1  ;flag fuer letzten namen im suchpfad
+ 1200 gnact    =2  ;cluster des root-dir des letzten eintrags
+ 1210 gnfile   =4  ;startcluster des letzten suchnamens
+ 1220 gnpath   =6  ;64 byte gefundener pfad
+ 1230 ;**** struktur getpath
+ 1240 gpclus   =0  ; startcluster
+ 1250 gppath   =2  ; path
+ 1260 ;**** struktur setvektor
+ 1270 svanz    =0  ; anzahl zu linkender vektoren
+ 1275 ; svadr/new/old sind zeiger auf arrays der angegebenen adressen
+ 1280 svadr    =2  ; adressen in der vektor-tabelle [ (xxx-bdos)*2/3 ]
+ 1290 svnew    =4  ; liste der neuen vektor-adressen
+ 1300 svold    =6  ; platz fuer alte vektor-adressen
+
