@@ -1,0 +1,343 @@
+
+
+;../origsrc/bdos+s1/VD  1.5 .S14 ==0801==
+	.word $8800
+  120 prg =1
+  130 bdos =$a000
+  140 .include "bds 1.44.s24"
+  150 .include "bdk 1.41.s17"
+  160 .include "bdj 1.45.s31"
+  170 .include "bde 1.45.s15"
+  200 dinit sta rwbzei:sty rwbzei+1
+  210 ldy #<-1:sty dosd0:sty dosd1
+  230 ldx #0:jsr gipar:bcs dii2
+  240 inx:jsr gipar
+  250 dii2 ldx #5
+  260 dii3 lda dosd0,x:sta $0100,x:dex
+  270 bpl dii3
+ 1000 ldx #<svtab:ldy #>svtab:jsr setvec
+ 1130 pinit lda #"u":sta media0:sta media1
+ 1150 sta cmdbuf:lda #"0":sta cmdbuf+1
+ 1160 lda dosd0:cmp dosd1:beq pina2
+ 1170 lda iecd0:cmp iecd1:bne pina1
+ 1180 lda drvd0:cmp drvd1:bne pina1
+ 1190 pina2 lda #<-1:sta dosd1:pina1
+ 1200 lda dosd0:bmi pinit5
+ 1210 lda iecd0:jsr opentest:bcc pinit5:lda #<-1:sta dosd0
+ 1220 pinit5 lda dosd1:bmi pinit3
+ 1230 lda dosd0:bmi pinit6
+ 1240 lda iecd0:cmp iecd1:beq pinit3
+ 1250 pinit6
+ 1260 lda iecd1:jsr opentest:bcc pinit3:lda #<-1:sta dosd1
+ 1270 pinit3 lda #0:rts
+ 1280 pinit1 lda #endnrdy:rts
+ 1290 ;*********
+ 1300 pexit jsr clrch:lda iecd0;s.o. :jsr close
+ 1310 lda iecd1;s.o. :jsr close:jmp (vexit)
+ 1320 ;*********
+ 1330 getdpar cmp dosd1:beq gdp1:cmp dosd0:bne gdpe
+ 1340 ldx #0:.byt $2c:gdp1 ldx #1
+ 1350 lda iecd0,x:sta actunit
+ 1360 lda drvd0,x:clc:rts
+ 1370 gdpe sec:rts
+ 1380 ;*********
+ 1390 opentest pha:tax:ldy #15:jsr setfpar:lda #0:jsr setfnpar
+ 1400 jsr open
+ 1410 pla:bcs opt1:pha
+ 1420 tax:jsr ckout:pla:bcs opt2
+ 1430 jsr clrch:clc:opt1 rts
+ 1440 opt2 jsr close:sec:rts
+ 1499 ;*********
+ 1500 gip1 gipar iny:lda (rwbzei),y
+ 1510 beq gipe:cmp #" ":beq gip1
+ 1520 sec:sbc #"a":sta dosd0,x
+ 1530 gip2 iny:lda (rwbzei),y:beq gipe
+ 1540 cmp #":":beq gip2
+ 1550 and #15:sta iecd0,x
+ 1560 iny:lda (rwbzei),y:beq gipe
+ 1570 cmp #"0":bcc gip3:cmp #"9"+1:bcs gip3
+ 1580 and #15:sta actunit:lda iecd0,x
+ 1590 bne gip4:lda #0:.byt $2c:gip4 lda #10
+ 1600 clc:adc actunit:sta iecd0,x
+ 1610 gip5 iny:lda (rwbzei),y:beq gipe
+ 1620 gip3 cmp #",":beq gip5
+ 1630 and #1:sta drvd0,x:clc:rts
+ 1640 gipe sec:rts
+ 2000 ;*********
+ 2010 pquery jsr getdpar:bcc pquery0:jmp (vquery)
+ 2020 pquery0 tay:lda #0:sta media0,x:tya:bne pquery1
+ 2030 lda #%00001010; drive 0:.byt $2c
+ 2040 pquery1 lda #%00001011; drive 1
+ 2050 ldy #2:jsr send3cmd:bcs bsnotrdy
+ 2060 bit serial
+ 2070 bvc bsslow
+ 2080 jsr serin
+ 2090 ldy #0
+ 2100 jsr togclk:jsr wbyte
+ 2110 sta retbuf,y:sta stat
+ 2120 jsr togclk
+ 2130 lda stat:bpl bsnotmfm; gcr-format
+ 2140 and #$0f:cmp #2:bcs bsdsker
+ 2150 ldx #5:iny
+ 2160 init2 jsr wbyte
+ 2170 sta retbuf,y
+ 2180 jsr togclk
+ 2190 iny:dex:bne init2
+ 2200 lda stat:and #15:cmp #2:bcs bsdsker
+ 2210 ldx #<retbuf:ldy #>retbuf:jmp error0
+ 2220 notready bsnotrdy lda #entxrx:.byt $2c
+ 2230 bsslow   lda #enslow:.byt $2c
+ 2240 bsnotmfm lda #engcr :.byt $2c
+ 2250 error0  bserr0   lda #0
+ 2260 diskerr bsdsker  pha:jsr clkhi:pla:cli:rts
+ 3000 ;**********
+ 3010 pmediach jsr getdpar:bcc pmed0:jmp (vmediach)
+ 3020 pmed0 tay:lda media0,x:bne mediafmt:tya:bne pmed1
+ 3030 lda #%11001100:.byt $2c
+ 3040 pmed1 lda #%11001101
+ 3050 ; liefert 1 wenn disk gewechselt
+ 3060 pmedia1 jsr send3cmd; sonst 0:bcs bsnotrdy
+ 3065 bit serial:bvc bsslow
+ 3070 jsr serin
+ 3080 jsr togclk:jsr wbyte:pha
+ 3090 jsr clkhi
+ 3100 pla:sta stat
+ 3110 and #$0f:cmp #2:bcc bserr0
+ 3120 ldx #0
+ 3130 cmp #11:bne bsdsker
+ 3140 mediafmt lda #1:jmp diskerr
+ 4000 ;**********
+ 4010 pfloprw sta rwbzei:sty rwbzei+1
+ 4020 ldy #pbdrive:lda (rwbzei),y
+ 4030 jsr getdpar:bcc pflop0:lda rwbzei:ldy rwbzei+1:jmp (vfloprw)
+ 4040 pflop0 sta int1
+ 4050 ldy #pbrwflag:lda (rwbzei),y:sta rwflag
+ 4060 ldy #pbbank:lda (rwbzei),y:sta rwfbank
+ 4070 lda stat:beq prwq:cmp #11:bne prw0
+ 4080 prwq ldy #pbdrive:lda (rwbzei),y:jsr query
+ 4090 beq prw0:rts
+ 4100 prw0 ldx int1
+ 4110 ldy #pbside:lda (rwbzei),y:cmp #1
+ 4120 lda #%00000000
+ 4130 bcc prw1:ora #%10000
+ 4140 prw1 cpx #1:bcc prw1a:ora #1; drive
+ 4150 prw1a ldx rwflag:beq prw2:ora #2
+ 4160 prw2 sta cmdbuf+2
+ 4170 ldy #pbtrack:lda (rwbzei),y:sta cmdbuf+3
+ 4180 ldy #pbsector:lda (rwbzei),y:sta cmdbuf+4
+ 4190 lda #1:sta cmdbuf+5
+ 4200 ldy #6:jsr sendcmd:bcc prwo1:jmp notready
+ 4210 prwo1 bit serial:bvs prwoo1:jmp bsslow
+ 4215 prwoo1 ldy #pbbuffer:lda (rwbzei),y:iny:tax:lda (rwbzei),y
+ 4220 sta rwbzei+1:stx rwbzei; zeiger auf puffer
+ 4230 lda stat:lsr:lsr:lsr:lsr:and #3
+ 4240 tay:lda length,y:tax
+ 4250 lda rwflag:bne prwrite
+ 4260 ;*****
+ 4270 ; read
+ 4280 jsr serin:jsr readerr
+ 4290 sta stat:and #$0f:cmp #2
+ 4300 bcc prrok:jmp diskerr
+ 4310 prrok stx cnt:lda #<rwbzei:jsr bsadr
+ 4320 jsr togclk
+ 4330 pr1 ldy #0
+ 4340 pr2 jsr wbyte
+ 4350 ldx rwfbank:jsr bstash
+ 4360 jsr togclk
+ 4370 iny:bpl pr2
+ 4380 tya:clc:adc rwbzei:sta rwbzei
+ 4390 bcc pr3:inc rwbzei+1
+ 4400 pr3 dec cnt:bne pr1
+ 4410 jmp prwok
+ 4420 ;*****
+ 4430 ; write
+ 4440 prwrite jsr serout
+ 4450 lda #clkin:sta rwflag
+ 4460 stx cnt:prww0 lda #<rwbzei:jsr bfadr:ldy #0
+ 4470 prww1 lda dra:cmp dra:bne prww1:and #clkin:eor rwflag:beq prww1
+ 4480 lda rwflag:eor #clkin:sta rwflag
+ 4490 ldx rwfbank:jsr bfetch:jsr sbyte
+ 4500 iny:bpl prww1
+ 4510 tya:clc:adc rwbzei:sta rwbzei
+ 4520 bcc prww2:inc rwbzei+1
+ 4530 prww2 dec cnt:bne prww0
+ 4540 jsr serin:jsr clklo
+ 4550 jsr wbyte:sta stat
+ 4560 jsr clkhi
+ 4570 lda stat:and #$0f:cmp #2:bcc prwok
+ 4580 jmp diskerr
+ 4590 ;*****
+ 4600 prwok ldx rwbzei:ldy rwbzei+1:jmp error0
+ 5000 ;**********
+ 5010 pformat cpx #2:bcc pfora:jmp (vformat)
+ 5020 pfora stx ffmbuf:sta pblock+pbdrive:jsr getdpar
+ 5025 bcc pfor0:jmp (vformat)
+ 5030 pfor0 pha
+ 5040 ldy #$13:pfo1 lda bef,y:sta cmdbuf,y
+ 5050 dey:bpl pfo1
+ 5060 pla:beq pfo2
+ 5065 lda cmdbuf+2:ora #$01:sta cmdbuf+2:pfo2
+ 5070 ldx fformat:bne pfoo3:lda cmdbuf+2:and #255-32:sta cmdbuf+2; 1-seitig
+ 5080 pfoo3 ldy #$14:jsr sendcmd
+ 5090 lda pblock+pbdrive:ldy #4:jsr sfrbuf:stx ffmbuf:beq ffm1:rts
+ 5100 ffm1 lda pblock+pbdrive:jsr query
+ 5110 bne pfoerr2
+ 5120 lda #0:tax:ldy ffmbuf:jsr bfzset
+ 5130 lda fformat:beq pfoo5
+ 5140 ldy #0:pfo3 lda boots,y:jsr bfset:iny:cpy #32:bne pfo3 :beq pfoo4
+ 5150 pfoo5 ldy #0:pfoo6 lda boot1,y:jsr bfset:iny:cpy #32:bne pfoo6
+ 5160 pfoo4 ldy #256-32:ldx #1;1 block+224 byte
+ 5170 lda #0:ffm1a jsr bfset:dey:bne ffm1a:ldy #254:dex:bpl ffm1a
+ 5180 lda #0:sta int1:sta int1+1
+ 5190 ldx #0:ldy #0:pfo4 iny:lda int1:clc:adc boots,y:sta int1
+ 5200 dey:lda int1+1:adc boots,y
+ 5210 sta int1+1:iny:iny:cpy #32:bne pfo4
+ 5220 pfoerr2 bne pfoerr1
+ 5230 lda int1:sec:sbc #$33:pha
+ 5240 lda int1+1:sbc #$12;checksum-$1234+1
+ 5250 jsr bfset:pla:jsr bfset
+ 5260 ldy #0:sty pblock+pbside:sty pblock+pbtrack
+ 5270 iny:sty pblock+pbsector
+ 5280 lda #prgbank:sta pblock+pbbank
+ 5290 lda #0:tax:ldy ffmbuf:jsr bfzset
+ 5300 lda bf1z:sta pblock+pbbuffer:lda bf1z+1:sta pblock+pbbuffer+1
+ 5310 lda #1:sta pblock+pbrwflag
+ 5320 lda #<pblock:ldy #>pblock:jsr floprw:pfoerr1 bne pfoerr3
+ 5330 ldx #1:lda pblock+pbdrive:cmp dosd0:bne pfff1
+ 5332 stx media0:beq pfff2
+ 5334 pfff1 stx media1:pfff2
+ 5340 sec:jsr sgdrive:bne pfoerr3
+ 5350 lda #0:tax:ldy ffmbuf:jsr bfzset
+ 5360 ldx #4:ldy #0:tya:pfo6 jsr bfset:iny:bne pfo6
+ 5370 inc rwbzei+1:dex:bne pfo6
+ 5380 lda #0:tax:ldy ffmbuf:jsr bfzset
+ 5390 lda #$ff:jsr bfset:jsr bfset:jsr bfset
+ 5400 lda #1:ldx #0:ldy ffmbuf:sec:jsr bufabs:pfoerr3 bne pfoerr
+ 5410 lda #3:ldx #0:ldy ffmbuf:sec:jsr bufabs:bne pfoerr
+ 5420 lda #0:tax:ldy ffmbuf:jsr bfzset
+ 5430 lda #0:jsr bfset:jsr bfset:jsr bfset
+ 5440 lda #2:ldx #0:ldy ffmbuf:sec:jsr bufabs
+ 5450 lda #4:sta int1+2
+ 5460 pfo7 lda int1+2:ldx #0:ldy ffmbuf:sec:jsr bufabs:bne pfoerr
+ 5470 inc int1+2:lda int1+2:cmp #13:bne pfo7
+ 5480 lda #0:pfoerr pha:ldx ffmbuf:jsr rlbuf:pla:rts
+ 6000 ;********** uebertragung
+ 6010 send3cmd sta cmdbuf+2:ldy #3
+ 6020 ; y= laenge des befehls in cmdbuf
+ 6030 sendcmd lda serial:and #%10111111:sta serial
+ 6040 ldx actunit:jsr ckout:bcc sendc0
+ 6050 jmp notready
+ 6060 sendc0 ldx #0
+ 6070 sendc1 lda cmdbuf,x:jsr bsout
+ 6080 inx:dey
+ 6090 bne sendc1
+ 6100 jsr clrch:clc:rts
+ 6110 togclk lda dra:eor #clkout:sta dra:rts
+ 6120 wbyte lda #8:wbyt1 bit icr:beq wbyt1:lda sdr:rts
+ 6130 sbyte sta sdr:lda #8:sbyt1 bit icr:beq sbyt1:rts
+ 6140 clkhi lda dra:and #ff-clkout:sta dra:rts
+ 6150 clklo lda dra:ora #clkout:sta dra:rts
+ 6160 serin sei:lda mmureg:and #$f7:sta mmureg
+ 6170 lda cra:and #$80:ora #$08:sta cra:bit icr:rts
+ 6180 serout sei:lda mmureg:ora #8:sta mmureg
+ 6190 lda #0:sta timah:lda #3:sta timal
+ 6200 lda #$7f:sta icr
+ 6210 lda cra:and #$80:ora #$55:sta cra:bit icr:rts
+ 6220 readerr jsr togclk:jsr wbyte:rts
+10000 ;**********
+10010 length .byt 1,2,4,8; tabelle der sektor-laengen in 128 byte
+10020 ;**********
+10030 bef .byt "u","0",$26,$c1,0,2,39,9,0,0
+10040 .byt $e5,1,2,3,4,5,6,7,8,9
+10050 ;**********
+10060 boots ; bootsektor ibm pc
+10070 .byt $eb,$2c,$90,0,0,0,0,0
+10080 .byt $c0,$12,$80
+10090 .word 512
+10100 .byt  2
+10110 .word 1
+10120 .byt  2
+10130 .word 112
+10140 .word 720
+10150 .byt  253
+10160 .word 2
+10170 .word 9
+10180 .word 2
+10190 .word 0,0
+10200 ;****
+10210 boot1 ; bootsektor ibm pc 1-seitig
+10220 .byt $eb,$2c,$90,0,0,0,0,0
+10230 .byt $c0,$12,$80
+10240 .word 512
+10250 .byt  1
+10260 .word 1
+10270 .byt  2
+10280 .word 64
+10290 .word 360
+10300 .byt  252
+10310 .word 2
+10320 .word 9
+10330 .word 1
+10340 .word 0,0
+10350 ffmbuf .byt 0
+10351 ;****
+10352 svtab
+10353 .word anznew
+10354 .word jmpadr
+10355 .word jmpnew
+10356 .word jmpold
+10360 anznew =5
+10370 jmpadr
+10380 .word  (query   -bdos)*2/3
+10390 .word  (mediach -bdos)*2/3
+10400 .word  (floprw  -bdos)*2/3
+10410 .word  (flopfmt -bdos)*2/3
+10420 .word  (exit    -bdos)*2/3
+10430 jmpnew
+10440 .word  pquery
+10450 .word  pmediach
+10460 .word  pfloprw
+10470 .word  pformat
+10480 .word  pexit
+10490 jmpold:;.if # :;.goto 10810
+	.bss
+10500 vquery   .word 0
+10510 vmediach .word 0
+10520 vfloprw  .word 0
+10530 vformat  .word 0
+10540 vexit    .word 0
+10550 ;********* data fuer teil 1
+10560 ;puffer fuer floppy-befehl
+10570 fformat .byt 0
+10580 ;puffer fuer floppy-befehl
+10590 cmdbuf .byt "u","0",0,0,0,0,0,0,0,0
+10600 .byt 0,0,0,0,0,0,0,0
+10610 .byt 0,0
+10620 ;puffer fuer antwort bei query
+10630 retbuf .byt 0,0,0,0,0,0
+10640 ;parameterblock f. floprw syscall
+10650 pblock .byt 0,0,0,0,0:.word 0:.byt 0
+10660 ;parameterblock fuer rwabs
+10670 abspar .byt 0,0:.word 0,0,0:.byt 0
+10680 ;statusbyte
+10690 stat    .byt 0
+10700 ;flag fuer floprw
+10710 rwflag  .byt 0
+10720 rwfbank .byt 0
+10730 pgbbuf  .byt 0
+10734 cnt     .byt 0
+10735 int1    .byt 0,0,0
+10736 media0  .byt 0
+10737 media1  .byt 0
+10740 dosd0   .byt 0 ;drive a:
+10750 dosd1   .byt 1 ;drive b:
+10760 iecd0   .byt 8 ;unit 8 on iec
+10770 iecd1   .byt 9 ;unit 9 on iec
+10780 drvd0   .byt 0 ;drive 0 on unit 8
+10790 drvd1   .byt 0 ;drive 0 on unit 9
+10800 actunit .byt 0 ;unit on air
+10802 varend =*
+	.text
+10820 .word varend
+10900 .end
+

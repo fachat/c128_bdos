@@ -1,0 +1,422 @@
+
+
+;../origsrc/bdos+s1/VB  1.2 .S10 ==0801==
+	.word $9000
+ 1200 prg =1
+ 1300 bdos =$a000
+ 1310 bank0 =%00111111
+ 1320 bank1 =%01111111
+ 1500 .include "bds 1.44.s24"
+ 1600 .include "bdk 1.41.s17"
+ 1700 .include "bdj 1.45.s31"
+ 1800 .include "bde 1.45.s15"
+ 2000 ;********
+ 2001 jsr rdinit:jsr tdinit:jsr udinit
+ 2002 ldx #<svtab:ldy #>svtab:jmp setvec
+ 2010 rdinit sta rwbzei:sty rwbzei+1
+ 2020 lda #2:sta drive
+ 2030 ldx #7:pix1 lda val,x:sta vadr,x
+ 2040 dex:bpl pix1
+ 2070 jsr gnib:bcs ri1
+ 2080 sec:sbc #10:sta drive
+ 2090 ri1 jsr gadr:bcs ri2
+ 2100 stx vadr:sta vadr+1
+ 2110 ri2 jsr gadr:bcs ria
+ 2120 stx vadr+2:sta vadr+3
+ 2122 ria jsr gadr:bcs rib
+ 2124 stx vadr+4:sta vadr+5
+ 2126 rib jsr gadr:bcs ri3
+ 2128 stx vadr+6:sta vadr+7
+ 2130 ri3 lda #0:sta anztrck:sta c1
+ 2140 ldy #64:ldx #0
+ 2150 ri5 asl vadr+7:rol vadr+6
+ 2153 rol vadr+5:rol vadr+4
+ 2157 rol vadr+3:rol vadr+2
+ 2160 rol vadr+1:rol vadr
+ 2170 bcc ri4
+ 2180 lda c1:asl:asl:ldx anztrck
+ 2190 sta adr,x:inc anztrck
+ 2200 ri4 inc c1:dey:bne ri5
+ 2210 rts
+ 3501 ;********
+ 3510 gnib ldy #0:lda (rwbzei),y
+ 3515 beq gnie
+ 3516 inc rwbzei:bne gni2:inc rwbzei+1
+ 3517 gni2:cmp #" ":beq gnib
+ 3518 cmp #"a":bcc gni1
+ 3520 sbc #8:gni1 sbc #"0"-1:and #15
+ 3525 clc:rts
+ 3530 gae gnie sec:rts
+ 3540 gadr lda #0:sta int1:sta int1+1
+ 3545 jsr gnib:bcs gae:asl:asl:asl:asl:sta int1+1
+ 3550 jsr gnib:bcs gae:ora int1+1:sta int1+1
+ 3555 gbyt jsr gnib:bcs gae:asl:asl:asl:asl:sta int1
+ 3560 jsr gnib:bcs gae:ora int1:ldx int1+1:clc:rts
+ 3600 ;****
+ 3700 tquery cmp drive:beq tqend
+ 3800 jmp (vquery)
+ 3900 tqend lda #0:sta mediafl:rts
+ 4000 ;****
+ 4100 tmediach cmp drive:beq tmedia
+ 4200 jmp (vmediach)
+ 4300 tmedia lda mediafl:rts
+ 4400 ;****
+ 4500 tfloprw sta rwbzei:sty rwbzei+1
+ 4600 ldy #pbdrive:lda (rwbzei),y:cmp drive:beq tflrw
+ 4700 lda rwbzei:ldy rwbzei+1
+ 4800 jmp (vfloprw)
+ 4900 tflrw
+ 5000 ;****
+ 5100 ldy #pbsector:lda (rwbzei),y:beq trr1:cmp #9:bcs trr1
+ 5105 ldy #pbside:lda (rwbzei),y:bne trr1
+ 5150 ldy #pbbank:lda (rwbzei),y:sta dbank
+ 5200 ldy #pbtrack:lda (rwbzei),y:tax
+ 5300 cmp anztrck:bcc trw1:trr1 lda #enprange:rts
+ 5305 trw1 lda adr,x
+ 5307 ldx #bank0:asl:bcc bbbn0:ldx #bank1
+ 5309 bbbn0 stx rbank
+ 5310 ldy #pbsector:clc:adc (rwbzei),y
+ 5320 tax:dex;sektor =1-8
+ 5350 ldy #pbrwflag:lda (rwbzei),y:pha
+ 5400 ldy #pbbuffer:lda (rwbzei),y:sta tzei:iny:lda (rwbzei),y:sta tzei+1
+ 5600 stx rwbzei+1:lda #0:sta rwbzei
+ 5700 pla:bne twrite
+ 5800 ;****
+ 5850 lda #tzei  :jsr bsadr
+ 5860 lda #rwbzei:jsr bfadr
+ 5900 ldy #0:sei
+ 5910 tre1 ldx rbank:jsr bfetch
+ 6000 ldx dbank:jsr bstash
+ 6010 iny:bne tre1
+ 6100 cli
+ 6110 ldx tzei:ldy tzei+1:iny:lda #0:rts
+ 6200 ;****
+ 6300 twrite lda #tzei:jsr bfadr
+ 6310 lda #rwbzei:jsr bsadr:ldy #0:sei
+ 6320 twr1 ldx dbank:jsr bfetch
+ 6325 ldx rbank:jsr bstash
+ 6330 iny:bne twr1
+ 6340 cli
+ 6500 ldx tzei:ldy tzei+1:iny:lda #0:rts
+ 6600 ;****
+ 6700 tformat cmp drive:beq tfmt
+ 6800 jmp (vformat)
+ 6900 tfmt sta rwb+pbdrive
+ 6910 lda #1:sta rwb+pbrwflag
+ 7000 lda #prgbank:sta rwb+pbbank
+ 7100 lda #0:sta rwb+pbside
+ 7110 sta rwb+pbtrack
+ 7300 lda #1:sta rwb+pbsector
+ 7310 ldy #0:tff1 lda bootsec,y:sta clrsec,y:iny:bne tff1
+ 7320 lda anztrck:sta clrsec+btsec
+ 7321 cmp #43:bcs fspf1
+ 7322 cmp #22:bcs fspf2
+ 7323 lda #1:.byt $2c
+ 7324 fspf2 lda #2:.byt $2c
+ 7325 fspf1 lda #3
+ 7326 sta clrsec+btspf:lda #0:sta clrsec+btspf+1
+ 7330 lda #0
+ 7340 asl clrsec+btsec:rol
+ 7350 asl clrsec+btsec:rol
+ 7360 asl clrsec+btsec:rol
+ 7370 sta clrsec+btsec+1
+ 7400 lda #<clrsec:sta rwb+pbbuffer
+ 7500 lda #>clrsec:sta rwb+pbbuffer+1
+ 7600 lda #<rwb:ldy #>rwb:jsr floprw
+ 7610 lda #0:tay:tff2 sta clrsec,y:iny:bne tff2
+ 7700 lda #<clrsec:sta rwb+pbbuffer
+ 7800 lda #>clrsec:sta rwb+pbbuffer+1
+ 7900 lda #$ff:sta clrsec+0:sta clrsec+1:sta clrsec+2
+ 8000 lda #2:sta rwb+pbsector
+ 8100 lda #<rwb:ldy #>rwb:jsr floprw
+ 8200 lda #0:sta clrsec+0:sta clrsec+1:sta clrsec+2
+ 8300 lda #3:sta rwb+pbsector
+ 8400 l2 lda #<rwb:ldy #>rwb:jsr floprw
+ 8500 inc rwb+pbsector:lda rwb+pbsector:cmp #8:bcc l2
+ 8600 lda #1:sta mediafl:lda #0:rts
+ 9000 ;*********
+ 9010 psgtime bcs pstime:jmp pgtime
+ 9020 pstime lda tcia+15:and #127:sta tcia+15
+ 9030 jmp timereg
+ 9040 psalarm cmp #0:beq psalar
+ 9050 cmp #1:beq paon
+ 9060 lda #%00000100:sta tcia+13:lda #0:rts
+ 9070 psalar lda tcia+15:ora #128:sta tcia+15
+ 9080 jsr timereg
+ 9090 paon lda #%10000100:sta tcia+13:lda #0:rts
+ 9100 timereg stx rwbzei:sty rwbzei+1
+ 9110 ldy #2:lda (rwbzei),y:jsr hourbcd
+ 9120 sta tcia+11
+ 9130 dey:lda (rwbzei),y:jsr bytbcd
+ 9140 sta tcia+10
+ 9150 dey:lda (rwbzei),y:jsr bytbcd
+ 9160 sta tcia+9
+ 9170 lda #0:sta tcia+8; 10th sec
+ 9180 lda #0:rts
+ 9190 hourbcd ldx #0:stx int1+1:hour1a cmp #12:bcc hour1
+ 9200 sbc #12:pha:lda int1+1:eor #128:sta int1+1:pla:bne hour1a
+ 9210 hour1 jsr bytbcd
+ 9220 cmp #0:bne hour2:lda #$92
+ 9230 hour2 eor int1+1:rts
+ 9240 bytbcd pha:lda #0:sta int1:pla
+ 9250 cmp #61:bcc bbcd1:lda #0:rts
+ 9260 bbcd1 sec:sbc #10:bcc bbcd2
+ 9270 inc int1:bne bbcd1
+ 9280 bbcd2 clc:adc #10
+ 9290 asl int1:asl int1:asl int1:asl int1
+ 9300 ora int1:rts
+ 9310 pgtime lda tcia+11:jsr bcdhour
+ 9320 sta int1+2
+ 9330 lda tcia+10:jsr bcdbyt:sta int1+1
+ 9340 lda tcia+9:jsr bcdbyt:sta int1
+ 9350 lda tcia+8:ldx #<int1:ldy #>int1:lda #0:rts
+ 9360 bcdhour tax:and #127:cmp #$12:bne bcdh1
+ 9370 txa:eor #128:tax:and #127
+ 9380 bcdh1 jsr bcdbyt
+ 9390 tay:txa:bpl bcdh2
+ 9400 tya:clc:adc #12:tay
+ 9410 bcdh2 tya:cmp #24:bcc bcdh3:sbc #24:bcdh3 rts
+ 9420 bcdbyt tay:and #15:sta int2+1
+ 9430 tya:and #%11110000
+ 9440 lsr:lsr:sta int2:lsr:lsr
+ 9450 clc:adc int2:asl:clc:adc int2+1
+ 9460 rts
+ 9470 psgdate bcs psdate
+ 9480 ldx #<datum:ldy #>datum:lda #0:rts
+ 9490 psdate stx rwbzei:sty rwbzei+1
+ 9500 ldy #2:psdate1 lda (rwbzei),y:sta datum,y:dey:bpl psdate1
+ 9510 lda #0:rts
+ 9520 ;**********
+ 9530 pbcan   pha:txa:pha:tya:pha:jsr $cd6f:jmp pban1
+ 9540 pbcaus  pha:txa:pha:tya:pha:lda #1:ldy $ec:jsr $cd9f
+ 9550 pban1 pla:tay:pla:tax:pla:rts
+ 9560 pbin    txa:pha:tya:pha:lda #1:sta $d6
+ 9570 lda $eb:clc:adc #1:sta $0a30
+ 9580 jsr $c009:sta $0a30:pla:tay:pla:tax:lda $0a30:rts
+ 9590 ;********
+ 9600 pbout   jmp bsout
+ 9610 pbcpos  jmp $fff0
+ 9620 pbgkey  jmp getkey
+ 9630 pbbcol  sta 53280:sta 53281:rts
+ 9640 pbtcol  and #$0f:tax
+ 9650 lda farben,x:jsr bout
+ 9660 rts
+ 9700 pbfadr sta fetvec:rts
+ 9710 pbsadr sta stavec:rts
+ 9760 pbfetch jmp fetch
+ 9770 pbstash jmp stash
+20000 ser      =3
+20010 iec      =4
+20020 dev1     =2
+20030 dev2     =3
+20035 dev3     =4
+20040 ;
+20050 unlisten =$ffae
+20060 untalk   =$ffab
+20070 serst    =$0a14
+20080 ;
+20090 ;********
+20100 tdinit
+20102 jsr gbyt:bcs tddi1:sta fname
+20103 jsr gbyt:bcs tddi1:sta fname+1
+20110 tddi1 lda fname:ora fname+1:bne tddi2
+20112 lda #endnp:bne operx
+20119 tddi2 lda #2:ldx #<fname:ldy #>fname:jsr setfnpar
+20120 lda #ser:ldx #2:ldy #2:jsr setfpar:jsr open
+20130 bcc operr:cmp #$f0:beq operr
+20140 ora #64:.byt $2c:operr lda #0
+20150 operx sta dev1err
+20180 rts
+20190 ;********
+20200 tdevout cpx #dev1:beq tdo1:jmp udevout
+20210 tdo1 ldx dev1err:bne td1x
+20215 jsr bsout:rts
+20217 td1x sec:txa:rts
+20220 ;****
+20230 tdevin cpx #dev1:beq tdi1:jmp udevin
+20240 tdi1 ldx dev1err:bne td1x
+20245 jsr waitser:clc:rts
+20250 ;****
+20260 tdevcmd cpx #dev1:beq tdc1:jmp udevcmd
+20270 tdc1 ldx dev1err:bne td1x
+20275 tax:bne tdc2
+20280 ldx $029e:inx:cpx $029d
+20290 beq tdc11:lda #0:rts:tdc11 lda #endbf:rts
+20300 tdc2 dex:bne tdc3
+20310 ldx $029b:cpx $029c
+20320 beq tdc21:lda #0:rts:tdc21 lda #endbe:rts
+20330 tdc3 dex:bne tdc4
+20340 ldx #ser:jsr ckout:lda #0:rts
+20350 tdc4 dex:bne tdc5
+20360 lda #3:sta $9a:lda #0:rts
+20370 tdc5 dex:bne tdc6
+20380 ldx #ser:jsr chkin:lda #0:rts
+20390 tdc6 dex:bne tdc7
+20400 lda #0:sta $99:rts
+20410 tdc7 lda #ennotimp:rts
+20420 ;********
+20430 udinit
+20432 lda #4:sta int2:lda #0:sta int2+1
+20433 jsr gbyt:bcs uddi1:sta int2
+20434 jsr gbyt:bcs uddi1:sta int2+1
+20440 uddi1 lda #0:jsr setfnpar
+20450 lda #iec:ldx int2:ldy int2+1:jsr setfpar:jsr open
+20460 bcc uperr:cmp #$f0:beq uperr
+20470 ora #64:.byt $2c:uperr lda #0
+20480 sta dev2err:rts
+20490 ;********
+20500 udevout cpx #dev2:beq udo1:jmp cdevout
+20510 udo1 ldx dev2err:bne td2x
+20515 jsr bsout:rts
+20517 td2x jmp td1x
+20520 ;****
+20530 udevin cpx #dev2:beq udi1:jmp cdevin
+20540 udi1 ldx dev2err:bne td2x
+20545 jsr basin:clc:rts
+20550 ;****
+20560 udevcmd cpx #dev2:beq udc1:jmp cdevcmd
+20570 udc1 ldx dev2err:bne td2x
+20575 stx status:tax:bne udc2
+20580 lda #0:rts
+20590 udc2 dex:bne udc3
+20600 lda #endbe:rts
+20610 udc3 dex:bne udc4
+20620 ldx #iec:jsr ckout:jmp tstst
+20630 udc4 dex:bne udc5
+20640 jsr unlisten:lda #3:sta $9a:lda #0:rts
+20650 udc5 dex:bne udc6
+20660 ldx #iec:jsr chkin:jmp tstst
+20670 udc6 dex:bne udc7
+20680 jsr untalk:lda #0:sta $99:rts
+20690 udc7 lda #ennotimp:rts
+20700 ;****
+20730 waitser lda $0a18:cmp $0a19:beq waitser
+20740 jmp $ffe4
+20750 tstst lda status:bne tstst1
+20760 lda #0:rts
+20770 tstst1 lda #endnp:rts
+29999 ;********
+30000 cdinit lda #$ff:sta cia2+3
+30010 lda cia2+2:ora #4:sta cia2+2
+30020 lda cia2+0:ora #4:sta cia2+0
+30030 lda #0:clc:rts
+30500 cdevout cpx #dev3:beq cdo1:jmp (vdevout)
+30510 cdo1 sta cia2+1
+30515 lda cia2+0:and #ff-4:sta cia2+0
+30520 lda cia2+0:ora #4:sta cia2+0
+30525 cdo2 jsr $ffe1:beq cdo3:lda cia2+13:and #16:beq cdo2:clc:rts
+30526 cdo3 lda #endnp:sec:rts
+30530 cdevin cpx #dev3:beq cdi1:jmp (vdevin)
+30540 cdi1 lda #endnp:sec:rts
+30550 cdevcmd cpx #dev3:beq cdc1:jmp (vdevcmd)
+30560 cdc1 cmp #2:beq cdinit:lda #0:rts
+50000 ;**********
+50010 svtab
+50020 .word anznew
+50030 .word jmpadr
+50040 .word jmpnew
+50050 .word jmpold
+50060 anznew =22
+50070 jmpadr
+50080 .word  (query   -bdos)*2/3
+50090 .word  (mediach -bdos)*2/3
+50100 .word  (floprw  -bdos)*2/3
+50110 .word  (flopfmt -bdos)*2/3
+50111 .word  (devout  -bdos)*2/3
+50112 .word  (devin   -bdos)*2/3
+50113 .word  (devcmd  -bdos)*2/3
+50120 .word  (sgtime  -bdos)*2/3
+50130 .word  (sgdate  -bdos)*2/3
+50140 .word  (salarm  -bdos)*2/3
+50150 .word  (bout    -bdos)*2/3
+50160 .word  (bin     -bdos)*2/3
+50170 .word  (bcan    -bdos)*2/3
+50180 .word  (bcaus   -bdos)*2/3
+50190 .word  (bbcol   -bdos)*2/3
+50200 .word  (btcol   -bdos)*2/3
+50210 .word  (bcpos   -bdos)*2/3
+50220 .word  (bgkey   -bdos)*2/3
+50230 .word  (bfetch  -bdos)*2/3
+50240 .word  (bstash  -bdos)*2/3
+50250 .word  (bfadr   -bdos)*2/3
+50260 .word  (bsadr   -bdos)*2/3
+50270 jmpnew
+50280 .word  tquery
+50290 .word  tmediach
+50300 .word  tfloprw
+50310 .word  tformat
+50311 .word  tdevout
+50312 .word  tdevin
+50313 .word  tdevcmd
+50320 .word  psgtime
+50330 .word  psgdate
+50340 .word  psalarm
+50350 .word  pbout
+50360 .word  pbin
+50370 .word  pbcan
+50380 .word  pbcaus
+50390 .word  pbbcol
+50400 .word  pbtcol
+50410 .word  pbcpos
+50420 .word  pbgkey
+50430 .word  pbfetch
+50440 .word  pbstash
+50450 .word  pbfadr
+50460 .word  pbsadr
+50470 farben
+50480 .byt $90,$05,$1c,$9f,$9c,$1e,$1f,$9e
+50490 .byt $81,$95,$96,$97,$98,$99,$9a,$9b
+50500 val .byt $00,$03,$c0,$fe
+50510 .byt $3f,$ff,$ff,$fe
+50520 bootsec
+50530 .word 0,0,0,0
+50540 .byt  $c0,$64,$00
+50550 .word 256
+50560 .byt  1
+50570 .word 1
+50580 .byt  1
+50590 .word 24
+50600 .word 0; sektoren = btsec
+50610 .byt  0
+50620 .word 2; btspf
+50630 .word 8
+50640 .word 1
+50650 .word 0
+50655 fname .byt 6,0
+//50660 .if #:.goto  50940
+	.bss
+50670 jmpold
+50680 vquery   .word 0
+50690 vmediach .word 0
+50700 vfloprw  .word 0
+50710 vformat  .word 0
+50711 vdevout  .word 0
+50712 vdevin   .word 0
+50713 vdevcmd  .word 0
+50720 .word 0,0,0,0,0
+50730 .word 0,0,0,0,0
+50740 .word 0,0,0,0,0
+50750 int2    .word 0,0
+50760 rwb .word 0,0,0,0
+50770 mediafl .byt 0
+50780 drive   .byt 0
+50790 c1      .byt 0
+50800 anztrck .byt 0
+50810 rbank   .byt 0
+50820 dbank   .byt 0
+50821 dev1err .byt 0
+50822 dev2err .byt 0
+50830 int1    .word 0,0
+50840 datum   .byt 0,0,0
+50850 vadr .word 0,0,0,0
+50860 adr
+50870 .word 0,0,0,0,0,0,0,0
+50880 .word 0,0,0,0,0,0,0,0
+50890 .word 0,0,0,0,0,0,0,0
+50900 .word 0,0,0,0,0,0,0,0
+50910 clrsec
+50920 varend =*+256
+	.text
+50950 .word varend
+50960 .end
+

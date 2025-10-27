@@ -28,6 +28,7 @@
   313 endbf    =<-24
   314 endbe    =<-25
 ;  320 .if prg:;.end
+#if prg-1
   330 ;**********
   340 error0   lda #enok      :.byt $2c
   350 notimpl  lda #ennotimp  :.byt $2c; uebertragung not ok
@@ -56,4 +57,4 @@
   557 dbufull  lda #endbf     :.byt $2c; dev-puffer voll
   558 dbufemp  lda #endbe     :        ; dev-puffer leer
   560 diskerr  cmp #0:rts
-
+#endif

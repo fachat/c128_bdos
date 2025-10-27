@@ -2,7 +2,7 @@
 
 ;BDJ 1.45.S31 ==0801==
 ; 1000 .if prg :;.goto 1620
-#if 1
+#if prg-1
  1010 anzjmp  =68
  1020 init    jmp pinit      ; start von vorne
  1030 exit    jmp (vexit   ) ; start von vorne
