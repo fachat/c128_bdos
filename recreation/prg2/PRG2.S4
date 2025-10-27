@@ -1,0 +1,30 @@
+
+
+;../origsrc/bdos+s1/PRG2.S4 ==0801==
+	.word $7000
+  120 bdos =$a000    ; startadresse bdos
+  130 prg  =1        ; fuer include-datei
+  140 .include "bds 1.44.s24"   ; strukturen
+  150 .include "bdj 1.45.s31"   ; jump-tabelle
+  160 zei  =$18
+  190 ;
+  200 sta zei        ; adresse speichern
+  210 sty zei+1
+  220 ;
+  230 lda #13        ; cr
+  240 jsr $ffd2      ; ausgeben
+  250 ;
+  260 ldy #0         ; index
+  270 loop
+  280 lda (zei),y    ; parameter
+  290 beq endprg     ; null=ende
+  300 jsr $ffd2      ; ausgeben
+  310 iny
+  320 bne loop
+  330 endprg
+  340 lda #13        ; cr
+  350 jsr $ffd2
+  360 lda #0         ; meldung an prompt
+  370 rts
+
+	.word $7f00

@@ -1,0 +1,91 @@
+
+
+;../origsrc/bdos+s1/PRG1.S4 ==0801==
+	.word $7000
+  120 bdos =$a000    ; startadresse bdos
+  130 prg  =1        ; fuer include-datei
+  140 .include "bds 1.44.s24"   ; strukturen
+  150 .include "bdj 1.45.s31"   ; jump-tabelle
+  190 ;
+  200 ;   jsr init   ; init bdos, bei prompt verboten
+  210 ;
+  220 lda #0         ; laufwerk a
+  230 sec            ; setzen
+  240 jsr sgdrive    ; und ausfuehren
+  250 ;
+  260 lda #<dtp      ; adresse des
+  270 ldy #>dtp      ; disk-transfer-
+  280 sec            ; puffers
+  290 jsr sgdta      ; setzen
+  300 ;
+  310 lda #"*"       ; joker
+  320 sta dtp+dsname ; fuer name
+  330 sta dtp+dsext  ; und extension
+  340 lda #%00111110 ; attribut
+  350 sta dtp+dsattr ; setzen
+  360 jsr sfirst     ; ersten eintrag
+  370 jmp loop1      ; suchen und drucken
+  380 ;
+  390 loop           ; schleife
+  400 jsr snext      ; naechster eintrag
+  410 loop1
+  420 bne enddir     ; nicht gefunden
+  430 ;
+  440 lda #13        ; cr
+  450 jsr $ffd2      ; ausgeben
+  460 ldy #0         ; index name
+  470 name
+  480 lda dtp+dgname,y
+  490 jsr $ffd2      ; namen ausgeben
+  500 iny
+  510 cpy #8
+  520 bne name
+  530 ;
+  540 ldy #0         ; index extension
+  550 exten
+  560 lda dtp+dgext,y
+  570 jsr $ffd2      ; extension ausgeben
+  580 iny
+  590 cpy #3
+  600 bne exten
+  610 ;
+  620 lda #" "       ; space
+  630 jsr $ffd2      ; ausgeben
+  640 lda dtp+dgattr ; attribut
+  650 tax
+  660 and #8         ; maske disk-name
+  670 beq noname
+  680 lda #"n"
+  690 jsr $ffd2
+  700 noname
+  710 ;
+  720 txa
+  730 and #16        ; maske subdir
+  740 beq nodir
+  750 lda #"d"
+  760 jsr $ffd2
+  770 nodir
+  780 ;
+  790 txa
+  800 and #4         ; maske systemfile
+  810 beq nosys
+  820 lda #"s"
+  830 jsr $ffd2
+  840 nosys
+  850 ;
+  860 jmp loop
+  870 ;
+  880 enddir
+  890 lda #13        ; cr
+  900 jsr $ffd2      ; ausgeben
+  910 ;  jsr exit    ; bei aufruf aus prompt verboten
+  920 lda #0         ; fehlermeldung fuer prompt
+  930 rts
+  940 dtp
+  950 .word 0,0,0,0,0
+  960 .word 0,0,0,0,0
+  970 .word 0,0,0,0,0
+  980 .word 0,0,0,0,0
+  990 .word 0,0,0,0,0
+
+	.word $7000

@@ -1,0 +1,60 @@
+
+
+	.word $7e00
+;../origsrc/bdos+s1/S-FLOPRW.S5 ==0801==
+  110 prg =1
+  120 bdos =$a000
+  130 .include "bds 1.44.s24"
+  140 .include "bdk 1.41.s17"
+  150 .include "bdj 1.45.s31"
+  160 .include "bde 1.45.s15"
+  170 cursor =$fff0
+  210 ;********
+  220 rdinit jsr version:stx rwbzei:sty rwbzei+1
+  230 ldy #vejmpadr+1:lda (rwbzei),y:tax:dey:lda (rwbzei),y
+  240 sta rwbzei:stx rwbzei+1
+  250 ldx #0
+  260 l1 ldy jmpadr,x
+  270 lda (rwbzei),y:sta jmpold,x
+  280 lda jmpnew,x:sta (rwbzei),y
+  290 inx:iny
+  300 lda (rwbzei),y:sta jmpold,x
+  310 lda jmpnew,x:sta (rwbzei),y
+  320 inx:iny
+  330 cpx #anznew*2; anzahl neuer routinen
+  340 bcc l1
+  345 tend lda #0:rts
+  999 ;*********
+ 1000 tfloprw sta zei:sty zei+1:pha:tya:pha:txa:pha
+ 1005 sec:jsr cursor:stx zeile:sty spalte
+ 1010 ldx #0:ldy #18:clc:jsr cursor
+ 1020 ldy #pbrwflag:lda (zei),y:beq l1a:lda #"w":.byt $2c
+ 1030 l1a lda #"r":jsr bsout:jsr spout
+ 1040 ldy #pbdrive:lda (zei),y:jsr hexsout
+ 1050 ldy #pbside:lda (zei),y:jsr hexsout
+ 1060 ldy #pbtrack:lda (zei),y:jsr hexsout
+ 1070 ldy #pbsector:lda (zei),y:jsr hexsout
+ 1080 ldy #pbbuffer+1:lda (zei),y:jsr hexout
+ 1090 dey:lda (zei),y:jsr hexsout
+ 1100 ldy #pbbank:lda (zei),y:jsr hexout
+ 1110 l1b jsr $ffe4:beq l1b
+ 1200 ldx zeile:ldy spalte:clc:jsr cursor
+ 1900 pla:tax:pla:tay:pla:jmp (vfloprw)
+ 1990 zeile .byt 0
+ 1991 spalte .byt 0
+ 1999 ;*****
+ 2000 hexout pha:lsr:lsr:lsr:lsr:jsr nibout
+ 2010 pla:and #$0f
+ 2020 nibout clc:adc #"0":cmp #"9"+1:bcc nib1
+ 2030 adc #6:nib1 jmp bsout
+ 2040 hexsout jsr hexout:spout lda #" ":jmp bsout
+19999 ;**********
+20010 anznew =1
+20020 jmpadr
+20030 .word  (floprw  -bdos)*2/3
+20070 jmpnew
+20080 .word  tfloprw
+20120 jmpold
+20130 vfloprw  .word 0
+
+	.word 0
