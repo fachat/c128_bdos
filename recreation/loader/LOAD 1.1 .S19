@@ -1,0 +1,61 @@
+
+
+	.word $8000
+;../origsrc/bdos+s1/LOAD 1.1 .S19 ==0801==
+  130 .include "bdk 1.41.s17"
+  140 adr =$fb:load =$ffd5
+  150 lda #$36:sta 1:lda #$0e:sta $ff00
+  151 lda basirq:and #$ff-1:sta basirq
+  152 lda #127:sta nmicr
+  160 lda #<buf:sta adr:lda #>buf:sta adr+1
+  170 lda #namlen:ldx #<name:ldy #>name
+  180 jsr setfnpar
+  190 ldx $ba:stx drv:ldy #0:sty $c7:sty $c6:jsr setfpar
+  200 ldx #<buf:ldy #>buf:lda #0:jsr load:bcc l1:rts
+  210 l1 stx adr:sty adr+1:lda #0:tay:sta (adr),y
+  220 lda #<buf:sta badr:lda #>buf:sta badr+1
+  230 lloop lda #0:sta $ce
+  240 lda badr:sta adr:lda badr+1:sta adr+1
+  250 ldy #0:lr1 lda (adr),y:cmp #13:beq lr2:iny:bne lr1
+  260 lr2 lda #0:sta (adr),y
+  270 ldy #<-1:ll1 iny:lda (adr),y
+  280 beq lle
+  290 cmp #$5c ;"\":bne ll1
+  300 tya:ldx adr:ldy adr+1:jsr setfnpar
+  310 ldx drv:ldy #1:jsr setfpar
+  320 lda #0:jsr load:bcc ll2a:rts
+  330 ll2a ldy $b7:jsr getadr
+  340 lda (adr),y:cmp #$5c ;"\":bne ll2
+  350 iny:ll2 tya:clc:adc adr
+  360 ldy adr+1:bcc ll3
+  370 iny:ll3 jsr ajsr
+  380 lda badr:sta adr:lda badr+1:sta adr+1
+  390 ldy #0:ll4 lda (adr),y:beq ll5:iny:bne ll4
+  400 ll5 iny:tya:clc:adc adr:sta badr:tax:lda adr+1:adc #0:sta badr+1
+  410 jmp lloop
+  420 lle lda #$37:sta 1:rts
+  430 ajsr jmp (jadr)
+  440 getadr lda #0:sta jadr:sta jadr+1
+  450 gta2 jsr getnib:bcc gta1:rts
+  460 gta1 tax:lda jadr+1
+  470 asl jadr:rol
+  480 asl jadr:rol
+  490 asl jadr:rol
+  500 asl jadr:rol
+  510 sta jadr+1:txa:ora jadr:sta jadr
+  520 jmp gta2
+  530 getnib iny:lda (adr),y
+  540 beq gtne
+  550 cmp #"0":bcc gtne:cmp #"9"+1:bcc gtn1
+  560 cmp #"a":bcc gtne:cmp #"f"+1:bcs gtne
+  570 sbc #6
+  580 gtn1 and #15:clc:rts
+  590 gtne sec:rts
+  600 badr .word 0
+  610 jadr .word 0
+  620 len  .byt  0
+  630 drv  .byt  0
+  640 name .asc "autoload"
+  650 namlen =8
+  660 buf =*
+
