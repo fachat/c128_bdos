@@ -1,0 +1,63 @@
+    R
+
+
+
+                              die 64'er Hardware
+
+
+
+
+    Im 128'er werden die Daten mit der VC1571 im Burst-Modus ausgetauscht.
+    Beim Lesen von MFM-Disketten greift die Floppy automatisch darauf zu.
+    Um MFM-Disketten nun im 64'er Modus (wohl ziemlich sinnlos) bzw. im
+    64'er selbst laufen zu lassen, mu~ der 64'er auf diesen Bus zugreifen
+    k|nnen.
+    Um eine geeignete Hardware zu entwickeln, schaut man sich erst einmal
+    den Bus an, wir er im 128'er existiert. Beim genauen Ansehen stellt
+    man fest, da~ die zus{tzliche Hardware lediglich aus einem
+    Ein/Ausgabepuffer zwischen -SRQIN und CNT1 sowie zwischen DATA und SP1
+    besteht. Die sonstige Verschaltung dieser vier Leitungen ist die
+    gleiche wie im C64.
+    Dieser Puffer ist im 64'er Modus ausgeschaltet. Umgeschaltet wird die
+    ]bertragungsrichtung mit der Leitung -FSDIR, die im 64'er Modus bzw.
+    im C64 nicht ansprechbar ist bzw. nicht existiert.
+    Die Hauptaufgabe ist also, diesen Puffer f}r den normalen Betrieb
+    transparent, d.h. wie nicht vorhanden, zu schalten und eine
+    zus{tzliche Steuerleitung f}r die Richtungsumschaltung zu finden. Da
+    die Schaltung extern sein sollte, mu~ diese Leitung an einem der Ports
+    zu finden sein.
+
+
+    Folgende L|sung wurde gefunden:
+
+    Leitung       Stecker   Pin
+    ---------------------------
+    -SRQIN        IEC-Bus   1  
+    DATA          IEC-Bud   5
+    CNT1          Userport  4
+    SP1             -"-     5
+    IN/-OUT         -"-     M
+    +5V             -"-     2
+    GND             -"-     1
+
+    Alle Leitungen, auch die am IEC-Bus werden nicht aufgetrennt und }ber
+    die Schaltung gef}hrt. Es gen}gt v|llig, eine elektrische Verbindung
+    dazu herzustellen.
+    Die Leitung IN/-OUT ist, wie Sie vielleicht schon bemerkt haben, die
+    Leitung PA2 vom CIA 2. Viele werden sagen, da~ diese Wahl verschiedene
+    Schnittstellen am Userport behindern kann. F}r diese Leitung gibt
+    verschiedene Gr}nde. U.a. ist die Schaltung abschaltbar, so da~ PA2
+    keine weitere Bedeutung f}r den Bus hat. Au~erdem ist PA2 als einzige
+    Leitung nach einem RESET auf Ausgang und einem definierten Pegel,
+    n{mlich 1.
+
+    Bauteileliste                         Schaltplan
+
+    1  IEC-Bus-Stecker
+    1  IEC-Bus-Buchse
+    1  Userport-Stecker
+    1  Widerstand 1kOhm
+    1  IC 74LS06
+    1  IC 74LS02
+    (1 IC 74LS19)
+     

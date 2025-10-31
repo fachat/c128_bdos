@@ -1,0 +1,130 @@
+    R
+
+
+
+                                     MENU
+
+
+
+    Wenn Sie das MENU starten, sehen Sie auf dem Bildschirm nur die
+    reverse Menu-zeile und die Statuszeile, sowie die Copyright-Meldung.
+    Die Statuszeile in der vorletzten Zeile unterrichtet Sie immer aktuell
+    über das CBM-Laufwerk (Unit, Drive) und das Laufwerk und den Pfad des
+    PC-Laufwerks. Die letzte Zeile, in der die Copyright-Meldung zu finden
+    ist, zeigt Ihnen normalerweise die aktuelle Fehlermeldung an.
+    In der Menu-Zeile ist das Wort 'BDOS' normal dargestellt. Dies ist der
+    'Cursor'. Mit den Tasten CRSR Rechts und Links können Sie diesen
+    Cursor in der Menüzeile bewegen. Mit CRSR nach unten können Sie zu dem
+    Begriff, auf dem der Menücursor steht, das zugehörige 'Pull-Down-Menü'
+    öffnen. Mit CRSR Hoch/Runter können Sie einen Menüpunkt auswählen und
+    mit RETURN wird dieser Menüpunkt ausgeführt.
+
+
+    Das BDOS-MEN]
+
+    Copyrights:   Zeigt die Copyrights und die Version des Programms an
+    Farben:       mit diesem Menüpunkt können Sie die Bildschirmfarben
+                  ändern
+    CLI:          In der A-Version können Sie damit das Programm CLI
+                  aufrufen
+    ENDE:         Hier beenden Sie das Programm
+    -Sort nach-:  Dient als ]berschrift. Mit den folgenden Menüpunkten
+                  können Sie einstellen, nach welchen Kriterien die
+                  Diskettenverzeichnisse sortiert werden sollen.
+    NICHTS:       Sortieren ausschalten
+    NAME:         Sortieren nach Namen
+    EXT/SPUR:       -"-    nach Extension im PC-Verzeichnis und nach
+                  PRG/SEQ/ etc. im CBM-Verzeichnis
+    GROESSE:      Sortieren nach Größe
+    AUF/AB:       Sortierrichtung umdrehen
+
+
+    Das PC-MEN]
+
+    Um keine Mißverständnisse aufkommen zu lassen, muß hier erwähnt
+    werden, daß der Begriff PC-Diskette auch für die RAM-Disk gilt! Diese
+    'Diskette' wird wie jede andere Diskette mit Boot-Sektor und FAT
+    verwaltet. Allein der andere Boot-Sektor bestimmt die Größe und wird
+    ebenso wie ein Boot-Sektor einer echten PC-Diskette gelesen und
+    ausgewertet. Allein der physikalische Zugriff wird für Drive C: auf
+    das RAM umgelenkt.
+
+    DIR:          Mit diesem Befehl rufen Sie das Inhaltsverzeichnis einer
+                  PC-Diskette ab. Sie werden gleich nach einer Suchmaske
+                  gefragt. Hier können Sie das Laufwerk (A:-D:, falls
+                  vorhanden) eingeben als auch nur einige bestimmte
+                  Dateien auflisten lassen. Dazu geben Sie wie z.B. beim
+                  LOAD"$:A?B*",8 in Basic den Namen, evtl mit den 'Jokern'
+                  * und ? verallgemeinert ein. Es werden dann nur die
+                  darauf passenden Dateien im Verzeichnis angezeigt. Wenn
+                  Sie RETURN drücken, erscheint das aktuelle Verzeichnis
+                  in voller Länge. Jedesmal, wenn Sie ein Verzeichnis
+                  aufrufen, haben Sie diese Möglichkeiten des Wählens. Das
+                  Verzeichnis wird in einzelnen Seiten angezeigt. mit CRSR
+                  Rechts und Links können Sie zwischen den Seiten
+                  umschalten. Unterverzeichnisse (gekennzeichnet durch ein
+                  + vor dem Namen und 'DIR' statt Größe) wählen Sie mit
+                  CRSR Hoch/Runter und rufen es mit Shift-RETURN auf.
+    DRIVE:        Damit können Sie das aktuelle Laufwerk neu auswählen
+    READ:         Hier können Sie sich eine Datei auf dem Bildschirm
+                  anzeigen lassen. Die Datei wählen Sie mit '=' aus dem
+                  Inhaltsverzeichnis aus
+    MAKE DIR:     Erstellt ein neues Unterverzeichnis auf der PC-Diskette.
+    DEL DIR:      Löscht Unterverzeichnis von Diskette. Dieses Verzeichnis
+                  wird wie bei READ mit '=' aus dem Inhaltsverzeichnis
+                  ausgewählt.
+    DELETE:       Hier können Sie im Gegensatz zu DEL DIR mehrere
+                  verschiedene Dateien auswählen. Nach RETURN werden Sie
+                  gefragt, ob Sie sicher sind, daß Sie die Dateien löschen
+                  wollen und falls ja, löscht das Programm alle markierten
+                  Dateien.
+    FORMAT:       Formatiert eine PC-Diskette. Sie können Laufwerk und
+                  Namen der Diskette eingeben. Wenn Sie RETURN drücken,
+                  wird das aktuelle Laufwerk ohne Namen formatiert.
+    COMMAND:      Diesen Befehl gibt es nur in der A-Version. Sie könne
+                  hier eine Anzahl von Befehlen direkt eingeben, wie es im
+                  CLI normal ist.
+
+
+
+
+
+    Das CBM-MEN]
+
+    CAT:          Zeigt das Verzeichnis des aktuellen CBM-Laufwerks an.
+                  Die Handhabung entspricht der des DIR-Befehls im
+                  PC-MEN], abgesehen von den fehlenden
+                  Unterverzeichnissen.
+    DRIVE:        Dient zur Auswahl des aktuellen CBM-Laufwerks.
+    SCRATCH:      Wie bei DELETE können Sie hier auch eine Reihe von
+                  Dateien zum Löschen mit '=' markieren. Nach Eingabe von
+                  RETURN werden diese Dateien gelöscht.
+    COMMAND:      Hier können Sie ein Disk-Command an das Laufwerk
+                  schicken. Mit RETURN allein erhalten Sie die
+                  Floppy-Fehlermeldung.
+
+
+    Das KOPIEREN-MEN]
+
+    Mit den 3 Kopier-Befehlen können Sie mehrere Dateien auf einmal
+    kopieren. Es ist unmöglich, von einem Laufwerk auf das gleiche
+    Laufwerk zu kopieren. Wegen der unterschiedlichen Speicherzugriffe und
+    -größen konnte kein vernünftig großer Speicher zur Verfügung gestellt
+    werden. Deshalb ist es notwendig, über die RAM-Disk zu kopieren.
+    Dadurch ist eine maximale Speicherausnutzung möglich. Die Größe der
+    RAM-Disk kann mit dem Programm INSTALL ME angepasst werden. Im 64'er
+    sind bis zu 34kByte und im 128'er bis zu 88kByte möglich.
+
+    PC  -> PC     kopiert von einer PC- auf eine andere PC-Diskette. Wie
+                  bei DELETE können hier mehrere Dateien markiert werden.
+    PC  -> CBM    kopiert dementsprechend von PC- auf CBM-Disketten. Die
+                  Namen werden übernommen.
+    CBM -> PC     kopiert letztendlich von CBM- auf PC-Disketten. Dabei
+                  wird der Name nach 12 Zeichen abgeschnitten und an die
+                  9. Stelle ein Punkt '.' gesetzt. Falls der Name schon
+                  vorhanden ist, kann man, wie bei den anderen
+                  Kopierbefehlen auch, abbrechen, die nächste Datei
+                  kopieren lassen oder einen neuen Namen für die Datei
+                  eingeben. Mit diesem Namen wird dann wieder versucht,
+                  die Datei zu schreiben.
+     

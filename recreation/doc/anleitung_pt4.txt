@@ -1,0 +1,112 @@
+
+
+
+
+                               Eingabehinweise
+
+
+
+    Folgende Programme sind auf der Diskette:
+
+
+    RUN ME        Startprogramm
+
+    INSTALL ME    Installationsprogramm, erstellt die Ladedatei AUTOLOAD
+
+    LOADER 1.0d18 Ladeprogramm, lädt die anderen Teile anhand der
+                  Ladedatei nach
+
+    AUTOLOAD      Ladedatei
+
+    BD  1.42EA    Bdos-Hauptprogramm
+
+    Diese Programm (mit Ausnahme von INSTALL ME sind auf jeden fall
+    notwendig, ob Sie mit dem 64'er oder mit dem C128 arbeiten.
+    Von den drei PR-Programmen wird nur eines gebraucht, je nach dem
+    welche Benutzeroberfläche Sie wählen.
+
+    PR  2.1A28/A  A-Version, enthält CLI und MENU
+    PR  2.1B28/A  B-Version, enthält nur MENU
+    PR  2.1C28/A  C-Version, enthält nur CLI
+
+    Die weiteren Programme hängen von dem verwendeten Computer ab:
+
+    VR  2.0C98/A  RAM-Disk für den C128
+
+    VD  1.5C9/A   Treiber für die VC1571 am C128
+
+    CR  1.0C98/A  RAM-Disk für den C64
+
+    CD  2.0A9/A   Treiber für die VC1571 am C64 mit Hardwarezusatz
+
+    CM  1.0A9F/A  Speicherzugriff für C64, nur C-Version von PR
+
+    CS  1.1EC/A   Speicherzugriff und Bildschirmtreiber für C64, nur A-
+                  und B-Version von PR
+
+
+
+    Mit dem Programm INSTALL ME können Sie dem Programm die Konfiguration
+    Ihres Systems mitteilen sowie eventuell freie Speicherbereiche
+    festlegen. Daraufhin erstellt INSTALL ME die Ladedatei AUTOLOAD, die
+    zum Starten benötigt wird
+
+
+
+
+
+
+                 Hinweise für fortgeschrittene Programmierer
+
+
+
+
+    Die Datei AUTOLOAD enthält eine Liste aller zu startenden Programme
+    mit Einsprungsadresse. Außerdem für einige der Programme eine
+    Parameterliste. Die Adresse dieser Parameter wird in AC/YR übergeben.
+    Die drei Felder werden durch ein Backslash getrennt und mit RETURN
+    abgeschlossen.
+
+    Hier eine Liste der Programme mit Startadresse ,Länge sowie benutzten
+    Speicheradressen:
+
+
+    Name          PRGANF PRGEND VARANF VAREND BUFANF BUFEND Parameter
+
+    BD  1.42EA    a000   be2f   1100   1504   1800   2800   --
+    PR  2.1A28/A  2800   5bc8   5bc8   5e80+  6800   7000-  Unit Textfarbe
+                                                            Hintergrunfarbe
+                                                            Puffergröße
+    PR  2.1B28/A  2800   4bc4   4bc4   4e4a+  5800   7000-  s.o.
+    PR  2.1C28/A  2800   3d94   3d94   3e0d   4000   7000-  s.o.
+    VD  1.5C9/A   9000   9602   9602   9649                 A:8,0 B:9,0 = 
+                                                            Drive A auf
+                                                            Unit 8,D0 usw.
+    CD  2.0A9/A   9000   960e   960e   9655                 s.o.
+    VR  2.0C98/A  9800   9ad6   9ad6   9c36                 Drive
+                                                            Memorymap*
+    CR  1.0C98/A  9800   9a8e   9a8e   9bc8                 Drive
+                                                            Memorymap*
+    CM  1.0A9F/A  9f00   9f5d
+    CS  1.1EC/A   c000   c393   c393   c39a
+
+
+    + Hier folgt bis Bufanf der Speicherplatz für die Verzeichnislisten
+
+    - kann durch Parameter variiert werden
+
+    * Memorymap :
+    Der Speicher für die RAM-Disk wird in 'Tracks' zu 2 kByte aufgeteilt.
+    jeder der 32 Tracks im C64 bzw 64 im C128 kann einzeln für die
+    RAM-Disk verfügbar gekennzeichnet werden. Dazu übergibt man eine Liste
+    mit 32 bzw 64 Bit im Hex-Format an die Routine. Das Höchste Bit steht
+    für die Adresse (0)0000. Das Bit 0 steht dann für f800 bzw 1f800 beim
+    C128
+
+    Der Parameter Unit bei PR ist in dezimal ohne führende Nullen
+    anzugeben. Die Farben sind in 1-stellig Hexadezimal anzugeben.
+    DRIVE wird wie im Programm mit A-D angegeben, aber ohne Doppelpunkt
+     
+    Die Einsprungsadresse ist in allen Fällen die Startadresse.
+
+     

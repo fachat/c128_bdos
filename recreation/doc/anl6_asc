@@ -1,0 +1,1120 @@
+
+
+
+
+                                   RAMDISK 
+
+
+
+    Das Programm RAMDISK simuliert dem BDOS ein Laufwerk C:. Die RAMDISK
+    wird nach dem Laden bei gestartetem BDOS mit JSR STARTADRESSE
+    initialisiert. Danach wird bei "DIR C:" wahrscheinlich Mist
+    ausgegeben. Deshalb mu~ das Laufwerk zuerst formatiert werden. Daf}r
+    bleiben diese Daten zwar nicht }ber das Ausschalten hinaus, jedoch
+    }ber ein Umschalten in den 64er Modus und R}ckkehr mit RESET erhalten.
+
+
+    Folgende Vektoren von BDOS wurden }ber die RAMDISK 'umgeleitet', wobei
+    jede neue Routine nur f}r Drive 2=C vorhanden ist :
+
+    QUERY         liefert immer 0
+    MEDIACH          "      "   0, au~er nach dem Formatieren der Ram-Disk
+    FLOPRW        liest/schreibt entsprechend in Bank 1 statt auf Diskette
+    FLOPFMT       Formatiert RAMDISK : schreibt Boot-Sektor, FAT und
+                  initialisert den Directory-Bereich
+
+
+
+
+                                   S.RWABS 
+
+
+    Dieses Programm wird in die Routine RWABS eingeschleift und zeigt
+    jeden Schreib/Lesezugriff in der obersten Zeile des Bildschirms an.
+    Dann wartet es auf einen Tastendruck. Um dieses Programm nutzen zu
+    k|nnen, mu~ der Speicherbereich $7000-$8000 frei sein.
+
+
+
+
+
+                                   S.FLOPRW 
+
+
+    Das gleiche wie S.RWABS, nur wird jeder Zugriff }ber FLOPRW angezeigt.
+
+
+
+
+                                     PRG1 
+
+
+    Dieses Programm zeigt am einfachen Beispiel, wie man mit Systemdateien
+    PROMPT erweitern kann und au~erdem die Funktionen SFIRST/SNEXT f}r ein
+    Inhaltsverzeichnis.(Der Quelltext sollte abgedruckt werden. Im
+    C64-Modus assembliert werden sie mit LOAD auf IBM-Format gespeichert
+    und damit f}r PROMPT ausf}hrbar.). Der Speicherbereich von $7000-$8000
+    mu~ auch hier frei sein (INSTALL ME).
+
+
+
+
+
+                                    - 14 -
+     
+
+
+
+
+                                     PRG2 
+
+
+
+    Dieses Programm verdeutlicht, wie man die Parameter}bergabe von PROMPT
+    realisieren kann.(Auch dieser Quelltext sollte abgedruckt werden).
+    Hier mu~ ebenfalls der Speicherbereich von $7000-$8000 frei bleiben.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    IBM, IBM PC-DOS                       sind gesch}tzte Zeichen der
+                                          International Business Machines
+    ATARI,ATARI ST                        sind gesch}tzte Zeichen der
+                                          Atari Cooperation
+    INTEL         ist gesch}tztes Zeichen der Intel Cooperation
+
+    Benutzte B}cher:
+
+    Atari ST Intern                       Data Becker GmbH, Merowingerstr.
+                                          30, 4000 D}sseldorf
+    C128 Intern   Data Becker GmbH, Merowingerstr. 30, 4000 D}sseldorf
+
+
+
+
+
+                                    - 16 -
+     
+
+
+
+
+     Tabelle 1 
+
+     Fehlerbeschreibung 
+
+    Fehler        Erklaerung
+
+    0  =HEX 00    kein Fehler
+    1             Diskette gewechselt (bei MEDIACH)
+    2-15          Fehlermeldungen des Disk-Controllers
+    -1  =$ff      NOTIMPL  :Befehl nicht implementiert
+    -2  =$fe      NOTREADY :Laufwerk nicht ok
+    -3  =$fd      NOTFAST  :Keine schnelle Floppy
+    -4  =$fc      NOTMFM   :Keine MFM-Diskette
+    -5  =$fb      PARRANGE :Parameter au~erhalb der Grenzen
+    -6  =$fa      CLUSNFND :Kein Folgecluster gefunden
+    -7  =$f9      DIRNFND  :Pfad nicht gefunden
+    -8  =$f8      EACTDIR  :Bei RMDIR versucht, aktuelles DIR zu l|schen
+    -9  =$f7      ENOTFND  :Eintrag in DIR nicht gefunden =FILE NOT FOUND
+    -10 =$f6      PATHOVRF :Pfad zu lang
+    -11 =$f5      ILLNAME  :Illegaler Name (CREATE z.b mit JOKER)
+    -12 =$f4      DISKFULL :Diskette voll
+    -13 =$f3      FILEXIST :File existiert schon
+    -14 =$f2      NOTEMPTY :SUBDIR bei RMDIR nicht leer
+    -15 =$f1      ILLDRV   :Drive existiert nicht
+    -16 =$f0      DNOTRDY  :Drive not ready
+    -17 =$ef      TMNYFILE :Zu viele Files
+    -18 =$ee      FILEOPEN :File schon ge|ffnet
+    -19 =$ed      FILNOPEN :File nicht ge|ffnet
+    -20 =$ec      EOF      :Ende des Files (kein eigentlicher Fehler)
+    -21 =$eb      NOBFFRE  :Kein Disk-Puffer mehr frei
+    -22 =$ea      BREAK    :Unterbrechung
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                    - 17 -
+     
+
+
+
+
+     Tabelle 2 
+
+     Kurzbeschreibung Routinen 
+
+    Adresse Name     I/D  Kurzbeschreibung
+
+    0000    INIT     D    Start von vorne/Initialisierung
+    0003    EXIT     D    Ende des Programms
+    0006    QUERY    I    Disk-Format feststellen
+    0009    MEDIACH  I    pr}fen, ob Diskette gewechselt
+    000c    GETBPB   I    Adresse des BIOS-Parameter-Blocks holen
+    000f    FLOPRW   I    Block lesen/schreiben
+    0012    RWABS    I    Blockreihe }ber logische Sektornummer
+                          lesen/schreiben
+    0015    FLOPFMT  I    Diskette formatieren
+    0018    SGDTA    I    Adresse des Disk-Transfer-Puffers holen/setzen
+    001b    SGDRIVE  I    aktuelles Drive holen/neu setzen
+    001e    GTPATH   I    holt Adresse des aktuellen Pfades
+    0021    SGNEXCL  I    Folgecluster holen/setzen
+    0024    SFRCLUS  I    Freien Cluster holen
+    0027    GTDSKFR  I    Freien Platz auf der Diskette holen
+    002a    SFIRST   I    Ersten Eintrag im aktuellen DIR nach DTP suchen
+    002d    SFIRSO   I    Ersten Eintrag nach DTP in beliebigem SUBDIR
+                          }ber Startcluster des DIR suchen.
+    0030    SNEXT    I    N{chsten Eintrag suchen
+    0033    CHDIR    I    Directory wechseln
+    0036    NAMEDTP  I    Pfad f}r Datei setzen
+    0039    WRENTRY  I    Eintrag in DTP auf Disk schreiben
+    003c    DELETE   I    File(s) l|schen
+    003f    DCREATE  I    File zum ersten Mal |ffnen
+    0042    MKDIR    I    Directory anlegen
+    0045    RMDIR    I    Directory l|schen
+    0048    DOPEN    I    Datei |ffnen
+    004b    DCLOSE   I    Datei schlie~en
+    004e    DREAD    I    Aus der Datei lesen
+    0051    DWRITE   I    In die Datei schreiben
+    0054    LSEEK    I    Position in der Datei festlegen
+    0057    VERSION  D    Version des BDOS holen
+    005a    RESCHAIN I    nicht implementiert
+    005d    IRQCHAIN I    nicht implementiert
+    0060    NMICHAIN I    nicht implementiert
+    0063    SGTIME   I    Zeit setzen und holen
+    0066    SGDATE   I    Datum setzen und holen
+    0069    SALARM   I    nicht implementiert
+
+
+
+
+     Tabelle 3 
+
+     Sektorbelegung auf Diskette 
+
+    Sektor  Belegung
+
+    0       Boot-Sektor
+    1/2     FAT 1
+    2/3     FAT 2
+    4-7     Directory
+    8/9     Datencluster 2
+    10/11   Datencluster 3
+    :
+
+
+                                    - 18 -
+     
+
+
+
+
+     Tabelle 4 
+
+     BOOT-Sektor 
+
+    Adresse Name       L{nge   Erkl{rung
+
+    0-7                        Jump auf Boot-Programm f}r IBM-PC
+    8       BTSERIAL   3Byte   Serien-Nummer der Diskette; zum ]berpr}fen,
+                               ob die Diskette gewechselt wurde
+    11      BTBPS      Word    Byte pro Sektor
+    13      BTSPC      Byte    Sektoren pro Cluster
+    14      BTRES      Word    Anzahl gesch}tzter Sektoren (wird
+                               ignoriert)
+    16      BTFAT      Byte    Anzahl FAT's auf der Diskette
+    17      BTDIR      Word    Anzahl Eintr{ge im Main-Directory
+    19      BTSEC      Word    Anzahl der Sektoren auf der Diskette
+    21      BTMEDIA    Byte    ???  (wird ignoriert)
+    22      BTSPF      Word    Sektoren pro FAT
+    24      BTSPT      Word    Sektoren pro Track
+    26      BTSIDE     Word    Seiten
+    28      BTHID      Word    versteckte Sektoren (wird ignoriert)
+
+    Die Worte (Word) sind im Intel 8088/8086 Format abgespeichert, d.h.
+    zuerst Low-Byte und dann High-Byte (wie beim 6502).
+
+
+
+     Tabelle 5 
+
+     BIOS-Parameter-Block 
+
+    Adresse Name       Erkl{rung
+
+    0       BPRECSIZ   Gr|~e eines Sektors (Record)
+    2       BPCLSIZ    Gr|~e eines Clusters in Sektoren
+    4       BPCLSIZB     "     "      "     in Byte
+    6       BPRDLEN    Anzahl der Sektoren im Main-Directory
+    8       BPFSIZ     Sektoren/FAT
+    10      BPFATREC   1. Sektor der 2.FAT
+    12      BPDATREC   1. Datensektor
+    14      BPNUMCL    Anzahl Cluster insgesamt
+    16      BFLAGS     Flag, ob FAT mit 12bit oder 16bit Eintr{gen. 0=
+                       12Bit, 1= 16Bit
+    18      BPTRACKS   Anzahl Tracks
+    20      BPSIDES    Anzahl Seiten
+    22      BPSPTS     Anzahl Sektoren/Track auf allen Seiten
+    24      BPSPT      Anzahl Sektoren/Track auf einer Seite
+    26      BPHIDDEN   Anzahl versteckter Sektoren
+    28      BPSERIAL   Serien-Nummer (3Byte)
+
+    Hier beginnt der Verwaltungstechnische Teil des im Vergleich zum Atari
+    erweiterte BIOS-Parameter-Blocks :
+
+    Adresse Name       Format  Erkl{rung
+
+    31      BPBVAL     Byte    0= BPB ist nicht g}ltig
+    32      BPBFAT     Byte    FAT-Puffer
+    33      BPBFLAG    Byte    f}r FAT-Zugriffe
+    34      BPDIRCLU   Word    Startcluster des aktuellen Directory auf
+                               der Diskette
+    36      BPPATH     64 Byte Pfad zum aktuellen Directory des Drives
+
+
+                                    - 19 -
+     
+
+
+
+
+     Tabelle 6 
+
+     Der Disk-Transfer-Puffer 
+
+    Adresse Name       Gr|~e   Erkl{rung
+
+     0      DSNAME     8 Byte  Name als Suchmaske im DIR
+     8      DSEXT      3 Byte  Extension als Suchmaske
+     11     DSATTR     1 Byte  Attribut als Suchmaske. Dabei wird das
+                               Attribut gefunden, wenn Suchmaske und
+                               Dir-Eintrag }bereinstimmen oder ein Bit bei
+                               beiden gesetzt ist.
+     12     DGNAME     8 Byte  gefundener Name
+     20     DGEXT      3 Byte      "      Extension
+     23     DGATTR     1 Byte      "    s Attribut.
+     24     DGCLUS     Word    erster Cluster der Datei
+     26     DGSIZE     2 Word  Gr|~e der Datei
+     30     DGSEC      Byte    Erstellungszeit der Datei Sekunden
+     31     DGMIN      Byte           "         "    "   Minuten
+     32     DGHOUR     Byte           "         "    "   Stunden
+     33     DGDAY      Byte    Erstellungsdatum Tag
+     34     DGMONTH    Byte           "         Monat
+     35     DGYEAR     Byte           "         Jahr
+     36     DTPOS      Byte    Nummer des Dir-Eintrages im Sektor
+     37     DTFLAG     Byte    Flag f}r leeren/g}ltigen Eintrag suchen
+     38     DTANZ      Byte    Maximale Anzahl Dir-Eintr{ge in einem
+                               Sektor
+     39     DTDRV      Byte    Laufwerk
+     40     DTCLUS     Word    Aktueller Cluster im Directory, 
+     42     DTSEC      Word    Aktueller Sektor im Dir-Cluster/Sektor im
+                               Main-Dir
+     44     DTSTART    Word    Startcluster des Dir, Main-Dir =0000
+
+    Mit dem Attribut wird die Art der Datei festgelegt. Dabei hat (fast)
+    jedes Bit seine Bedeutung:
+
+     Bit 0  =1:        nur lesen erlaubt
+     Bit 1  =1:        verstecktes File
+     Bit 2  =1:        Systemfile
+     Bit 3  =1:        Eintrag ist Disketten-Name
+     Bit 4  =1:        Eintrag ist ein Subdirectory
+     Bit 5  =1:        File ge{ndert.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                    - 20 -
+     
+
+
+
+
+     Tabelle 7 
+
+     File-Parameter-Block 
+
+     Der File-Parameter-Block besteht aus einem erweiterten DTP:
+
+            FPNAME     DGNAME
+            FPEXT      DGEXT
+            FPDRIVE    DTDRV
+            FPSIZE     DGSIZE
+            FPSTART    DGCLUS 
+
+     46     FPHANDLE           Handle-Nummer der Datei, wird f}r
+                               READ/WRITE ben|tigt. Jede ge|ffnete Datei
+                               erh{lt eine Handle-Nummer, }ber die man f}r
+                               das System definiert diese Datei ausw{hlt.
+                               Entspricht in der Funktion der File-Nr. im
+                               C64-Basic.
+     47     FPOS       4 Byte  Position f}r READ/WRITE
+     51     FPCLUS     Word    aktueller Cluster
+     53     FPSEC      Word        "     Sektor im Cluster
+     55     FPBYT      Word        "   s Byte im Sektor
+     57     FPANZ      Word    Anzahl zu lesender/schreibender Byte
+     59     FPADR      Word    Adresse f}r READ/WRITE
+     61     FPSHIFT    Dword   Position (relativ/absolut) f}r LSEEK
+     65     FPDIR      Byte    Flag f}r LSEEK
+     66     FPBUF      Byte    Nummer des Sektor-Puffers
+     67     FPFLAG     Byte    1= DTP mu~ bei Close geschrieben werden.
+     68     FPBANK     Byte    Bank f}r RW
+
+
+
+
+     Tabelle 8 
+
+     Verzeichniseintrag 
+
+    Adresse Name       L{nge   Erkl{rung
+
+    0       DENAME     8       Name 
+    8       DEEXT      3       Extension
+    11      DEATTR     1       Attribut der Datei
+    22      DEUHR      2       Uhrzeit der letzen [nderung
+    24      DEDATE     2       Datum    "     "       "
+    26      DEFCLUS    2       erster Cluster der Datei
+    28      DESIZE     4       L{nge der Datei
+
+    Die Uhrzeit ist wie folgt verschl}sselt (Werte bin{r, Buchstaben zur
+    Kennzeichnung der Zugeh|rigkeit):
+
+    Stunde :hhhhh    Minute :mmmmmm    Sekunde :sssss
+
+    Kode :hhhhhmmm mmmsssss
+
+
+    Das Datum wird {hnlich verschl}sselt (Jahr=Jahreszahl-1980, z.B. 8 f}r
+    1988):
+
+    Jahr :jjjjjjj    Monat :mmmm    Tag :ddddd
+
+    Kode:jjjjjjjm mmmddddd
+
+
+                                    - 21 -
+     
+
+
+
+
+     Tabelle 9 
+
+     Beschreibung der Routinen 
+
+    Aufbau wie folgt:
+
+
+     Name der Routine 
+
+    A:Adresse relativ zur Startadresse des BDOS
+    I: Parameter, die diese Routine ben|tigt; zwei-Byte Werte werden in
+       den Registern mit Register1/Register2 abgek}rzt, z.B. AC/XR f}r
+       Low-Byte im Akkumulator (AC) und High-Byte im X-Register (XR). "C"
+       ist die Abk}rzung f}r Carry-Flag.
+    F:Funktion der Routine
+    O:zur}ckgegebene Informationen
+
+
+
+    Jetzt die Beschreibung:
+
+
+
+     INIT 
+
+    A:0000
+    I: -
+    F: Initialisiert das System. Mu~ vor dem ersten Aufruf einer Routine
+       ausgef}hrt werden.
+    O: AC=Fehler
+
+
+
+
+     EXIT 
+
+    A:0003
+    I: -
+    F: Beendet das Programm. Danach mu~ wieder ein INIT ausgef}hrt werden,
+       wenn mit dem Programm weitergearbeitet werden soll.
+    O: -
+
+
+
+
+     QUERY 
+
+    A:0006
+    I: AC=Drive
+    F: Stellt Format der Diskette fest (entspricht dem Disk-Befehl QUERY
+       der VC1571).
+    O: AC=Fehler
+
+
+
+
+
+
+
+
+
+
+
+                                    - 22 -
+     
+
+
+
+
+     MEDIACH 
+
+    A:0009
+    I: AC=Drive
+    F: Pr}ft, ob die Diskette gewechselt wurde.
+    O: AC=Fehler/1=Diskette gewechselt
+
+
+
+
+     GETBPB 
+
+    A:000C
+    I: AC=Drive
+    F: liest Boot-Sektor und berechnet Bios-Parameter-Block
+    O: AC=Fehler
+       XR/YR =Adresse des BPB in Bank 0
+
+
+
+
+     FLOPRW 
+
+    A:000F
+    I: AC/YR: Adresse Parameter Block f}r FLOPRW
+
+       Der RW-Parameterblock ist folgenderma~en aufgebaut:
+       0    PBRWFLAG   RW-Flag, 0=lesen, 1=schreiben
+       1    PBDRIVE    Laufwerk
+       2    PBSIDE     Seite
+       3    PBTRACK    Track
+       4    PBSECTOR   Sektor
+       5    PBBUFFER   Adresse des Puffers
+       7    PBBANK     Bank f}r RW
+
+    F: Diese Routine l{dt einen Sektor von der Diskette in den Puffer,
+       dessen Adresse in PBBUFFER angegeben ist. Als Bank wird der Wert
+       angegeben, der in das Configuration Register der MMU geschrieben
+       wird.
+    O: AC=Fehler
+       XR/YR =Endadresse der ]bertragung
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                    - 23 -
+     
+
+
+
+
+     RWABS 
+
+    A:0012
+    I: AC/XR =Adresse des ABSPAR-Blocks
+
+       Der ABSPAR-Block ist folgenderma~en aufgebaut:
+       0    APRWFLAG   Byte    RW-Flag, 0=Lesen, 1=Schreiben
+       1    APDRIVE    Byte    Laufwerk
+       2    APRECORD   Word    logischer Sektor
+       4    APANZ      Word    Anzahl der Sektoren
+       6    APBUFFER   Word    Adresse 
+       8    APBANK     Byte    Bank f}r RW
+
+    F: Die Routine RWABS liest/schreibt ein bestimmte Anzahl von Sektoren
+       von/auf Diskette in die/von der Adresse im Speicher, die in
+       APBUFFER angegeben ist. Dabei wird der erste Sektor mit der
+       logischen Sektornummer ausgew{hlt.
+    O: AC=Fehler
+
+
+
+
+     FLOPFMT 
+
+    A:0015
+    I: AC=Drive
+       XR=Format :     XR=0 :40 Tracks, single sided
+                       XR=1 :40 Tracks, double sided
+    F: Formatiert Diskette in entsprechendem Drive im IBM-Format.
+    O: AC=Fehler
+
+
+
+
+     SGDTA 
+
+    A:0018
+    I: bei Carry-Flag =0 nichts weiter
+       bei C =1 :
+       AC/YR =Adresse des Disk-Transfer-Puffers in Bank 0
+    F: holt bei C=1 die Adresse des Disk-Transfer-Puffers. Setzt bei C=1
+       die neue Adresse des DTP.
+       Der DTP dient zur ]bergabe von Daten, die mit Directory-Eintr{gen
+       zu tun haben und ist in Tabelle 6 dargestellt.
+    O: AC/YR=Adresse des DTP in Bank 0
+
+
+
+
+     SGDRIVE 
+
+    A:001B
+    I: bei C=0 nichts weiter
+       bei C=1 :
+       AC=Drive
+    F: holt/setzt aktuelles Laufwerk. Dabei wird der BPB aktualisiert.
+       Beim Drive ist Drive A=0, B=1 usw.
+    O: bei C=0 :AC=Drive
+       bei C=1 :AC=Fehler
+
+
+
+
+                                    - 24 -
+     
+
+
+
+
+     GTPATH 
+
+    A:001E
+    I: -
+    F: holt Adresse des aktuellen Pfades sowie Startcluster des aktuellen
+       Directories.
+    O: AC/YR =Adresse des GETPATH-Blockes in Bank 0
+
+       Der GETPATH-Block :
+       0    Startcluster des aktuellen Dir
+       2    Pfad, Ende= Nullbyte
+
+
+
+
+     SGNEXCL 
+
+    A:0021
+    bei C=0 :
+
+    I: AC/XR = Nummer eines Clusters
+    F: holt Nummer des Folgeclusters in der Datei aus FAT.
+    O: AC=Fehler
+       XR/YR =Clusternummer
+       Z-Flag: 1=Folgecluster gefunden, d.h. die Nummer liegt zwischen 2  
+                 und BPNUMCL+2
+
+    bei C=1 :
+
+    I: AC/YR = Adresse eines Dwords (4Byte) mit folgendem Aufbau:
+       XR    = $80 (128d)
+       0    Clusteradresse
+       2    neuer Folgecluster
+    F: Setzt f}r den Cluster in Word 0 den neuen Folgecluster aus Word 1
+       in der FAT
+    O: AC=Fehler
+
+
+
+
+     SFRCLUS 
+
+    A:0024
+    I: AC/XR = Clusternummer, ab der zuerst in der FAT gesucht wird
+    F: Sucht freien Cluster auf der Diskette. Kein freier Cluster ergibt
+       Disk Full Error.
+    O: AC=Fehler
+       XR/YR = Clusternummer
+
+
+
+
+     GTDSKFR 
+
+    A:0027
+    I: -
+    F: Berechnet freien Speicherplatz auf der Diskette
+    O: AC=Fehler
+       XR/YR = Zeiger auf Dword in Bank 0, in dem der Wert steht mit dem
+       low-Byte zuerst
+
+
+
+                                    - 25 -
+     
+
+
+
+
+     SFIRST 
+
+    A:002A
+    I: -
+    F: Sucht ersten Directory-Eintrag in aktuellem Directory, der auf die
+       Suchmaske im DTP pa~t, wertet den Dir-Eintrag aus und setzt die
+       Werte im DTP.
+    O: AC=Fehler
+       Im DTP werden die Daten des Dir-Eintrags gesetzt.
+
+
+
+
+     SFIRSO 
+
+    A:002D
+    I: YR=0 = 1.g}ltigen Eintrag suchen
+       YR=1 = 1.leeren Eintrag suchen
+       AC/XR = Startcluster des zu durchsuchenden DIR's
+    F: Sucht Directory-Eintrag in beliebigem Directory, wobei auch ein
+       leerer Eintrag gesucht werden kann, z.b. f}r eine neu anzulegende
+       Datei.
+    O: wie SFIRST 
+
+
+
+
+     SNEXT 
+
+    A:0030
+    I: -
+    F: Sucht den folgenden Dir-Eintrag nach der Suchmaske im DTP. Vorher
+       mu~ ein SFIRST/SFIRSTO erfolgt sein, um die ben|tigten Werte im DTP
+       zu setzen. Durch mehrmaliges Ausf}hren mit einer allgemeinen
+       Suchmaske kann das gesamte Directory angezeigt werden.
+    O: wie SFIRST
+
+
+
+
+     CHDIR 
+
+    A:0033
+    I: AC/YR = Adresse des Pfades in Bank 0, Endekennzeichen = Nullbyte
+    F: sucht neuen Pfad und setzt f}r das aktuelle bzw. angesprochene
+       Drive den Pfad fest
+    O: AC=Fehler
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                    - 26 -
+     
+
+
+
+
+     NAMEDTP 
+
+    A:0036
+    I: wie CHDIR
+       XR = Suchattribut f}r letzten Eintrag
+    F: sucht Pfad und setzt letzten Eintrag in den DTP. der Pfad wird
+       nicht }bernommen.
+    O: AC=Fehler
+       XR/YR = Adresse GN-Puffer in Bank 0:
+       0    GNDRIVE    Laufwerk
+       1    GNFLAG     Flag f}r letzten Namen im Suchpfad
+       2    GNACT      Startcluster des Root-Dir des letzten Suchnamens
+       4    GNFILE     Startcluster des Suchnamens
+       6    GNPATH     64 Byte gefundener Pfad
+
+
+
+
+     WRENTRY 
+
+    A:0039
+    I: Daten f}r Dir-Eintrag im DTP
+    F: Schreibt den Dir-Eintrag im DTP auf Diskette (z.B. um neuen Namen,
+       Datum/Zeit oder Gr|~e abzuspeichern)
+    O: AC=Fehler
+
+
+
+
+     DELETE 
+
+    A:003C
+    I: Wie NAMEDTP
+    F: l|scht alle Dateien, die auf die Suchmaske passen.
+    O: AC=Fehler 
+       XR/YR = Anzahl gel|schter Dateien
+
+
+
+
+     DCREATE 
+
+    A:003F
+    I: Wie NAMEDTP
+    F: legt Dir-Eintrag f}r neue Datei an, XR ist das Attribut der neuen
+       Datei
+    O: AC=Fehler
+
+
+
+
+     MKDIR 
+
+    A:0042
+    I: Wie CHDIR
+    F: er|ffnet neues Unterverzeichnis
+    O: AC=Fehler
+
+
+
+
+
+
+                                    - 27 -
+     
+
+
+
+
+     RMDIR 
+
+    A:0045
+    I: Wie CHDIR
+    F: l|scht angegebenes Unterverzeichnis
+    O: AC=Fehler
+
+
+
+
+     DOPEN 
+
+    A:0048
+    I: Wie CHDIR
+    F: er|ffnet bestehende Datei auf der Diskette, setzt Positionszeiger
+       f}r READ/WRITE auf Null.
+    O: AC=Fehler
+       XR/YR = Adresse des File-Parameter-Blocks in Bank 0
+
+
+
+
+     DCLOSE 
+
+    A:004B
+    I: XR=Handle-Nummer
+    F: schlie~t Datei und gibt Puffer bzw FPB frei f}r neuen DOPEN
+    O: AC=Fehler
+
+
+
+
+     DREAD 
+
+    A:004E
+    I: XR=Handle-Nummer
+       im FPB m}ssen FPANZ, FPBANK und FPADR/FPBANK gesetzt sein.
+    F: liest ANZ an Bytes aus der Datei und schreibt in den Speicher ab
+       Adresse ADR in FPBANK
+    O: AC=Fehler
+
+
+
+
+     DWRITE 
+
+    A:0051
+    I: wie DREAD
+    F: schreibt ANZ Bytes aus ADR
+    O: AC=Fehler
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                    - 28 -
+     
+
+
+
+
+     LSEEK 
+
+    A:0054
+    I: XR=File-Handle
+       im FPB m}ssen FPDIR und FPSHIFT gesetzt sein.
+    F: setzt Positionszeiger auf beliebige Position innerhalb der Datei
+       in FPDIR = 0 : FPSHIFT = neue Position
+       in FPDIR = 1 : neue Pos. = akt. Pos. + FPSHIFT
+       in FPDIR = 2 : neue Pos. = akt. Pos  - FPSHIFT
+    O: AC=Fehler
+
+
+
+
+     VERSION 
+
+    A:0057
+    I: -
+    F: Holt Adresse des Version-Blocks.
+    O: XR/YR = Adresse in Bank 0
+
+       Der Version-Block ist wie folgt aufgebaut
+       0    VEVER      2 Byte  Version des BDOS
+       2    VEBUFANZ   1 Byte  Anzahl Puffer f}r FAT/DIR/FILES
+       3    VEPATHLE   1 Byte  Maximale L{nge des Pfades
+       4    VEANZDRV   1 Byte  Maximale Anzahl Drives
+       5    VEFPBANZ   1 Byte     "       "    von FPB's
+       6    VEJMPADR   Word    Adresse der Jump-Tabelle in Bank 0.
+                               Die Tabelle beginnt mit der Adresse von
+                               INIT und alle 2 Byte folgt die n{chste
+                               Adresse in der Reihenfolge wie in der
+                               Jump-Tabelle.
+       16   VETEXT             "Written by" - Text. Jeder, der BDOS
+                               benutzt, sollte diesen Text mindestens
+                               einmal am Anfang seines Programm ausgeben.
+                               Der Text wird durch ein Nullbyte begrenzt
+
+
+
+
+     RESCHAIN 
+
+    -nicht implementiert-
+
+
+
+
+     IRQCHAIN 
+
+    -nicht implementiert-
+
+
+
+
+     NMICHAIN 
+
+    -nicht implementiert-
+
+
+
+
+
+
+                                    - 29 -
+
+
+
+
+
+     SGTIME 
+
+    A:0063
+
+    bei C=0:
+
+    F:holt aktuelle Uhrzeit aus CIA 1, TOD
+    O:XR/YR=Adresse Zeit 
+
+    bei C=1:
+
+    I:XR/YR=Adresse 3-Byte Zeit:
+             0  Sekunde
+             1  Minute
+             2  Stunde
+    F:setzt neue Uhrzeit (CIA 1, TOD)
+
+
+
+
+     SGDATE 
+
+    bei C=0:
+
+    F:holt aktuelles Datum
+    O:XR/YR=Adresse Datum (3 Byte)
+             0  Tag
+             1  Monat
+             2  Jahr
+
+    bei C=1:
+
+    I:XR/YR=Adresse Datum
+    F:setzt neues Datum
+
+
+
+
+     SALARM
+
+    -nicht implementiert-
+
+
+
+
+
+
+     Tabelle 10 
+
+     Belegung der Zeropage 
+
+
+       Adr       Name          Funktion
+       0e/0f     LZEI          Zeiger in der Verzeichnisliste
+       10/11     LMZEI          -"-
+       12/13     WZEI          Zeiger in Menu
+       16/17     BF1Z          Zeiger in aktuellem Puffer (BD)
+       18/19     ZEI
+       1a/1b     PZEI
+       1c/1d     WSZEI         Zeiger in Submenu
+       1e/1f     TZEI
+       20/21     DZEI
+       22/23     WCZEI         Hilfszeiger in Menu
+       24/25     BFZEI         Zeiger in Puffer f}r DREAD/DWRITE
+       26/27     OLDFPB        Zeiger f}r Quelldatei bei Kopieren (Menu)
+       28/29     FPZEI         Zeiger f}r File-Parameter-Block
+                               (DREAD/DWRITE)
+       2a/2b     DIRZEI        Zeiger in Directory
+       2c/2d     NEWFPB        Zeiger f}r Zieldatei (wie OLDFPB)
+       2e/2f     RWBZEI        Zeiger auf Floprw-Parameter-Block f}r
+                               Systemaufrufe
+       30/31     CZEI          Zeiger in Text
+       3c/3d     PRZEI         Zeiger in Data f}r DREAD/DWRITE
+       fc/fd     ABSZEI        Zeiger auf RWABS-Parameter-Block f}r
+                               System-Aufrufe
+       fe/ff     DTADR         Adresse des Disk-Transfer-Puffers
+
+     
