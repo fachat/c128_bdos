@@ -522,8 +522,14 @@ pcerr1    pha
           pla 
           rts 
          ;**********
-psave     sta zei
+	; save a PC file to a CBM disk
+psave   .(
+	; pointer to cmdline
+	  sta zei
           sty zei+1
+	; skip leading spaces
+	lda #" "
+	sta qflag
           ldx #0
           ldy #<-1
 pss1      iny 
@@ -531,22 +537,36 @@ pss1      iny
           beq psse
           cmp #" "
           beq pss1
+	cmp #$22	; quote
+	bne pss2
+	sta qflag
+	iny
 pss2      lda (zei),y
-          cmp #" "
-          beq pss3a
+	beq pss3a
+	cmp qflag
+          beq pss3b
           sta dbuf,x
-          cmp #0
-          beq psse
           iny 
           inx 
           bne pss2
+pss3b	iny
 pss3a psse lda #0
           sta dbuf,x
           dey 
+	; find 2nd filename
+	lda #" "
+	sta qflag
+	; skip leading spaces
 pss4      iny 
           lda (zei),y
           cmp #" "
           beq pss4
+	cmp #$22
+	bne pss4a
+	sta qflag
+	iny
+pss4a
+	; calculate start of 2nd filname
           tya 
           clc 
           adc zei
@@ -554,13 +574,17 @@ pss4      iny
           lda zei+1
           adc #0
           sta zei+1
+	; copy 2nd filename to buf
           ldy #0
 psa1      lda (zei),y
           sta buf,y
           beq psa2
+	cmp qflag
+	beq psa2
           iny 
           bne psa1
 psa2      sty dint1
+	; set CBM file/-name parameters
           tya 
           ldx #<buf
           ldy #>buf
@@ -570,6 +594,8 @@ psa2      sty dint1
           ldy #1
           jsr setfpar
          ;****
+	; check drives
+	; CBM filename
           ldy #0
 pts1      lda buf,y
           iny 
@@ -582,6 +608,7 @@ pts1      lda buf,y
           beq pts2
           lda #0
           sta dr1
+	; check PC filename for drive
 pts2      ldy #0
 pts3      lda dbuf,y
           iny 
@@ -593,31 +620,41 @@ pts3      lda dbuf,y
           lda dbuf,y
           cmp #":"
           beq pts4
+	; set PC drive if given
           clc 
           jsr sgdrive
           sta dr2
+	; check if we can copy between same or different drives
 pts4      jsr drvtest
           bcc pls1
+	; same drive
           jmp pss
          ;****
+	; different drive
+	; ask for source and target file
 pls1      jsr gsoutar
           bne pls1a
           lda #enbreak
           rts 
-pls1a     lda #<dbuf
+pls1a  	; open PC file for reading
+	; also sets file length in variable laenge
+	  lda #<dbuf
           ldy #>dbuf
           jsr rwopen
           bne psaerr1a
+	; open CBM file
           jsr open
           bcc psa3
           lda #ennotimp
           bne psaerr2
 psaerr1a  bne psaerr1
 psa3      
-psread    lda fadr
+psread 	; read into buffer
+	  lda fadr
           sta zei
           lda fadr+1
           sta zei+1
+	; set parameters for read
           ldy #fpanz
           lda prblen
           sta (zei),y
@@ -633,30 +670,37 @@ psread    lda fadr
           ldy #fpbank
           lda #prgbank
           sta (zei),y
+	; read from PC
           ldx handle
           jsr dread
           bne psa4
+	; no prob reading, write full buffer to CBM
           ldx prblen
           ldy prblen+1
 psa5      jsr ppsave
           beq psa4a
           lda #endnrdy
           bne psa4
-psa4a     lda laenge
+psa4a   ; adjust length
+	  lda laenge
           sec 
           sbc prblen
           sta laenge
           lda laenge+1
           sbc prblen+1
           sta laenge+1
+	; upper 16bits of file len
           bcs rs1
           lda laenge+2
           bne rs2
           dec laenge+3
 rs2       dec laenge+2
+	; loop to read next buffer
 rs1       jmp psread
-psa4      cmp #eneof
+psa4    ; have we reached end-of-file?
+	  cmp #eneof
           bne psaerr2
+	; yes, end-of-file, save rest
           ldx laenge
           ldy laenge+1
           jsr ppsave
@@ -670,7 +714,10 @@ psaerr1   pha
           jsr dclose
           pla 
           rts 
-ppsave    stx tplen
+	.)
+	; save buffer of x/y length to CBM file #1
+ppsave 	.(
+	  stx tplen
           sty tplen+1
           txa 
           ora tplen+1
@@ -703,6 +750,7 @@ pssa3     dec tplen
           lda status
           and #255-64
 pssx      rts 
+	.)
          ;****
 pss       jsr gsource
           beq psse3
@@ -810,7 +858,6 @@ plc1      iny
 	iny
 	; copy source (cbm) filename until next space/quote into dbuf
 plc2      lda (zei),y
-	beq plc3a
           cmp qflag
           beq plc3aq
           sta dbuf,x
