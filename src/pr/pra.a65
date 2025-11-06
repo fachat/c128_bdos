@@ -1,0 +1,64 @@
+
+
+
+
+          .word $2800
+
+         ;PRA 2.4 .S50 ==0801==
+         ;****
+         ;fmn =0 ; 1 falls ohne menu
+         ;fci =0 ; 1 falls ohne cli
+         ;eng =0 ; 1 falls englisch
+         ;****
+         mix=(1-fmn)*(1-fci)
+	 prg=1
+         c128=1
+         bdos=$a000
+         rs232=0           ; 1 falls rs232 im menue
+         ;****
+#if mix
+         bufanf=$6c00           ;a-version
+         buflen=$0400
+#else
+#if 1-fmn
+	bufanf=$5c00		;b-version
+	buflen=$0400
+#else
+	bufanf=$4400		;c-version
+	buflen=$0400
+#endif
+#endif
+         ;****
+         keystp=3
+
+	.include "BDK.A65"
+	.include "BDJ.A65"
+	.include "BDS.A65"
+	.include "BDE.A65"
+	.include "WPK.A65"
+	.include "PR1.A65"
+	.include "PR2.A65"
+	.include "PR3.A65"
+	.include "PR4.A65"
+#if 1-fmn
+	.include "WP1.A65"
+	.include "WP4.A65"
+	.include "WPU.A65"
+#endif
+	.include "WP2.A65"
+	.include "WP3.A65"
+	.include "WPW.A65"
+#if 1-eng
+	.include "PRR.A65"
+#else
+	.include "PRRE.A65"
+#endif
+	.bss
+         varanf=*
+	.include "PRD.A65"
+         varend=*
+          .text 
+          .word varend                ;=listanf
+          .word bufanf                ;=listend
+
+          .end 

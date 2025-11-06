@@ -1,0 +1,1085 @@
+
+
+
+
+         ;PR2 2.4 .S60 ==0801==
+#if fci-1
+
+lload     sta zei
+          sty zei+1
+          ldy #0
+lll0      lda (zei),y
+          beq lll2
+          cmp #"/"
+          beq lll1
+          iny 
+          bne lll0
+lll1      iny 
+lll2      tya 
+          clc 
+          adc zei
+          sta fad2
+          lda zei+1
+          adc #0
+          sta fad2+1
+          lda zei
+          ldy zei+1
+          jsr rwopen
+          bne llor1a
+          ldy #fpanz
+          lda #2
+          sta (zei),y
+          iny 
+          lda #0
+          sta (zei),y
+          ldy #fpbank
+          lda #prgbank
+          sta (zei),y
+          ldy #fpadr
+          lda #<buffer
+          sta (zei),y
+          iny 
+          lda #>buffer
+          sta (zei),y
+          lda zei
+          sta fl1
+          lda zei+1
+          sta fl1+1
+          ldx handle
+          jsr dread
+          bne lloe
+llor1a    bne llor
+          lda fl1
+          sta zei
+          lda fl1+1
+          sta zei+1
+          ldy #fpadr
+          lda buffer
+          sta nadr
+          sta (zei),y
+          lda buffer+1
+          sta nadr+1
+          iny 
+          sta (zei),y
+          ldy #fpsize
+          lda (zei),y
+          tax 
+          iny 
+          lda (zei),y
+          ldy #fpanz+1
+          sta (zei),y
+          dey 
+          txa 
+          sta (zei),y
+          ldx handle
+          jsr dread
+          cmp #eneof
+          bne lloe
+          lda #0
+lloe      pha 
+          ldx handle
+          jsr dclose
+          pla 
+          bne llor
+          lda nadr
+          sta llvec
+          lda nadr+1
+          sta llvec+1
+          lda fad2
+          ldy fad2+1
+          jmp (llvec)
+llor      rts 
+         ;**********
+del       ldx #$e7
+          jmp delete
+         ;**********
+md        jmp mkdir
+         ;**********
+rd        jmp rmdir
+         ;**********
+cr        ldx #$20
+          jmp dcreate
+         ;**********
+#endif
+
+pformat   sta czei
+          sty czei+1
+          lda #1
+          sta fformat
+pff0      jsr chrgot
+          beq pfo1
+          cmp #"/"
+          bne pff1
+          jsr chrget
+          jsr gbyt
+          bne pff0
+          stx fformat
+          beq pff0
+pff1      tax 
+          ldy #1
+          lda (czei),y
+          cmp #":"
+          bne pfo1
+          jsr chrget
+          jsr chrget
+          txa 
+          sec 
+          sbc #"a"
+          jmp pfo2
+pfo1      clc 
+          jsr sgdrive
+pfo2      sta fadr
+          ldx fformat
+          jsr flopfmt
+          bne pfoe
+          jsr chrgot
+          beq pfoe
+          lda fadr
+          sec 
+          jsr sgdrive
+          bne pfoe
+          lda #<ddtp
+          ldy #>ddtp
+          sec 
+          jsr sgdta
+          lda #0
+          tax 
+          ldy #1             ; ersten leeren eintrag
+          jsr sfirso
+          bne pfoe
+          ldy #0
+          ldx #0
+pfo3      lda (czei),y
+          beq pfoleer
+          cmp #"."
+          beq pfoext
+          sta ddtp+dgname,x
+          iny 
+          inx 
+          cpx #8
+          bcc pfo3
+pfo3a     lda (czei),y
+          beq pfoleer
+          cmp #"."
+          beq pfoext
+          iny 
+          bne pfo3a
+pfoleer   dey 
+pfoext    lda #" "
+          cpx #8
+          beq pfoex1
+          sta ddtp+dgname,x
+          inx 
+          bne pfoext
+pfoex1    iny 
+          ldx #0
+pfo4      lda (czei),y
+          beq pfoend
+          sta ddtp+dgext,x
+          iny 
+          inx 
+          cpx #3
+          bne pfo4
+pfoend    lda #" "
+          cpx #3
+          beq pfoe1
+          sta ddtp+dgext,x
+          inx 
+          bne pfoend
+pfoe1     lda #$08
+          sta ddtp+dgattr
+          jmp wrentry
+pfoe      rts 
+
+#if 1-fci
+         ;**********
+cd        jmp chdir
+         ;**********
+ex        jsr exit
+          jmp ($fffc)
+         ;**********
+rwopen    jsr dopen
+          stx zei
+          sty zei+1
+          bne prwe
+          stx fadr
+          sty fadr+1
+          ldy #fphandle
+          lda (zei),y
+          sta handle
+          ldy #fpsize
+flen2     lda (zei),y
+          sta laenge-fpsize,y
+          iny 
+          cpy #fpsize+4
+          bne flen2
+prwe      rts 
+         ;****
+pread     jsr rwopen
+          bne preade
+          jsr prttst
+read      lda fadr
+          sta zei
+          lda fadr+1
+          sta zei+1
+          ldy #fpanz
+          lda prblen
+          sta (zei),y
+          iny 
+          lda prblen+1
+          sta (zei),y
+          ldy #fpadr
+          lda #<buffer
+          sta (zei),y
+          iny 
+          lda #>buffer
+          sta (zei),y
+          ldy #fpbank
+          lda #prgbank
+          sta (zei),y
+          ldx handle
+          jsr dread
+          bne pread1
+          ldx prblen
+          ldy prblen+1
+          jsr rdprint
+          bcs pread1
+          lda laenge
+          sec 
+          sbc prblen
+          sta laenge
+          lda laenge+1
+          sbc prblen+1
+          sta laenge+1
+          bcs rd1
+          lda laenge+2
+          bne rd2
+          dec laenge+3
+rd2       dec laenge+2
+rd1       jmp read
+pread1    cmp #eneof
+          bne preade
+          ldx laenge
+          ldy laenge+1
+          jsr rdprint
+preade    pha 
+          ldx handle
+          jsr dclose
+          jsr prtoff
+          pla 
+          rts 
+         ;****
+rdprint   stx tplen
+          sty tplen+1
+          txa 
+          ora tplen+1
+          beq wrle
+          lda #<buffer
+          sta zei
+          lda #>buffer
+          sta zei+1
+rdp1      ldy #0
+          lda (zei),y
+          jsr chout
+          jsr bgkey
+          cmp #3
+          bne wrls
+          lda #enbreak
+          sec 
+          rts 
+wrls      inc zei
+          bne rdp1a
+          inc zei+1
+rdp1a     lda tplen
+          bne rdp2
+          dec tplen+1
+rdp2      dec tplen
+          lda tplen
+          ora tplen+1
+          bne rdp1
+wrle      clc 
+          rts 
+         ;**********
+pwrite    sta nadr
+          sty nadr+1
+          ldx #$20
+          jsr dcreate
+          bne wrle
+          lda nadr
+          ldy nadr+1
+          jsr rwopen
+          bne pwritee
+wrloop    jsr wrinput
+          sta st1
+          stx tplen
+          sty tplen+1
+          lda fadr
+          sta zei
+          lda fadr+1
+          sta zei+1
+          ldy #fpanz
+          lda tplen
+          sta (zei),y
+          iny 
+          lda tplen+1
+          sta (zei),y
+          ldy #fpadr
+          lda #<buffer
+          sta (zei),y
+          iny 
+          lda #>buffer
+          sta (zei),y
+          ldy #fpbank
+          lda #prgbank
+          sta (zei),y
+          ldx handle
+          jsr dwrite
+          bne pwritee
+          lda st1
+          beq wrloop
+          lda #0
+pwritee   pha 
+          ldx handle
+          jsr dclose
+          pla 
+          rts 
+         ;****
+wrinput   lda #<buffer
+          sta zei
+          lda #>buffer
+          sta zei+1
+          lda #0
+          sta tplen
+          sta tplen+1
+wril      jsr bgkey
+          beq wril
+          jsr chout
+          ldy #0
+          sta (zei),y
+          pha 
+          inc zei
+          bne wri1
+          inc zei+1
+wri1      inc tplen
+          bne wri2
+          inc tplen+1
+wri2      pla 
+          cmp #3             ;run/stop
+          beq wrie
+          lda tplen+1
+          cmp prblen+1
+          bne wril
+          lda tplen
+          cmp prblen
+          bne wril
+          lda #0
+          .byt $2c
+wrie      lda #eneof
+          ldx tplen
+          ldy tplen+1
+          rts 
+         ;*********
+pcopy     sta zei
+          sty zei+1
+          ldx #0
+          ldy #<-1
+pcc1      iny 
+          lda (zei),y
+          beq pcce
+          cmp #" "
+          beq pcc1
+pcc2      lda (zei),y
+          cmp #" "
+          beq pcc3a
+          sta dbuf,x
+          cmp #0
+          beq pcce
+          iny 
+          inx 
+          bne pcc2
+pcc3a pcce lda #0
+          sta dbuf,x
+          dey 
+pcc4      iny 
+          lda (zei),y
+          cmp #" "
+          beq pcc4
+          tya 
+          clc 
+          adc zei
+          sta nadr
+          lda zei+1
+          adc #0
+          sta nadr+1
+          jsr gsoutar
+          bne pcc3
+          lda #enbreak
+          rts 
+pcc3      lda #<dbuf
+          ldy #>dbuf
+          jsr rwopen
+          bne pcerr1a
+          lda nadr
+          ldy nadr+1
+          ldx #$20
+          jsr dcreate
+pcerr1a   bne pcerr1b
+          lda nadr
+          ldy nadr+1
+          jsr dopen
+          stx fad2
+          sty fad2+1
+          php 
+          stx zei
+          sty zei+1
+          ldy #fphandle
+          lda (zei),y
+          sta handl2
+          plp 
+          bne pcerr2a
+pcread    lda fadr
+          sta zei
+          lda fadr+1
+          sta zei+1
+          ldy #fpanz
+          lda prblen
+          sta (zei),y
+          iny 
+          lda prblen+1
+          sta (zei),y
+          ldy #fpadr
+          lda #<buffer
+          sta (zei),y
+          iny 
+          lda #>buffer
+          sta (zei),y
+          ldy #fpbank
+          lda #prgbank
+          sta (zei),y
+          ldx handle
+          jsr dread
+          sta st1
+          cmp #eneof
+          beq pcrwa
+          lda prblen+1
+          sta tplen+1
+          lda prblen
+          sta tplen
+          lda laenge
+          sec 
+          sbc prblen
+          sta laenge
+          lda laenge+1
+          sbc prblen+1
+          sta laenge+1
+          bcs pcrw1
+          lda laenge+2
+          bne pcrw2
+pcerr1b   bne pcerr1
+pcerr2a   bne pcerr2
+          dec laenge+3
+pcrw2     dec laenge+2
+pcrw1     jmp pcrw3
+pcreada   beq pcread
+pcrwa     lda laenge
+          sta tplen
+          lda laenge+1
+          sta tplen+1
+pcrw3     lda fad2
+          sta zei
+          lda fad2+1
+          sta zei+1
+          ldy #fpanz
+          lda tplen
+          sta (zei),y
+          iny 
+          lda tplen+1
+          sta (zei),y
+          ldy #fpadr
+          lda #<buffer
+          sta (zei),y
+          iny 
+          lda #>buffer
+          sta (zei),y
+          ldy #fpbank
+          lda #prgbank
+          sta (zei),y
+          ldx handl2
+          jsr dwrite
+          bne pcerr2
+          lda st1
+          beq pcreada
+          cmp #eneof
+          bne pcerr2
+          lda #0
+pcerr2    pha 
+          ldx handl2
+          jsr dclose
+          pla 
+pcerr1    pha 
+          ldx handle
+          jsr dclose
+          pla 
+          rts 
+         ;**********
+psave     sta zei
+          sty zei+1
+          ldx #0
+          ldy #<-1
+pss1      iny 
+          lda (zei),y
+          beq psse
+          cmp #" "
+          beq pss1
+pss2      lda (zei),y
+          cmp #" "
+          beq pss3a
+          sta dbuf,x
+          cmp #0
+          beq psse
+          iny 
+          inx 
+          bne pss2
+pss3a psse lda #0
+          sta dbuf,x
+          dey 
+pss4      iny 
+          lda (zei),y
+          cmp #" "
+          beq pss4
+          tya 
+          clc 
+          adc zei
+          sta zei
+          lda zei+1
+          adc #0
+          sta zei+1
+          ldy #0
+psa1      lda (zei),y
+          sta buf,y
+          beq psa2
+          iny 
+          bne psa1
+psa2      sty dint1
+          tya 
+          ldx #<buf
+          ldy #>buf
+          jsr setfnpar
+          ldx iecunit
+          lda #1
+          ldy #1
+          jsr setfpar
+         ;****
+          ldy #0
+pts1      lda buf,y
+          iny 
+          cmp #" "
+          beq pts1
+          and #$0f
+          sta dr1
+          lda buf,y
+          cmp #":"
+          beq pts2
+          lda #0
+          sta dr1
+pts2      ldy #0
+pts3      lda dbuf,y
+          iny 
+          cmp #" "
+          beq pts3
+          sec 
+          sbc #"a"
+          sta dr2
+          lda dbuf,y
+          cmp #":"
+          beq pts4
+          clc 
+          jsr sgdrive
+          sta dr2
+pts4      jsr drvtest
+          bcc pls1
+          jmp pss
+         ;****
+pls1      jsr gsoutar
+          bne pls1a
+          lda #enbreak
+          rts 
+pls1a     lda #<dbuf
+          ldy #>dbuf
+          jsr rwopen
+          bne psaerr1a
+          jsr open
+          bcc psa3
+          lda #ennotimp
+          bne psaerr2
+psaerr1a  bne psaerr1
+psa3      
+psread    lda fadr
+          sta zei
+          lda fadr+1
+          sta zei+1
+          ldy #fpanz
+          lda prblen
+          sta (zei),y
+          iny 
+          lda prblen+1
+          sta (zei),y
+          ldy #fpadr
+          lda #<buffer
+          sta (zei),y
+          iny 
+          lda #>buffer
+          sta (zei),y
+          ldy #fpbank
+          lda #prgbank
+          sta (zei),y
+          ldx handle
+          jsr dread
+          bne psa4
+          ldx prblen
+          ldy prblen+1
+psa5      jsr ppsave
+          beq psa4a
+          lda #endnrdy
+          bne psa4
+psa4a     lda laenge
+          sec 
+          sbc prblen
+          sta laenge
+          lda laenge+1
+          sbc prblen+1
+          sta laenge+1
+          bcs rs1
+          lda laenge+2
+          bne rs2
+          dec laenge+3
+rs2       dec laenge+2
+rs1       jmp psread
+psa4      cmp #eneof
+          bne psaerr2
+          ldx laenge
+          ldy laenge+1
+          jsr ppsave
+          lda #0
+psaerr2   pha 
+          lda #1
+          jsr close
+          pla 
+psaerr1   pha 
+          ldx handle
+          jsr dclose
+          pla 
+          rts 
+ppsave    stx tplen
+          sty tplen+1
+          txa 
+          ora tplen+1
+          beq pssx
+          lda #0
+          sta status
+          ldx #1
+          jsr ckout
+          bcc ppsav1
+          ora #64
+          bne pssx
+ppsav1    lda #<buffer
+          sta zei
+          lda #>buffer
+          sta zei+1
+          ldy #0
+ppsa1     lda (zei),y
+          jsr bsout
+          inc zei
+          bne pssa2
+          inc zei+1
+pssa2     lda tplen
+          bne pssa3
+          dec tplen+1
+pssa3     dec tplen
+          lda tplen
+          ora tplen+1
+          bne ppsa1
+          jsr clrch
+          lda status
+          and #255-64
+pssx      rts 
+         ;****
+pss       jsr gsource
+          beq psse3
+          lda #<dbuf
+          ldy #>dbuf
+          jsr rwopen
+          bne pssee1
+          ldy #fpanz
+          lda prblen
+          sta (zei),y
+          iny 
+          lda prblen+1
+          sta (zei),y
+          ldy #fpadr
+          lda #<buffer
+          sta (zei),y
+          iny 
+          lda #>buffer
+          sta (zei),y
+          ldy #fpbank
+          lda #prgbank
+          sta (zei),y
+          ldx handle
+          jsr dread
+pssee1    pha 
+          ldx handle
+          jsr dclose
+          pla 
+          beq psse1
+          cmp #eneof
+          bne pssee
+          jsr gtarget
+          beq psse3
+          lda dint1
+          ldx #<buf
+          ldy #>buf
+          jsr setfnpar
+          ldx iecunit
+          lda #1
+          ldy #1
+          jsr setfpar
+          jsr open
+          bcs psse2
+          ldx laenge
+          ldy laenge+1
+          jsr ppsave
+          beq pssex
+          lda #endnrdy
+pssex     pha 
+          lda #1
+          jsr close
+          pla 
+          rts 
+psse1     lda #enprange
+          .byt $2c
+psse3     lda #enbreak
+          .byt $2c
+psse2     lda #ennotimp
+pssee     rts 
+         ;****
+gsource   lda #<tsource
+          ldy #>tsource
+          jsr textout
+pllo7     jsr bgkey
+          beq pllo7
+          cmp #keystp
+          rts 
+gtarget   lda #<ttarget
+          ldy #>ttarget
+          jsr textout
+pllo6     jsr bgkey
+          beq pllo6
+          cmp #keystp
+          rts 
+gsoutar   lda #<tsoutar
+          ldy #>tsoutar
+          jsr textout
+ptttt     jsr bgkey
+          beq ptttt
+          cmp #keystp
+          rts 
+         ;**********
+pload                      ;
+          sta zei
+          sty zei+1
+          ldx #0
+          ldy #<-1
+plc1      iny 
+          lda (zei),y
+          beq plce
+          cmp #" "
+          beq plc1
+plc2      lda (zei),y
+          cmp #" "
+          beq plc3a
+          sta dbuf,x
+          cmp #0
+          beq plce
+          iny 
+          inx 
+          bne plc2
+plc3a plce lda #0
+          sta dbuf,x
+          stx st1
+          dey 
+plc4      iny 
+          lda (zei),y
+          cmp #" "
+          beq plc4
+          tya 
+          clc 
+          adc zei
+          sta nadr
+          lda zei+1
+          adc #0
+          sta nadr+1
+          ldy #0
+ptl1      lda dbuf,y
+          iny 
+          cmp #" "
+          beq ptl1
+          and #$0f
+          sta dr1
+          lda dbuf,y
+          cmp #":"
+          beq ptl2
+          lda #0
+          sta dr1
+ptl2      ldy #0
+ptl3      lda buf,y
+          iny 
+          cmp #" "
+          beq ptl3
+          sec 
+          sbc #"a"
+          sta dr2
+          lda buf,y
+          cmp #":"
+          beq ptl4
+          clc 
+          jsr sgdrive
+          sta dr2
+ptl4      lda st1
+          ldx #<dbuf
+          ldy #>dbuf
+          jsr setfnpar
+          ldx iecunit
+          lda #1
+          ldy #0
+          jsr setfpar
+          jsr drvtest
+          bcs pll1
+         ;****
+pll1y     jsr gsoutar
+          bne pll1a
+          lda #enbreak
+          rts 
+pll1a     jsr open
+          bcc plo3
+          lda #ennotimp
+          bne plerr2
+plo3      lda nadr
+          ldy nadr+1
+          ldx #$20
+          jsr dcreate
+          bne plerr2
+          lda nadr
+          ldy nadr+1
+          jsr rwopen
+          bne plerr2
+plloop    jsr plinput
+          sta st1
+          stx tplen
+          sty tplen+1
+          lda fadr
+          sta zei
+          lda fadr+1
+          sta zei+1
+          ldy #fpanz
+          lda tplen
+          sta (zei),y
+          iny 
+          lda tplen+1
+          sta (zei),y
+          ldy #fpadr
+          lda #<buffer
+          sta (zei),y
+          iny 
+          lda #>buffer
+          sta (zei),y
+          ldy #fpbank
+          lda #prgbank
+          sta (zei),y
+          ldx handle
+          jsr dwrite
+          bne plerr2
+          lda st1
+          beq plloop
+          lda #0
+plerr1    pha 
+          ldx handle
+          jsr dclose
+          pla 
+plerr2    pha 
+          lda #1
+          jsr close
+          pla 
+plerr1a   rts 
+         ;****
+pll1      jsr gsource
+          beq pllo4c
+          jsr open
+          bcc pllo3
+          lda #ennotimp
+          bne plloerr
+pllo3     jsr plinput
+          sta st1
+          and #255-64
+          bne pllo4b
+          lda st1
+          and #64
+          bne pllo4a
+pllo4     lda #enprange
+          .byt $2c
+pllo4a    lda #enok
+          .byt $2c
+pllo4c    lda #enbreak
+          .byt $2c
+pllo4b    lda #endnrdy
+          stx tplen
+          sty tplen+1
+plloerr   pha 
+          lda #1
+          jsr close
+          pla 
+          beq pllo5
+          rts 
+pllo5     jsr gtarget
+          beq pllo4c
+          lda nadr
+          ldy nadr+1
+          ldx #$20
+          jsr dcreate
+          bne plerr1a
+          lda nadr
+          ldy nadr+1
+          jsr rwopen
+          bne plerr1
+          ldy #fpanz
+          lda tplen
+          sta (zei),y
+          iny 
+          lda tplen+1
+          sta (zei),y
+          ldy #fpadr
+          lda #<buffer
+          sta (zei),y
+          iny 
+          lda #>buffer
+          sta (zei),y
+          ldy #fpbank
+          lda #prgbank
+          sta (zei),y
+          ldx handle
+          jsr dwrite
+          jmp plerr1
+         ;****
+plinput   lda #0
+          sta tplen
+          sta tplen+1
+          sta status
+          ldx #1
+          jsr chkin
+          lda #<buffer
+          sta zei
+          lda #>buffer
+          sta zei+1
+pliloop   jsr basin
+          ldy #0
+          sta (zei),y
+          inc zei
+          bne pli1
+          inc zei+1
+pli1      inc tplen
+          bne pli2
+          inc tplen+1
+pli2      lda status
+          bne plie
+          lda tplen
+          cmp prblen
+          bne pliloop
+          lda tplen+1
+          cmp prblen+1
+          bne pliloop
+          lda #0
+plie      pha 
+          jsr clrch
+          ldx tplen
+          ldy tplen+1
+          pla 
+          rts 
+         ;**********
+drvtest   lda dr2
+          ldx #0
+          cmp dosd0,x
+          beq drt1
+          inx 
+          cmp dosd0,x
+          bne drte
+drt1      lda iecunit
+          cmp iecd0,x
+          bne drte
+          lda dr1
+          cmp drvd0,x
+          bne drte
+          sec 
+          rts 
+drte      clc 
+          rts 
+         ;**********
+copycon   sta fadr
+          sty fadr+1
+          ldx #$20
+          jsr dcreate
+          bne cpcend
+          lda fadr
+          ldy fadr+1
+          jsr rwopen
+          bne cpcend
+cpcl      jsr linein
+          sta zei
+          sty zei+1
+          ldy #0
+cpca      lda (zei),y
+          sta buf,y
+          beq cpcb
+          iny 
+          bne cpca
+cpcb      lda fadr
+          sta zei
+          lda fadr+1
+          sta zei+1
+          ldy #<-1
+cpc0      iny 
+          lda buf,y
+          beq cpcen
+          cmp #" "
+          beq cpc0
+cpc1      iny 
+          lda buf,y
+          cmp #0
+          bne cpc1
+          lda #13
+          sta buf,y
+          iny 
+          tya 
+          ldy #fpanz
+          sta (zei),y
+          iny 
+          lda #0
+          sta (zei),y
+          lda #<buf
+          ldy #fpadr
+          sta (zei),y
+          iny 
+          lda #>buf
+          sta (zei),y
+          ldy #fpbank
+          lda #prgbank
+          sta (zei),y
+          ldx handle
+          jsr dwrite
+          beq cpcl
+cpcen     pha 
+          ldx handle
+          jsr dclose
+          pla 
+cpcend    rts 
+#endif
+          .end 

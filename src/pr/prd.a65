@@ -1,0 +1,107 @@
+
+
+
+
+         ;PRD 2.4 .S28 ==0801==
+prblen    .word 0
+ddtp      
+	.dsb dtplen,0
+
+fformat   .byt 0
+fadr      .word 0
+iecunit   .byt 0
+prtdev    .byt 0
+prtfl     .byt 0
+prtdiv    .byt 0
+vchout    .word 0
+
+#if fci-1
+dosd0     .word 0
+iecd0     .word 0
+drvd0     .word 0
+         ;*********
+dircount  .word 0
+dint1     .word 0
+dint2     .word 0
+dint3     .word 0
+dabuf     .byt 0
+dword     .word 0,0
+dcl       .word 0
+dpa       .word 0
+cnt       .byt 0
+handle    .byt 0
+handl2    .byt 0
+st1       .byt 0
+flag      .byt 0
+dr1       .byt 0
+dr2       .byt 0
+nadr      .word 0
+fad2      .word 0
+tplen     .word 0
+fl1       .word 0
+laenge    .byt 0,0,0,0
+pblock    .word 0,0,0,0,0
+llvec     .word 0
+clitcol   .byt 0
+clibcol   .byt 0
+         ;********
+#endif
+#if fmn-1
+#if mix-1
+int1      .word 0
+int2      .word 0
+int3      .word 0
+#else
+int1	=dint1
+int2	=dint2
+int3	=dint3
+#endif
+wmenu     .byt 0
+wza       .byt 0
+sma       .byt 0
+wsmenu    .byt 0
+smf       .byt 0
+oldsize   .byt 0,0,0,0
+oldhdl    .byt 0
+olderr    .byt 0
+newhdl    .byt 0
+olddrv    .byt 0
+newdrv    .byt 0
+ccnt      .byt 0,0
+gtpd      .byt 0
+mpdb      .byt 0
+mpdcmd    .byt 0
+cdir      .word 0
+gdb       .byt 0
+lanz      .byt 0
+lmanz     .byt 0
+mpdf      .byt 0
+lseit     .byt 0
+abuf      .byt 0
+iecdrive  .byt 0
+panzsub   .byt 0
+menutcol  .byt 0
+menubcol  .byt 0
+cvfl      .byt 0
+#endif
+#if fmn-1
+sofl      .byt 0
+sonk      .byt 0
+sofirst   .byt 0
+solast    .byt 0
+socount   .byt 0
+sokrit    .byt 0
+sokend    .byt 0
+soelen    .byt 0
+sofadr    .word 0
+dirmenu   
+	.dsb mdirtlen,0
+pcsuch    
+	.dsb dsattr,0
+         pcdta=ddtp
+         liste=*
+#endif
+         buffer=bufanf
+         dbuf=$0100
+         listend=bufanf
+          .end 
