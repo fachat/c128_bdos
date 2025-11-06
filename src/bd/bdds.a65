@@ -5,7 +5,9 @@
          ;BDDS1.41.S4  ==0801==
          ;********** data allgemein
 drvbpb                     ;
+	.dsb bpplen*anzdrv,0
 
 fpbt                       ;
+	.dsb fpbanz*fpblen,0
 
          ; .assert bufanz-*<=15, "more data than buffer"

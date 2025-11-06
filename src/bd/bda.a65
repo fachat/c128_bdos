@@ -1,0 +1,53 @@
+
+
+
+
+          .word $a000
+         ;
+         va=$01
+         vb=$45
+         ;
+         prg=0
+         bflagof=0
+         ;
+         prganf=$a000
+         bufanf=$1800
+         varanf=$1100
+         anzdrv=4
+         fpbanz=2
+         bufanz=4
+         buflen=1024
+         ;
+         ;
+         bufend=buflen*bufanz+bufanf
+         ;* =prganf
+
+	.include "BDK.A65"
+	.include "BDS.A65"
+	.include "BDJ.A65"
+	.include "BDB.A65"
+	.include "BDU.A65"
+	.include "BDC.A65"
+	.include "BD1.A65"
+	.include "BD2.A65"
+	.include "BD3.A65"
+	.include "BD4.A65"
+	.include "BD5.A65"
+	.include "BDE.A65"
+	.include "BDR.A65"
+
+	.bss
+         ;*=varanf
+
+	.include "BDDJ.A65"
+	.include "BDDU.A65"
+	.include "BDDP.A65"
+	.include "BDDS.A65"
+
+         varend=*
+          .text 
+          .word varanf
+          .word varend
+          .word bufanf
+          .word bufend
+          .end 

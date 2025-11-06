@@ -19,6 +19,7 @@ bf2val    .byt 0           ; sys drive+logs gueltig
 bf2r      .word 0           ;
 bf3x                       ; speicher fuer puffer 3-bufanz
          bfoffs=bf2drv-bf1drv
+	.dsb (bufanz-2)*bfoffs,0
 
 cabsx     .byt 0           ; speicher fuer register
 up1       .word 0

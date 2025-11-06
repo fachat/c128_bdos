@@ -20,10 +20,12 @@ abspar    .byt 0,0
 pgbbuf    .byt 0
          ;**** bios-parameter block aktuell, enthaelt gp-struktur
 bpb                        ;
+	.dsb bpblen,0
 
          ;**** hier folgt gp-struktur
 dirclus   .word 0
 path                       ;
+	.dsb pathlen, 0
 
 sfirsfe   .byt 0           ; flag,ob leeren eintrag suchen
          ;********** data fuer teil 2
@@ -35,11 +37,13 @@ actflag   .byt 0           ; flag fuer getname
 actclus   .word 0           ; startcluster akt. directory
 actfil    .word 0           ; startcluster file
 actpath                    ; pfad fuer getname
+	.dsb pathlen, 0
 
          ;**** zwischenspeicher fuer dir-eintrag
 dirbuf    .asc "01234567890123456789012345678901"
          ; disk-transfer-puffer
 dtp       
+	.dsb dtplen, 0
 
 pa1       .word 0
 pa2       .word 0

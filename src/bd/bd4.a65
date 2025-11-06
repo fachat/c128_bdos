@@ -405,6 +405,7 @@ pwe2b     lda #1
           ldx #0
 writadd   jsr waddbfpr
           bne pwenda
+	  bcs pwrit0
           bcc pwrit2
 pwenda    cmp #1
           bne pwend
