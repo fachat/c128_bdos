@@ -826,9 +826,11 @@ plc4      iny
           tya 
           clc 
           adc zei
+	sta zei
           sta nadr
           lda zei+1
           adc #0
+	sta zei+1
           sta nadr+1
 
 	; scan source (cbm) filename 
@@ -850,12 +852,10 @@ ptl1      lda dbuf,y
 	; no colon - clear drive again
           lda #0
           sta dr1
-	; scan "buf" - is this meant to be target filename?
-	; but target filename is only pointed to by nadr
-	; "buf" is the linein input buffer
+	; scan PC filename for drive
 	; skip leading spaces
 ptl2      ldy #0
-ptl3      lda buf,y
+ptl3      lda (zei),y
           iny 
           cmp #" "
           beq ptl3
@@ -863,7 +863,7 @@ ptl3      lda buf,y
 	; check PC drive
           sbc #"a"
           sta dr2
-          lda buf,y
+          lda (zei),y
           cmp #":"
           beq ptl4
           clc 
