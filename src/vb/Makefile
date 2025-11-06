@@ -1,0 +1,29 @@
+
+FILE=~/8bit/xa65/xagit/xa/file65
+#FILE=file65
+RELOC=~/8bit/xa65/xagit/xa/reloc65
+#RELOC=reloc65
+XA=~/8bit/xa65/xagit/xa/xa
+#XA=xa
+
+ORIG=vb
+SRC=${ORIG}.a65
+TRG=vb
+
+all: ${TRG}
+
+${TRG}: ${SRC}
+	${XA} -P "$@".lst -O PETSCII -R -bt 36862 -bb 38512 -o "$@".o65 "$<"
+	${FILE} "$@".o65
+	${RELOC} -v -X -o "$@" -bb 38512 "$@".o65
+	hexdump -C "$@" > "$@".hex
+
+comp: ${TRG}
+	kdiff3 ${TRG}.hex ../../recreation/${ORIG}/"${ORIG}"*.hex
+
+# lint the sources so that they can be edited in modern editors
+resrc:
+	for i in ${ORIG}*.S??; do echo $$i; xa -E -U -P - "$$i" | cut -c 40- > ../../src/${TRG}/"$$i"; done
+
+clean:
+	rm -f ${TRG}.o65 ${TRG} ${TRG}.hex *.lst

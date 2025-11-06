@@ -9,6 +9,11 @@
          bank0=%00111111
          bank1=%01111111
 
+	.include "BDS.A65"
+	.include "BDK.A65"
+	.include "BDJ.A65"
+	.include "BDE.A65"
+
          ;********
           jsr rdinit
           jsr tdinit
@@ -831,6 +836,8 @@ bootsec
           .word 1
           .word 0
 fname     .byt 6,0
+
+	.bss
 
 jmpold    
 vquery    .word 0

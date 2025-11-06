@@ -7,6 +7,11 @@
          prg=1
          bdos=$a000
 
+	.include "BDS.A65"
+	.include "BDK.A65"
+	.include "BDJ.A65"
+	.include "BDE.A65"
+
 dinit     sta rwbzei
           sty rwbzei+1
           ldy #<-1
@@ -707,6 +712,7 @@ jmpnew
 jmpold    
          ;.if # 
          ;.goto 10810
+	.bss
 
 vquery    .word 0
 vmediach  .word 0
