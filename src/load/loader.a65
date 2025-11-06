@@ -5,6 +5,8 @@
           .word $8000
          ;../origsrc/bdos+s1/LOAD 1.1 .S19 ==0801==
 
+	.include "BDK.A65"
+
          adr=$fb
          load=$ffd5
           lda #$36
