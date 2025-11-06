@@ -1,0 +1,172 @@
+
+
+
+
+         ;PR1 2.4 .S63 ==0801==
+         czei=$30
+          sta czei
+          sty czei+1
+          jsr prtinit
+          lda #8
+          sta iecunit
+          lda #0
+          sta prtdev
+          sta prtfl
+         ;lda #0
+          ldx #13
+
+          sta menubcol
+          stx menutcol
+          lda #128
+          sta sofl
+          lda #0
+          sta sonk
+
+          jsr gbyt
+          bcs gblfe
+          txa 
+          cmp #16
+          bcc gbl1
+          sbc #6
+gbl1      and #15
+          sta iecunit
+gblfe     jsr gbyt
+          bcs gbl3b
+          txa 
+          and #15
+          sta prtdev
+gbl3b     jsr gbyt
+          bcs gbl3a
+          txa 
+          and #63
+          sta prtfl
+gbl3a     jsr gbyt
+          bcs gbl3
+
+          stx menutcol
+
+gbl3      jsr gbyt
+          bcs gbl4
+
+          stx menubcol
+
+gbl4      jsr gadr
+          bcc gblok
+          ldx #<buflen
+          ldy #>buflen
+gblok     stx prblen
+          sty prblen+1
+
+          ldx #<datum
+          ldy #>datum
+          sec 
+          jsr sgdate
+
+          jmp menuprg
+
+         ;********** c128
+
+         buf=$0200
+chrget    inc czei
+          bne chrgot
+          inc czei+1
+chrgot    ldy #0
+          lda (czei),y
+          beq chrg1
+          cmp #" "
+          beq chrget
+chrg1     rts 
+
+         ;****
+gfnib     jsr chrgot
+          jmp glnib
+gnib      inc czei
+          bne glnib
+          inc czei+1
+glnib     ldy #0
+          lda (czei),y
+          beq glend
+          cmp #" "
+          beq glend
+          sec 
+          sbc #"0"
+          cmp #10
+          bcc glok
+          sbc #7
+glok      and #$0f
+          clc 
+          rts 
+glend     sec 
+          rts 
+gadr      lda #0
+          sta fadr
+          sta fadr+1
+          jsr gfnib
+          bcs gadre1
+          jmp gadr1
+gnnib     jsr gnib
+gadr1     bcs gadre
+          asl fadr
+          rol fadr+1
+          asl fadr
+          rol fadr+1
+          asl fadr
+          rol fadr+1
+          asl fadr
+          rol fadr+1
+          ora fadr
+          sta fadr
+          jmp gnnib
+gadre     clc 
+gadre1    ldx fadr
+          ldy fadr+1
+          lda #0
+          rts 
+gbyt      jsr gadr
+          tya 
+          bne gbyte
+          rts 
+gbyte     lda #enprange
+          rts 
+
+         ;**********
+errtxt    ldx #0
+errt1     cmp errnum,x
+          beq errt2
+          inx 
+          cpx #erranz
+          bne errt1
+          ldx #0
+          jsr hexbuf
+errt3     lda errnumt-2,x
+          sta iobuf,x
+          beq errte
+          inx 
+          bne errt3
+errte     lda #<iobuf
+          ldy #>iobuf
+          rts 
+errt2     lda #<ert
+          sta zei
+          lda #>ert
+          sta zei+1
+          inx 
+errt4     ldy #0
+          dex 
+          beq errtok
+errt5     lda (zei),y
+          beq errt6
+          iny 
+          bne errt5
+errt6     iny 
+          tya 
+          clc 
+          adc zei
+          sta zei
+          bcc errt4
+          inc zei+1
+          bne errt4
+errtok    lda zei
+          ldy zei+1
+          rts 
+         ;********

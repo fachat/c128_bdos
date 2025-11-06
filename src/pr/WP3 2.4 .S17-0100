@@ -1,0 +1,353 @@
+
+
+
+
+         ;WP3 2.4 .S17 ==0801==
+
+sortinit  
+mpm51     jsr hk1clr
+          lda #"+"
+          sta hk11
+          lda #0
+          sta sofl
+          rts 
+mpm52     jsr hk1clr
+          lda #"+"
+          sta hk12
+          lda #128
+          sta sofl
+          lda #0
+          sta sonk
+          rts 
+mpm53     jsr hk1clr
+          lda #"+"
+          sta hk13
+          lda #128
+          sta sofl
+          lda #1
+          sta sonk
+          lda #0
+          rts 
+mpm54     jsr hk1clr
+          lda #"+"
+          sta hk14
+          lda #128+64+32
+          sta sofl
+          lda #2
+          sta sonk
+          lda #0
+          rts 
+mpm55     lda sofl
+          eor #32
+          sta sofl
+          lda #0
+          rts 
+hk1clr    lda #" "
+          sta hk11
+          sta hk12
+          sta hk13
+          sta hk14
+          rts 
+         ;********
+sort      stx sofirst
+          sty solast
+          cpy sofirst
+          beq sortr
+          sta int1
+          lda sonk
+          asl 
+          asl 
+          ora int1
+          tax 
+          lda soname,x
+          sta sokrit
+          inx 
+          inx 
+          lda soname,x
+          sta sokend
+          ldx int1
+          lda sollen,x
+          sta soelen
+          bit sofl
+          bmi sort1
+sortr     lda #0
+          rts 
+sort1     lda soelen
+          sta int1
+          ldx #0
+          stx int1+1
+          lda sofirst
+          jsr mult
+          clc 
+          adc #<liste
+          sta sofadr
+          txa 
+          adc #>liste
+          sta sofadr+1
+sortloop  lda sofl
+          and #$ff-1
+          sta sofl
+          lda sofadr
+          sta lzei
+          lda sofadr+1
+          sta lzei+1
+          lda sofirst
+          sta socount
+soloop    lda lzei
+          clc 
+          adc soelen
+          sta lmzei
+          lda lzei+1
+          adc #0
+          sta lmzei+1
+          bit sofl
+          bvs solow
+          ldy sokrit
+sol1      lda (lzei),y
+          cmp (lmzei),y
+          bcc solkm
+          bne solgm
+          iny 
+          cpy sokend
+          bne sol1
+          beq solmg
+solow     ldy sokend
+sol2      cpy sokrit
+          beq solmg
+          dey 
+          lda (lzei),y
+          cmp (lmzei),y
+          beq sol2
+          bcs solgm
+solkm     lda sofl
+          and #32
+          beq solmg
+          bne sochange
+solgm     lda sofl
+          and #32
+          bne solmg
+sochange  ldy #0
+soc1      
+          lda (lzei),y
+          tax 
+          lda (lmzei),y
+          sta (lzei),y
+          txa 
+          sta (lmzei),y
+          iny 
+          cpy soelen
+          bne soc1
+          lda sofl
+          ora #1
+          sta sofl
+solmg     lda lmzei
+          sta lzei
+          lda lmzei+1
+          sta lzei+1
+          inc socount
+          lda socount
+          cmp solast
+          bne soloop
+          lda sofl
+          and #1
+          beq sortrr
+          jmp sortloop
+sortrr    lda lzei
+          clc 
+          adc soelen
+          sta lzei
+          bcc sortr1
+          inc lzei+1
+sortr1    lda #0
+          rts 
+         ;********
+mpm45     jsr hk2clr
+          lda #"+"
+          sta hk21
+          lda #128
+          sta cvfl
+          lda #0
+          rts 
+mpm46     jsr hk2clr
+          lda #"+"
+          sta hk22
+          lda #64
+          sta cvfl
+          lda #0
+          rts 
+convinit  
+mpm47     jsr hk2clr
+          lda #"+"
+          sta hk23
+          lda #0
+          sta cvfl
+          rts 
+hk2clr    lda #" "
+          sta hk21
+          sta hk22
+          sta hk23
+          rts 
+conv      ldy cvfl
+          bne conv1
+          rts 
+conv1     
+          sta int1
+          stx int1+1
+          sta int2
+          stx int2+1
+          lda #<buffer
+          sta rwbzei
+          lda #>buffer
+          sta rwbzei+1
+          ldy #0
+cv2       lda (rwbzei),y
+          jsr bytconv
+          sta (rwbzei),y
+          iny 
+          bne cv3
+          inc rwbzei+1
+cv3       
+          lda int1
+          bne cv4
+          dec int1+1
+cv4       dec int1
+          lda int1
+          ora int1+1
+          bne cv2
+          lda int2
+          ldx int2+1
+          rts 
+bytconv   ldx cvfl
+          cpx #128
+          bne bcbmasc
+
+basccbm   cmp #65
+          bcc bcvr
+          cmp #91
+          bcc bcvo
+          cmp #97
+          bcc bcvr
+          cmp #123
+          bcs bcvr
+bcvx      eor #$20
+bcvr      rts 
+bcvo      ora #$80
+          rts 
+bcbmasc   
+          cmp #65
+          bcc bcvr
+          cmp #91
+          bcc bcvx
+          cmp #97
+          bcc bcvr
+          cmp #123
+          bcc bcvx
+          cmp #128+65
+          bcc bcvr
+          cmp #128+91
+          bcs bcvr
+          and #$7f
+          rts 
+
+         ;********
+hkcclr    lda #" "
+          sta hk51
+          sta hk52
+          sta hk53
+          rts 
+hkpclr    lda #" "
+          sta hk56
+          sta hk57
+          sta hk58
+          rts 
+         ;****
+mprtinit  jsr mprtoff
+mpout     jsr hkcclr
+          jsr hkpclr
+          lda prtfl
+          and #3
+          ldx #"+"
+          tay 
+          bne mpi1
+          stx hk51
+          beq mpi4
+mpi1      dey 
+          bne mpi2
+          stx hk53
+          beq mpi4
+mpi2      dey 
+          bne mpi4
+          stx hk52
+mpi4      lda #" "
+          sta hk54
+          sta hk55
+          lda prtfl
+          and #%00001000
+          beq mpi5
+          stx hk54
+mpi5      lda prtfl
+          and #%00100000
+          beq mpi6
+          stx hk55
+mpi6      lda prtdev
+          and #63
+          sec 
+          sbc #2
+          tay 
+          bne mpi7
+          stx hk56
+          beq mpi9
+mpi7      dey 
+          bne mpi8
+          stx hk57
+          beq mpi9
+mpi8      dey 
+          bne mpi9
+          stx hk58
+mpi9      lda #0
+          rts 
+         ;****
+mppnokon  lda prtfl
+          and #255-3
+          sta prtfl
+          jmp mpout
+mppacbm   lda prtfl
+          and #255-3
+          ora #2
+          sta prtfl
+          jmp mpout
+mppcasc   lda prtfl
+          and #255-3
+          ora #1
+          sta prtfl
+          jmp mpout
+         ;****
+mppcr     lda prtfl
+          eor #8
+          sta prtfl
+          jmp mpout
+mpplf     lda prtfl
+          eor #32
+          sta prtfl
+          jmp mpout
+         ;****
+mpp232    lda #2
+          sta prtdev
+          jmp mpout
+mppiec    lda #3
+          sta prtdev
+          jmp mpout
+mppcentr  lda #4
+          sta prtdev
+          jmp mpout
+         ;****
+mprton    lda prtfl
+          ora #128
+          sta prtfl
+          rts 
+mprtoff   lda prtfl
+          and #127
+          sta prtfl
+          rts 
+
+          .end 

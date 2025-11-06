@@ -53,6 +53,13 @@ comp: ${TRG}
 	kdiff3 PE_B.hex "PE  2.4B28_A.hex" || true
 	kdiff3 PE_C.hex "PE  2.4C28_A.hex" || true
 
+# lint the sources so that they can be edited in modern editors
+resrc:
+	for fmn in 0 1; do for fci in 0 1; do for eng in 0 1; do for prg in 0 1; do \
+		for i in *.S??; do echo $$i; xa -Dfmn=$$fmn -Dfci=$$fci -Deng=$$eng -Dprg=$$prg -E -U -P - "$$i" | cut -c 40- > ../../src/pr/"$$i"-$$fmn$$fci$$eng$$prg; done \
+	done; done; done; done
+
+
 clean:
 	rm -f *.o65 ${TRG} P?_?.hex *.lst
 

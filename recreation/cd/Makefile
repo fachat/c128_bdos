@@ -20,5 +20,10 @@ ${TRG}: ${SRC}
 
 comp: ${TRG}
 	kdiff3 ${TRG}.hex "${ORIG}"*.hex
+
+# lint the sources so that they can be edited in modern editors
+resrc:
+	for i in ${ORIG}*.S??; do echo $$i; xa -E -U -P - "$$i" | cut -c 40- > ../../src/${TRG}/"$$i"; done
+
 clean:
 	rm -f ${TRG}.o65 ${TRG} ${TRG}.hex *.lst

@@ -1,0 +1,932 @@
+
+
+
+
+         ;WP4 2.4 .S47 ==0801==
+         ;****
+mpm41                      ; pc->pc
+          lda #128
+          ldx #7
+          jsr mdirpin
+          bne m41aa
+          lda lanz
+          bne m41a
+m41aa     rts 
+m41a      clc 
+          jsr sgdrive
+          sta olddrv
+          lda #12
+          jsr prntcmd
+          lda #<cppt1
+          ldy #>cppt1
+          jsr winput
+          bcs m41aa
+          txa 
+          pha 
+          tya 
+          pha 
+          jsr askdisks
+          beq m41xx
+          tay 
+          pla 
+          pla 
+          tya 
+          rts 
+m41xx     pla 
+          tay 
+          pla 
+          jsr chdir
+          bne m41aa
+          clc 
+          jsr sgdrive
+          sta newdrv
+          lda #<liste
+          sta lzei
+          lda #>liste
+          sta lzei+1
+         ;****
+m41loop   ldy #16
+          lda (lzei),y
+          bmi m41a0
+          jmp m41next
+m41a0     jsr lzeibuf
+          lda newdrv
+          sec 
+          jsr sgdrive
+          jsr wclrcmd
+          lda #<iobuf
+          ldy #>iobuf
+          jsr wprntcmd
+m41a3     lda #<iobuf
+          ldy #>iobuf
+          ldx #$20
+          jsr dcreate
+          beq m41b
+          cmp #enfexist
+          bne m41a1
+          jsr gtnname
+          bcc m41a3
+          bne m41a2
+          beq m41b1
+m41b      lda #<iobuf
+          ldy #>iobuf
+          jsr dopen
+          beq m41c
+m41a1     jsr error
+          bcc m41b1
+m41a2     lda #1
+          sta lanz
+m41b1     jmp m41next
+m41c      stx newfpb
+          sty newfpb+1
+          ldy #fphandle
+          lda (newfpb),y
+          sta newhdl
+         ;****
+          lda olddrv
+          sec 
+          jsr sgdrive
+          jsr lzeibuf
+          jsr dopen
+          beq m41d
+          jsr error
+          bcc m41b2
+          lda #1
+          sta lanz
+m41b2     jmp m41l
+m41d      stx oldfpb
+          sty oldfpb+1
+          ldy #fphandle
+          lda (oldfpb),y
+          sta oldhdl
+          ldy #fpsize
+m41d1     lda (oldfpb),y
+          sta oldsize-fpsize,y
+          iny 
+          cpy #fpsize+4
+          bne m41d1
+         ;****
+cppl2     lda #prgbank
+          ldy #fpbank
+          sta (oldfpb),y
+          ldy #fpadr
+          lda #<buffer
+          sta (oldfpb),y
+          iny 
+          lda #>buffer
+          sta (oldfpb),y
+          ldy #fpanz
+          lda prblen
+          sta (oldfpb),y
+          iny 
+          lda prblen+1
+          sta (oldfpb),y
+          ldx oldhdl
+          jsr dread
+          sta olderr
+          beq m41e
+          cmp #eneof
+          beq m41f
+          jsr error
+          bcc m41b3
+          lda #1
+          sta lanz
+m41b3     jmp m41i
+m41e      lda oldsize
+          sec 
+          sbc prblen
+          sta oldsize
+          lda oldsize+1
+          sbc prblen+1
+          sta oldsize+1
+          bcs m41e1
+          lda oldsize+2
+          bne m41e2
+          dec oldsize+3
+m41e2     dec oldsize+2
+m41e1     lda prblen
+          ldx prblen+1
+          jmp m41g
+m41f      lda oldsize
+          ldx oldsize+1
+m41g      jsr conv
+          ldy #fpanz
+          sta (newfpb),y
+          iny 
+          txa 
+          sta (newfpb),y
+          ldy #fpadr
+          lda #<buffer
+          sta (newfpb),y
+          iny 
+          lda #>buffer
+          sta (newfpb),y
+          ldy #fpbank
+          lda #prgbank
+          sta (newfpb),y
+          ldx newhdl
+          jsr dwrite
+          beq m41h
+          jsr error
+          bcc m41b4
+          lda #1
+          sta lanz
+m41b4     jmp m41i
+m41h      lda olderr
+          bne m41i
+          jmp cppl2
+         ;****
+m41i      ldx oldhdl
+          jsr dclose
+m41l      ldx newhdl
+          jsr dclose
+m41next   lda lzei
+          clc 
+          adc #19
+          sta lzei
+          bcc m41j
+          inc lzei+1
+m41j      dec lanz
+          beq m41k
+          jmp m41loop
+m41k      lda #0
+          rts 
+         ;********
+gtnname   
+          lda #<iobuf
+          ldy #>iobuf
+          jsr wprnterr
+          lda #<gtnnt3
+          ldy #>gtnnt3
+          jsr textout
+gtnname1  lda #<gtnnt
+          ldy #>gtnnt
+          jsr wopenmsg
+gtn1      jsr wgetkey
+          beq gtn1
+          cmp #13
+          beq gtnret
+          cmp #"="
+          beq gtnnam
+          cmp #3
+          bne gtn1
+          jsr wclose
+gtn1x     lda #enbreak
+          sec 
+          rts 
+gtnret    jsr wclose
+          lda #0
+          sec 
+          rts 
+gtnnam    jsr wclose
+          lda #5
+          jsr prntcmd
+          lda #<isnpt
+          ldy #>isnpt
+          jsr winput
+          bcs gtn1x
+          clc 
+          lda #0
+          rts 
+         ;****
+askdisks  lda #<adt
+          ldy #>adt
+          jsr wopenmsg
+adl1      jsr wgetkey
+          beq adl1
+          cmp #13
+          beq adl2
+          cmp #3
+          bne adl1
+          lda #enbreak
+          .byt $2c
+adl2      lda #0
+          pha 
+          jsr wclose
+          pla 
+          rts 
+         ;********
+mpm42                      ; pc->cbm
+          lda #128
+          ldx #7
+          jsr mdirpin
+          bne m42aa
+          lda lanz
+          bne m42a
+m42aa     rts 
+m42a      clc 
+          jsr sgdrive
+          sta olddrv
+          jsr askdisks
+          bne m42aa
+          lda #<liste
+          sta lzei
+          lda #>liste
+          sta lzei+1
+          lda #0
+          jsr setfnpar
+          lda #1
+          ldx iecunit
+          ldy #15
+          jsr setfpar
+          jsr open
+          ora #64
+          bcs m42aa
+         ;****
+m42loop   ldy #16
+          lda (lzei),y
+          bmi m42a0
+          jmp m42next
+m42a0     lda iecdrive
+          sta iobuf
+          lda #":"
+          sta iobuf+1
+          ldy #0
+m42a3     lda (lzei),y
+          sta iobuf+2,y
+          iny 
+          cpy #8
+          bne m42a3
+m42a4     lda (lzei),y
+          sta iobuf+3,y
+          iny 
+          cpy #11
+          bne m42a4
+          lda #"."
+          sta iobuf+2+8
+          lda #0
+          sta iobuf+3+11
+          lda #14
+m42newnam ldx #<iobuf
+          ldy #>iobuf
+          jsr setfnpar
+          lda #2
+          ldx iecunit
+          ldy #1
+          jsr setfpar
+          jsr wclrcmd
+          lda #<iobuf
+          ldy #>iobuf
+          jsr wprntcmd
+          jsr open
+          ora #64
+          bcs m42c
+          jsr m34b
+          beq m42cc
+          lda #2
+          jsr close
+          lda iobuf
+          cmp #"6"
+          bne m42xa
+          lda iobuf+1
+          cmp #"3"
+          beq m42xb
+m42xa     jsr errorq
+          bcs m42xkk
+m42ce     jmp m42next
+m42xb     jsr gtnname1
+          bcc m42cd
+          beq m42ce
+m42xkk    jmp m42kk
+m42cd     ldy #<-1
+m42cf     iny 
+          lda iobuf,y
+          bne m42cf
+          tya 
+          jmp m42newnam
+         ;****
+m42cc     lda olddrv
+          sec 
+          jsr sgdrive
+          jsr lzeibuf
+          jsr dopen
+          beq m42d
+m42c      jsr error
+          bcc m42b2
+          lda #1
+          sta lanz
+m42b2     jmp m42l
+m42d      stx oldfpb
+          sty oldfpb+1
+          ldy #fphandle
+          lda (oldfpb),y
+          sta oldhdl
+          ldy #fpsize
+m42d1     lda (oldfpb),y
+          sta oldsize-fpsize,y
+          iny 
+          cpy #fpsize+4
+          bne m42d1
+         ;****
+cpcl2     lda #prgbank
+          ldy #fpbank
+          sta (oldfpb),y
+          ldy #fpadr
+          lda #<buffer
+          sta (oldfpb),y
+          iny 
+          lda #>buffer
+          sta (oldfpb),y
+          ldy #fpanz
+          lda prblen
+          sta (oldfpb),y
+          iny 
+          lda prblen+1
+          sta (oldfpb),y
+          ldx oldhdl
+          jsr dread
+          sta olderr
+          beq m42e
+          cmp #eneof
+          beq m42f
+          jsr error
+          bcc m42b3
+          lda #1
+          sta lanz
+m42b3     jmp m42i
+m42e      lda oldsize
+          sec 
+          sbc prblen
+          sta oldsize
+          lda oldsize+1
+          sbc prblen+1
+          sta oldsize+1
+          bcs m42e1
+          lda oldsize+2
+          bne m42e2
+          dec oldsize+3
+m42e2     dec oldsize+2
+m42e1     lda prblen
+          ldx prblen+1
+          jmp m42g
+m42f      lda oldsize
+          ldx oldsize+1
+m42g      jsr conv
+          jsr cwrite
+          beq m42h
+          jsr error
+          bcc m42b4
+          lda #1
+          sta lanz
+m42b4     jmp m42i
+m42h      lda olderr
+          bne m42i
+          jmp cpcl2
+         ;****
+m42i      ldx oldhdl
+          jsr dclose
+m42l      lda #2
+          jsr close
+m42next   lda lzei
+          clc 
+          adc #19
+          sta lzei
+          bcc m42j
+          inc lzei+1
+m42j      dec lanz
+          beq m42k
+          jmp m42loop
+m42k      lda #0
+m42kk     pha 
+          lda #1
+          jsr close
+          pla 
+          rts 
+         ;****
+cwrite    sta ccnt
+          stx ccnt+1
+          lda #<buffer
+          sta newfpb
+          lda #>buffer
+          sta newfpb+1
+          ldx #2
+          jsr ckout
+          ora #64
+          bcs cwre
+          ldy #0
+cwrl      lda (newfpb),y
+          jsr bsout
+          inc newfpb
+          bne cwr1
+          inc newfpb+1
+cwr1      lda ccnt
+          bne cwr2
+          dec ccnt+1
+cwr2      dec ccnt
+          lda ccnt
+          bne cwrl
+          ora ccnt+1
+          bne cwrl
+          lda #0
+cwre      pha 
+          jsr clrch
+          pla 
+          rts 
+         ;********
+mpm43                      ; cbm->pc
+          jsr gtcbmdir
+          beq m43x1
+m43x2     rts 
+m43x1     lda #<iobuf
+          ldy #>iobuf
+          jsr wprnterr
+          lda #7
+          jsr prntcmd
+          lda lanz
+          beq m43x2
+          lda #128
+          jsr mpdirin
+          bne m43x2
+          lda #12
+          jsr prntcmd
+          lda #<cppt1
+          ldy #>cppt1
+          jsr winput
+          bcs m43x2
+          txa 
+          pha 
+          tya 
+          pha 
+          jsr askdisks
+          beq m43xx
+          tay 
+          pla 
+          pla 
+          tya 
+          rts 
+m43xx     pla 
+          tay 
+          pla 
+          jsr chdir
+          bne m43x2
+          clc 
+          jsr sgdrive
+          sta newdrv
+          lda #<liste
+          sta lzei
+          lda #>liste
+          sta lzei+1
+         ;****
+m43loop   ldy #18
+          lda (lzei),y
+          bmi m43a0
+          jmp m43next
+m43a0     jsr lcpzeibuf
+          lda newdrv
+          sec 
+          jsr sgdrive
+          jsr wclrcmd
+          lda #<iobuf
+          ldy #>iobuf
+          jsr wprntcmd
+m43a3     lda #<iobuf
+          ldy #>iobuf
+          ldx #$20
+          jsr dcreate
+          beq m43b
+          cmp #enfexist
+          bne m43a1
+          jsr gtnname
+          bcc m43a3
+          bne m43a2
+          beq m43b1
+m43b      lda #<iobuf
+          ldy #>iobuf
+          jsr dopen
+          beq m43c
+m43a1     jsr error
+          bcc m43b1
+m43a2     lda #1
+          sta lanz
+m43b1     jmp m43next
+m43c      stx newfpb
+          sty newfpb+1
+          ldy #fphandle
+          lda (newfpb),y
+          sta newhdl
+         ;****
+          jsr lczeibuf
+          jsr setfnpar
+          lda #2
+          ldx iecunit
+          ldy #0
+          jsr setfpar
+          jsr open
+          ora #64
+          bcc m43d
+          jsr error
+          bcc m43b2
+          lda #1
+          sta lanz
+m43b2     jmp m43l
+m43d      jsr m34b
+          beq ccpl2
+         ;****
+ccpl2     
+          jsr cread
+          sta olderr
+          beq m43f
+          cmp #eneof
+          beq m43f
+          jsr error
+          bcc m43b3
+          lda #1
+          sta lanz
+m43b3     jmp m43i
+m43f      tya 
+m43g      jsr conv
+          ldy #fpanz+1
+          sta (newfpb),y
+          dey 
+          txa 
+          sta (newfpb),y
+          ldy #fpadr
+          lda #<buffer
+          sta (newfpb),y
+          iny 
+          lda #>buffer
+          sta (newfpb),y
+          ldy #fpbank
+          lda #prgbank
+          sta (newfpb),y
+          ldx newhdl
+          jsr dwrite
+          beq m43h
+          jsr error
+          bcc m43b4
+          lda #1
+          sta lanz
+m43b4     jmp m43i
+m43h      lda olderr
+          bne m43i
+          jmp ccpl2
+         ;****
+m43i      lda #2
+          jsr close
+m43l      ldx newhdl
+          jsr dclose
+m43next   lda lzei
+          clc 
+          adc #20
+          sta lzei
+          bcc m43j
+          inc lzei+1
+m43j      dec lanz
+          beq m43k
+          jmp m43loop
+m43k      lda #0
+          rts 
+         ;****
+lczeibuf  lda iecdrive
+          sta iobuf
+          lda #":"
+          sta iobuf+1
+          ldy #2
+          ldx #2
+lczei1    lda (lzei),y
+          sta iobuf,x
+          beq lczei2
+          inx 
+          iny 
+          cpy #18
+          bne lczei1
+lczei2    lda #","
+          sta iobuf,x
+          inx 
+          ldy #19
+          lda (lzei),y
+          sta iobuf,x
+          inx 
+          lda #0
+          sta iobuf,x
+          txa 
+          ldx #<iobuf
+          ldy #>iobuf
+          rts 
+         ;****
+lcpzeibuf ldy #2
+lcpz1     lda (lzei),y
+          cmp #"."
+          bne lcpz1a
+          lda #"_"
+lcpz1a    sta iobuf-2,y
+          beq lcpze
+          iny 
+          cpy #14
+          bne lcpz1
+          lda #0
+          sta iobuf-2,y
+lcpze     lda iobuf+8
+          beq lcpze1
+          lda #"."
+          sta iobuf+8
+lcpze1    rts 
+         ;****
+cread     ldx #2
+          jsr chkin
+          ora #64
+          bcs crde
+          lda #0
+          sta status
+          sta ccnt
+          sta ccnt+1
+          lda #<buffer
+          sta oldfpb
+          lda #>buffer
+          sta oldfpb+1
+crdl1     jsr basin
+          ldy #0
+          sta (oldfpb),y
+          inc oldfpb
+          bne crdl2
+          inc oldfpb+1
+crdl2     inc ccnt
+          bne crdl2a
+          inc ccnt+1
+crdl2a    jsr tststat
+          bne crde
+          lda ccnt+1
+          cmp prblen+1
+          bcc crdl1
+          bne crdl3
+          lda ccnt
+          cmp prblen
+          bcc crdl1
+crdl3     lda #0
+crde      pha 
+          jsr clrch
+          lda oldfpb
+          sec 
+          sbc #<buffer
+          tax 
+          lda oldfpb+1
+          sbc #>buffer
+          tay 
+          pla 
+          rts 
+         ;********
+mpmprint  jsr mprton
+mpmread   lda #64
+          ldx #6
+          jsr mdirpin
+          beq mrd1
+mrd2      rts 
+mrd1      lda lanz
+          beq mrd2
+          jsr lzeibuf
+          jsr dopen
+          bne mrd2
+          stx oldfpb
+          sty oldfpb+1
+          ldy #fphandle
+          lda (oldfpb),y
+          sta oldhdl
+          ldy #fpsize
+m4rd1     lda (oldfpb),y
+          sta oldsize-fpsize,y
+          iny 
+          cpy #fpsize+4
+          bne m4rd1
+          ldx #3
+          ldy #0
+          clc 
+          jsr wcursor
+          ldx #18
+          lda #39
+          jsr wopen
+          lda #19+128       ;"{clr}"
+          sta newhdl
+          jsr wclr
+mrdl      
+          lda #prgbank
+          ldy #fpbank
+          sta (oldfpb),y
+          ldy #fpadr
+          lda #<buffer
+          sta (oldfpb),y
+          iny 
+          lda #>buffer
+          sta (oldfpb),y
+          ldy #fpanz
+          lda prblen
+          sta (oldfpb),y
+          iny 
+          lda prblen+1
+          sta (oldfpb),y
+          ldx oldhdl
+          jsr dread
+          sta olderr
+          beq m4re
+          cmp #eneof
+          beq m4rf
+          jmp m4rxe
+m4re      lda oldsize
+          sec 
+          sbc prblen
+          sta oldsize
+          lda oldsize+1
+          sbc prblen+1
+          sta oldsize+1
+          bcs m4re1
+          lda oldsize+2
+          bne m4re2
+          dec oldsize+3
+m4re2     dec oldsize+2
+m4re1     lda prblen
+          ldx prblen+1
+          jmp m4rg
+m4rf      lda oldsize
+          ldx oldsize+1
+m4rg      jsr cprint
+          bne m4rxe
+m4rh      lda olderr
+          bne m4ri
+          jmp mrdl
+m4ri      lda #0
+m4rxe     pha 
+cprl5     jsr wgetkey
+          beq cprl5
+          jsr mprtoff
+          ldx oldhdl
+          jsr dclose
+          jsr wclose
+          pla 
+          rts 
+         ;****
+cprint    sta ccnt
+          stx ccnt+1
+          lda #<buffer
+          sta newfpb
+          lda #>buffer
+          sta newfpb+1
+          jsr prttst
+          bne cprx
+cprl1     ldy #0
+          lda (newfpb),y
+          cmp #19             ;"{home}"
+          bne cprl2
+          cmp newhdl
+          beq cprla
+cprl2     jsr chartest
+          sta newhdl
+          jsr chout
+          bcs cprx
+cprla     inc newfpb
+          bne cprl3
+          inc newfpb+1
+cprl3     lda ccnt
+          bne cprl4
+          dec ccnt+1
+cprl4     dec ccnt
+          jsr wgetkey
+          beq cprl6
+          cmp #3
+          beq cprbrk
+cprl7     jsr wgetkey
+          beq cprl7
+cprl6     lda ccnt
+          ora ccnt+1
+          bne cprl1
+          lda #0
+          .byt $2c
+cprbrk    lda #enbreak
+cprx      pha 
+          jsr prtoff
+          pla 
+          rts 
+         ;****
+chartest  tax 
+          and #127
+          cmp #32
+          bcs chatok
+          ldy #anztkey-1
+          txa 
+chat1     cmp chtkeys,y
+          beq chatok
+          dey 
+          bpl chat1
+          lda #"@"
+          rts 
+chatok    clc 
+          txa 
+          rts 
+         ;********
+prntcmd   pha 
+          jsr wclrcmd
+          pla 
+          asl 
+          tax 
+          lda ptta-1,x
+          tay 
+          lda ptta-2,x
+          jmp wprntcmd
+         ;********
+tststat   lda status
+          beq tst2
+          and #$bf
+          bne tst1
+          lda #eneof
+          .byt $2c
+tst1      lda #29+64
+tst2      cmp #0
+          rts 
+         ;********
+mpcprint  jsr mprton
+mpcread   
+          jsr gtcbmdir
+          beq mcr1
+mcrr      rts 
+mcr1      
+          lda #<iobuf
+          ldy #>iobuf
+          jsr wprnterr
+          lda #15
+          jsr prntcmd
+          lda lanz
+          beq mcrr
+          lda #128+64
+          jsr mpdirin
+          bne mcrr
+          jsr lczeibuf
+          jsr setfnpar
+          lda #2
+          ldx iecunit
+          ldy #0
+          jsr setfpar
+          ldx #3
+          ldy #0
+          jsr wcursor
+          ldx #18
+          lda #39
+          jsr wopen
+          lda #19+128       ;"{clr}"
+          sta newhdl
+          jsr wclr
+          jsr open
+          ora #64
+          bcs mcrx
+mcrl      jsr cread
+          sta olderr
+          beq mcr2
+          cmp #eneof
+          bne mcrx
+mcr2      
+          txa 
+          pha 
+          tya 
+          tax 
+          pla 
+          jsr cprint
+          bne mcrx
+          lda olderr
+          beq mcrl
+          lda #0
+mcrx      pha 
+          lda #2
+          jsr close
+mcry      jsr wgetkey
+          beq mcry
+          jsr mprtoff
+          jsr wclose
+          pla 
+          rts 

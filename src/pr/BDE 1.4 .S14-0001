@@ -1,0 +1,28 @@
+
+
+
+
+         ;BDE 1.4 .S14 ==0801==
+         enok=0
+         ennotimp=<-1
+         entxrx=<-2
+         enslow=<-3
+         engcr=<-4
+         enprange=<-5
+         enclnf=<-6
+         endnfnd=<-7
+         enactdir=<-8
+         ennotfnd=<-9
+         enpovr=<-10
+         enillnam=<-11
+         endskful=<-12
+         enfexist=<-13
+         ennempty=<-14
+         enilldrv=<-15
+         endnrdy=<-16
+         entmnyf=<-17
+         enfopen=<-18
+         enfnopen=<-19
+         eneof=<-20
+         ennbfre=<-21
+         enbreak=<-22

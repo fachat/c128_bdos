@@ -1,0 +1,89 @@
+
+
+
+
+         ;BDE 1.45.S15 ==0801==
+         enok=0
+         ennotimp=<-1
+         entxrx=<-2
+         enslow=<-3
+         engcr=<-4
+         enprange=<-5
+         enclnf=<-6
+         endnfnd=<-7
+         enactdir=<-8
+         ennotfnd=<-9
+         enpovr=<-10
+         enillnam=<-11
+         endskful=<-12
+         enfexist=<-13
+         ennempty=<-14
+         enilldrv=<-15
+         endnrdy=<-16
+         entmnyf=<-17
+         enfopen=<-18
+         enfnopen=<-19
+         eneof=<-20
+         ennbfre=<-21
+         enbreak=<-22
+         endnp=<-23
+         endbf=<-24
+         endbe=<-25
+         ;  320 .if prg
+         ;.end
+
+         ;**********
+error0    lda #enok
+          .byt $2c
+notimpl   lda #ennotimp
+          .byt $2c              ; uebertragung not ok
+notready  lda #entxrx
+          .byt $2c              ; disk not ready
+notfast   lda #enslow
+          .byt $2c              ; keine schnelle floppy
+notmfm    lda #engcr
+          .byt $2c              ; keine mfm-diskette
+parrange  lda #enprange
+          .byt $2c              ; parameter out of range
+clusnfnd  lda #enclnf
+          .byt $2c              ; kein folgecluster gefunden
+dirnfnd   lda #endnfnd
+          .byt $2c              ; pfad nicht gefunden
+eactdir   lda #enactdir
+          .byt $2c              ; bei rmdir aktuelles dir zum loeschen
+enotfnd   lda #ennotfnd
+          .byt $2c              ; entry not found
+pathovrf  lda #enpovr
+          .byt $2c              ; path zu lang
+illname   lda #enillnam
+          .byt $2c              ; illegaler name
+diskfull  lda #endskful
+          .byt $2c              ; diskette voll
+filexist  lda #enfexist
+          .byt $2c              ; file existiert schon
+notempty  lda #ennempty
+          .byt $2c              ; subdir bei rmdir nicht leer
+illdrv    lda #enilldrv
+          .byt $2c              ; illegal drive n
+dnotrdy   lda #endnrdy
+          .byt $2c              ; drive not ready
+tmnyfile  lda #entmnyf
+          .byt $2c              ; zu viele files
+fileopen  lda #enfopen
+          .byt $2c              ; file schon geoeffnet
+filnopen  lda #enfnopen
+          .byt $2c              ; file noch nicht offen
+eof       lda #eneof
+          .byt $2c              ; end of file
+nobffre   lda #ennbfre
+          .byt $2c              ; kein disk-puffer mehr
+break     lda #enbreak
+          .byt $2c              ; unterbrechung
+dnotpr    lda #endnp
+          .byt $2c              ; device not present
+dbufull   lda #endbf
+          .byt $2c              ; dev-puffer voll
+dbufemp   lda #endbe
+         ; dev-puffer leer
+diskerr   cmp #0
+          rts 

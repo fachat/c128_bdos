@@ -1,0 +1,85 @@
+
+
+
+
+         ;PR3 2.4 .S26 ==0801==
+
+mrnx      ldy #<-1
+prn2      iny 
+          lda (zei),y
+          beq prne
+          cmp #" "
+          beq prn2
+prn3      lda (zei),y
+          beq prn4
+          cmp #$5c             ;"\"
+          beq prne
+          cmp #":"
+          beq prne
+          iny 
+          bne prn3
+prn4      lda zei
+          ldy zei+1
+          ldx #$ff
+          jsr namedtp
+          beq prne2
+          cmp #ennotfnd
+          bne prnex
+          clc 
+          jsr sgdta
+          sta rwbzei
+          sty rwbzei+1
+          ldy #dsname
+prnx1     lda (rwbzei),y
+          sta ddtp,y
+          iny 
+          cpy #dsname+12
+          bcc prnx1
+          lda #<dbuf
+          ldy #>dbuf
+          ldx #$ff
+          jsr namedtp
+          bne prnex
+          ldx #dsname
+          ldy #dgname
+prnx2     lda ddtp,x
+          sta (rwbzei),y
+          inx 
+          iny 
+          cpy #dgname+11
+          bcc prnx2
+          jmp wrentry
+prne      lda #enillnam
+          .byt $2c
+prne2     lda #enfexist
+prnex     rts 
+
+mrename   lda #64
+          ldx #6
+          jsr mdirpin
+          beq mrn1
+mrnr      rts 
+mrn1      
+          lda lanz
+          beq mrnr
+          jsr lzeibuf
+          sta zei
+          sty zei+1
+          ldy #0
+mrn2      lda (zei),y
+          sta dbuf,y
+          beq mrn3
+          iny 
+          bne mrn2
+mrn3      
+          lda #14
+          jsr prntcmd
+          lda #<isnpt
+          ldy #>isnpt
+          jsr winput
+          bcs mrnr
+          stx zei
+          sty zei+1
+          jmp mrnx
+
+          .end 

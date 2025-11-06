@@ -1,0 +1,92 @@
+
+
+
+
+         ;../origsrc/bdos+s1/PRG1.S4 ==0801==
+          .word $7000
+         bdos=$a000           ; startadresse bdos
+         prg=1           ; fuer include-datei
+
+         ;
+         ;   jsr init   ; init bdos, bei prompt verboten
+         ;
+          lda #0             ; laufwerk a
+          sec                    ; setzen
+          jsr sgdrive                ; und ausfuehren
+         ;
+          lda #<dtp              ; adresse des
+          ldy #>dtp              ; disk-transfer-
+          sec                    ; puffers
+          jsr sgdta                ; setzen
+         ;
+          lda #"*"             ; joker
+          sta dtp+dsname            ; fuer name
+          sta dtp+dsext            ; und extension
+          lda #%00111110             ; attribut
+          sta dtp+dsattr            ; setzen
+          jsr sfirst                ; ersten eintrag
+          jmp loop1                ; suchen und drucken
+         ;
+loop                       ; schleife
+          jsr snext                ; naechster eintrag
+loop1     
+          bne enddir                ; nicht gefunden
+         ;
+          lda #13             ; cr
+          jsr $ffd2              ; ausgeben
+          ldy #0             ; index name
+name      
+          lda dtp+dgname,y
+          jsr $ffd2              ; namen ausgeben
+          iny 
+          cpy #8
+          bne name
+         ;
+          ldy #0             ; index extension
+exten     
+          lda dtp+dgext,y
+          jsr $ffd2              ; extension ausgeben
+          iny 
+          cpy #3
+          bne exten
+         ;
+          lda #" "             ; space
+          jsr $ffd2              ; ausgeben
+          lda dtp+dgattr            ; attribut
+          tax 
+          and #8             ; maske disk-name
+          beq noname
+          lda #"n"
+          jsr $ffd2
+noname    
+         ;
+          txa 
+          and #16             ; maske subdir
+          beq nodir
+          lda #"d"
+          jsr $ffd2
+nodir     
+         ;
+          txa 
+          and #4             ; maske systemfile
+          beq nosys
+          lda #"s"
+          jsr $ffd2
+nosys     
+         ;
+          jmp loop
+         ;
+enddir    
+          lda #13             ; cr
+          jsr $ffd2              ; ausgeben
+         ;  jsr exit    ; bei aufruf aus prompt verboten
+          lda #0             ; fehlermeldung fuer prompt
+          rts 
+dtp       
+          .word 0,0,0,0,0
+          .word 0,0,0,0,0
+          .word 0,0,0,0,0
+          .word 0,0,0,0,0
+          .word 0,0,0,0,0
+
+          .word $7000

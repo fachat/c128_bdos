@@ -1,0 +1,24 @@
+
+
+
+
+         ;WP2 2.1 .S60 ==0801==
+
+hexbuf    pha 
+          lsr 
+          lsr 
+          lsr 
+          lsr 
+          jsr hexnbuf
+          pla 
+          and #$0f
+hexnbuf   clc 
+          adc #"0"
+          cmp #"9"+1
+          bcc hexnb1
+          adc #6
+hexnb1    sta iobuf,x
+          inx 
+          rts 
+
+          .end 

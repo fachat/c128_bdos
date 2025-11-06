@@ -1,0 +1,286 @@
+
+
+
+
+         ;BDB 1.41.S37 ==0801==
+         ;****
+psfrbuf   sty bfyr
+          sta bfxr
+          ldx #0
+sfrb2     ldy bfdindex,x
+          lda bf1val,y
+          and #255-$40
+          bmi sfrb2a
+          cmp bfyr
+          bne sfrb2a
+          lda bf1drv,y
+          cmp bfxr
+          beq sbfok
+sfrb2a    inx 
+          cpx #bufanz
+          bne sfrb2
+          ldx #0
+sfrb3     ldy bfdindex,x
+          lda bf1val,y
+          and #$c0
+          beq sbfok
+sfrb3a    inx 
+          cpx #bufanz
+          bne sfrb3
+          ldx #0
+sfrb4     ldy bfdindex,x
+          lda bf1val,y
+          bpl sbfok
+          inx 
+          cpx #bufanz
+          bne sfrb4
+sfrerr    ldx #0
+          jmp nobffre
+sbfok     lda bf1val,y
+          and #$40
+          ora bfyr
+          ora #$80
+          sta bf1val,y
+          lda #0
+          rts                    ; x=buffer-nr
+         ;****
+prlbuf    cpx #bufanz
+          bcs sfrerr
+          ldy bfdindex,x
+          lda bf1val,y
+          and #127
+          sta bf1val,y
+          lda #0
+          rts 
+         ;****
+bfzsr     sty int1
+          lda #0
+          sta int1+1
+          lda #<buflen
+          ldx #>buflen
+          jsr mult
+          clc 
+          adc #<bufanf
+          tay 
+          txa 
+          adc #>bufanf
+          tax 
+          tya 
+          rts 
+pbfzset   sty bfyr
+          pha 
+          txa 
+          pha 
+          jsr bfzsr
+          sta bf1z
+          stx bf1z+1
+          pla 
+          sta int1+1
+          tax 
+          pla 
+          sta int1
+          clc 
+          adc bf1z
+          sta bf1z
+          txa 
+          adc bf1z+1
+          sta bf1z+1
+          lda bpb+bprecsiz
+          ldx bpb+bprecsiz+1
+          jsr sub
+          pha 
+          ldy bfyr
+          lda bfdindex,y
+          sta bfbfo
+          tay 
+          pla 
+          sta bf1r,y
+          txa 
+          sta bf1r+1,y
+          lda bf1z
+          ldx bf1z+1
+          rts 
+         ;****
+pbfset    sty bfyr
+          ldy #0
+          sta (bf1z),y
+          ldy bfyr
+pbfget    sty bfyr
+          ldy #0
+          lda (bf1z),y
+          inc bf1z
+          bne bf1get1
+          inc bf1z+1
+bf1get1   stx bfxr
+          ldx bfbfo
+          ldy bf1r,x
+          bne bf1get2
+          dec bf1r+1,x
+bf1get2   dec bf1r,x
+          bne bf1gok
+          ldy bf1r+1,x
+          bne bf1gok
+          sec 
+          .byt $24
+bf1gok    clc 
+          ldy bfyr
+          ldx bfxr
+          rts 
+         ;*****
+pbufabs   php 
+          pha 
+          txa 
+          pha 
+          sty bfyr
+          jsr bfzsr
+          sta abspar+apbuffer
+          stx abspar+apbuffer+1
+          pla 
+          sta abspar+aprecord+1
+          pla 
+          sta abspar+aprecord
+          lda #0
+          plp 
+          bcc bufa1
+          lda #1
+bufa1     sta abspar+aprwflag
+          lda #prgbank
+          sta abspar+apbank
+          ldx bfyr
+bfcfabs   stx bfyr
+          clc 
+          jsr sgdrive
+          sta abspar+apdrive
+          lda #1
+          sta abspar+apanz
+          lda #0
+          sta abspar+apanz+1
+          ldx bfyr                ; buffer-nr
+          ldy bfdindex,x
+          lda bf1val,y
+          and #$40
+          beq bufaexe
+          lda abspar+aprwflag
+          bne bufaexe
+          lda abspar+apdrive
+          cmp bf1drv,y
+          bne bufaexe
+          lda abspar+aprecord
+          cmp bf1logs,y
+          bne bufaexe
+          lda abspar+aprecord+1
+          cmp bf1logs+1,y
+          bne bufaexe
+          lda #0
+          rts 
+bufaexe   lda abspar+aprecord
+          sta bf1logs,y
+          lda abspar+aprecord+1
+          sta bf1logs+1,y
+          lda abspar+apdrive
+          sta bf1drv,y
+          lda bf1val,y
+          sta bfxr
+          sty bfyr
+          and #$ff-$40
+          sta bf1val,y
+          lda #<abspar
+          ldy #>abspar
+          jsr rwabs
+          bne bufaerr
+          ldy bfyr
+          lda bfxr
+          ora #$40
+          sta bf1val,y
+          lda #0
+bufaerr   rts 
+         ;*****
+pwritfat  
+          lda bpb+bpbflag
+          and #dfwrit
+          beq pfwrit1
+          ldy bpb+bpbfat
+          lda bfdindex,y
+          tax 
+          lda bf1val,x
+          and #$40
+          beq pfwrit1
+          lda bf1logs,x
+          sta pwfrec
+          lda bf1logs+1,x
+          sta pwfrec+1
+pwf1      lda pwfrec
+          ldx pwfrec+1
+          ldy bpb+bpbfat
+          jsr wbufabs
+          lda pwfrec
+          sec 
+          sbc bpb+bpfsiz
+          sta pwfrec
+          lda pwfrec+1
+          sbc bpb+bpfsiz+1
+          sta pwfrec+1
+          bcc pfwrit1
+          ora pwfrec
+          bne pwf1
+pfwrit1   
+          lda bpb+bpbflag
+          and #ff-dfwrit
+          sta bpb+bpbflag
+          lda #0
+          rts 
+         ;****
+wbufabs   sta abspar+aprecord
+          stx abspar+aprecord+1
+          ldx #1
+          stx abspar+aprwflag
+          stx abspar+apanz
+          dex 
+          stx abspar+apanz+1
+          lda #prgbank
+          sta abspar+apbank
+          txa 
+          jsr bfzset
+          sta abspar+apbuffer
+          stx abspar+apbuffer+1
+          lda #<abspar
+          ldy #>abspar
+          jmp rwabs
+         ;*****
+preadfat  
+          ldy bpb+bpbfat
+preadbuf  sta rbrec
+          stx rbrec+1
+          sty bfyr
+          ldx bfdindex,y
+          lda bf1val,x
+          and #$40
+          beq prbread
+          lda bf1logs,x
+          cmp rbrec
+          bne prbwr
+          lda bf1logs+1,x
+          cmp rbrec+1
+          beq prbend
+prbwr     jsr writfat
+          ldy bfyr
+          ldx bfdindex,y
+          lda bf1val,x
+          and #ff-$40
+          sta bf1val,x
+prbread   lda rbrec
+          ldx rbrec+1
+          ldy bfyr
+          clc 
+          jmp bufabs
+prbend    lda #0
+          rts 
+         ;*****
+pwritbuf  ldx bfdindex,y
+          lda bf1logs,x
+          pha 
+          lda bf1logs+1,x
+          tax 
+          pla 
+          sec 
+          jmp bufabs

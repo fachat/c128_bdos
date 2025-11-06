@@ -13,5 +13,10 @@ bd+: bda*.a65 *.S??
 
 comp: bd+
 	kdiff3 bd+.hex "BD+ 1.45HA.hex"
+
+# lint the sources so that they can be edited in modern editors
+resrc:
+	for i in *.S??; do echo $$i; xa -E -U -P - "$$i" | cut -c 40- > ../../src/bd/"$$i"; done
+
 clean:
 	rm -f bd+.o65 bd+ bd+.hex *.lst

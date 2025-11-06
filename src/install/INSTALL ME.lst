@@ -1,0 +1,165 @@
+
+
+;../../origsrc/bdos+s1/INSTALL ME ==0801==
+ 1000 rem ******************************
+ 1001 rem *install  bdos+  (c) a.fachat*
+ 1002 rem ******************************
+ 1003 if peek(65532)=61 then bank 0
+ 1005 if ll=1 then sys 32768
+ 1010 dim a$(10),b$(10,10),a%(10),r(1)
+ 1012 dim h$(15)
+ 1014 fori=0 to 15:read h$(i):next
+ 1015 p=1:p8=1024:p9=3
+ 1020 r(0)=14:r(1)=68
+ 1030 p2$(0)="f":p2$(1)="e3ffffffe"
+ 1040 p3$(0)="40":p3$(1)="00"
+ 1050 de=peek(186):if de<8 or de>11 then de=8
+ 1100 bd$="bd+ 1.45ha\a000"
+ 1110 pr$(1)="pe  2.4a28/a\2800"
+ 1120 pr$(2)="pe  2.4b28/a\2800"
+ 1130 pr$(3)="pe  2.4c28/a\2800"
+ 1140 cb$(0)="cb  1.2c9/a\9000"
+ 1150 cd$(0)="cd  2.0d88/a\8800"
+ 1160 cb$(1)="vb  1.2b9/a\9000"
+ 1170 cd$(1)="vd  1.5d88/a\8800"
+ 1180 lo$="loader 1.1a8"
+ 2000 gosub50000:print"hardware
+ 2010 gosub50100
+ 2020 gosub50200:gosub50240
+ 2040 if c=1 thenif a%(c)>2 then a%(c)=1
+ 2050 if c<=a then 2020
+ 2060 p1=a%(1)-1
+ 2065 p3=a%(4)+6
+ 2070 if a%(2)=1 and a%(3)=1 then p2=0:goto 3000
+ 2075 p2=1:p1$=""
+ 2080 if a%(2)<>1 then p1$="a:"+b$(2,a%(2))
+ 2090 if a%(3)<>1 then p1$=p1$+"b:"+b$(3,a%(3))
+ 3000 gosub50000:print"printer":gosub50100
+ 3010 gosub50200:gosub50240
+ 3015 if p=1 and a%(1)=1 then a%(1)=2
+ 3020 if c<=a then 3010
+ 3030 p4=a%(1)+1
+ 3035 p5=a%(2)-1+16*(a%(4)-1)
+ 3040 if a%(3)=3 then a%(3)=4
+ 3045 p5=p5+4*(a%(3)-1)
+ 3050 p6=4:p7=0
+ 3055 if a%(1)<>2 then 4000
+ 3060 print"{home}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}                    "
+ 3065 print"{home}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}
+ 3070 input"iec-bus unit : ";p6
+ 3075 print
+ 3080 input"iec-sec.adr  : ";p7
+ 4000 gosub50000:print"memory map    ":gosub50100:c=0:goto4060
+ 4010 gosub50200
+ 4020 r=r(p1):for i=2 to 6:ifa%(i)=4 then r=r+4:ifi=5 then r=r-2
+ 4030 nexti
+ 4032 i=1:ps=1:if a%(1)=3 then ps=3
+ 4034 i=i+1:if a%(i)=1 then4034
+ 4036 if a%(i)<>3 then 4040
+ 4038 ps=ps+4:if i=5 then ps=ps-2
+ 4039 goto 4034
+ 4040 print"{down}ramdisk        :"right$("   "+str$(r),4)" kbyte "
+ 4045 print"{down}buffer size    :"right$("   "+str$(ps),4)" kbyte "
+ 4050 gosub50240
+ 4060 if c=1 thenif a%(c)=4 then a%(c)=1
+ 4070 for i=2 to 6
+ 4080 if a%(i)=1 then a%(i)=2
+ 4090 next
+ 4100 if a%(1)=1 then a%(2)=1:a%(3)=1
+ 4110 if a%(1)=2 then a%(2)=1
+ 4120 if p1=1    then a%(6)=4
+ 4130 if c<=a then 4010
+ 4200 p8=ps*1024
+ 4210 pf=a%(1)
+ 4220 pa=0:if a%(2)=4 then pa=3
+ 4230 pb=0:if a%(3)=4 then pb=12
+ 4240 if      a%(4)=4 then pb=pb+3
+ 4250 pc=0:if a%(5)=4 then pc=8
+ 4260 pd=0
+ 4270 pe=3:if a%(6)=4 then pe=pe+12
+ 5000 gosub50000:print"colors"
+ 5010 print"{down}":pg=14:ph=6
+ 5020 input"foreground color : ";pg
+ 5025 print
+ 5030 input"background color : ";ph
+ 6000 print"{down}{down}{down}please wait, creating loadfile      "
+ 6010 p4$=p3$(p1)+h$(pa)+h$(pb)+h$(pc)+h$(pd)+h$(pe)+p2$(p1)
+ 6020 p5$=h$(p9+9)+" "+p4$+" 00 00 "
+ 6030 c=p6:gosub50300:p5$=p5$+b$+" "
+ 6040 c=p7:gosub50300:p5$=p5$+b$
+ 6050 c=p3:gosub50300:p6$=b$+" "
+ 6060 c=p4:gosub50300:p6$=p6$+b$+" "
+ 6070 c=p5:gosub50300:p6$=p6$+b$+" "
+ 6080 c=pg:gosub50300:p6$=p6$+b$+" "
+ 6090 c=ph:gosub50300:p6$=p6$+b$+" "
+ 6100 w=p8:gosub50350:p6$=p6$+b$
+ 7000 open1,de,15,"s:autoload"
+ 7010 close1
+ 7020 open1,de,1,"autoload"
+ 7030 print#1,"  "bd$
+ 7040 print#1,cb$(p1)"\"p5$
+ 7050 if p2 then print#1,cd$(p1)"\"p1$
+ 7060 print#1,pr$(pf)"\"p6$
+ 7070 close1
+ 8000 print"{down}":input"do you want to start now  (y/n)   y{left}{left}{left}";a$
+ 8010 if a$<>"y" then end
+ 8020 ll=1:load lo$,de,1
+ 9999 end
+50000 poke53280,0:poke53281,0
+50010 print"{clr}{dish}{$0a}{down}install bdos+               (c) a.fachat";
+50020 print"CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+50030 return
+50100 read a,b
+50110 for i=1 to a:read a%(i),a$(i)
+50120 for t=1 to b:read b$(i,t)
+50130 nextt,i:c=fre(0):return
+50200 print"{home}{down}{down}{down}{down}{down}"
+50210 for i=1 to a
+50220 print"{down}<"chr$(48+i)">"tab(7)a$(i);b$(i,a%(i))
+50230 nexti:return
+50240 print"{home}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}{down}correct (1-"chr$(a+48)"/y) ?";
+50250 geta$:ifa$=""then50250
+50260 c=asc(a$)
+50270 if (c>48 and c<49+a) then 50295
+50280 if c<>89 then 50250
+50290 return
+50295 c=c-48:a%(c)=a%(c)+1
+50297 if a%(c)>b then a%(c)=1
+50298 return
+50300 b$=h$(int(c/16))+h$(c and15):return
+50350 c=int(w/256):gosub50300
+50360 c=w-256*c:w$=b$:gosub50300:b$=w$+b$
+50370 return
+60000 data 0,1,2,3,4,5,6,7,8,9,a,b,c,d,e,f
+60009 data 4,5
+60010 data 2,"computer      : "
+60020 data c64 ,c128,,,
+60030 data 2,"drive a:      : "
+60040 data none  ,"8,0   ","8,1   ","9,0   ","9,1   "
+60050 data 4,"drive b:      : "
+60060 data none  ,"8,0   ","8,1   ","9,0   ","9,1   "
+60070 data 2,"cbm-disk unit : "
+60080 data none  ,"8     ","9     ","10    ","11    "
+60090 data 4,3
+60100 data 2,"printer       : "
+60110 data rs232     ,iec-bus   ,centronics
+60120 data 1,"conversion    : "
+60130 data none    ,cbm->asc,asc->cbm
+60140 data 1,"carriage ret. : "
+60150 data cr   ,lf   ,cr+lf
+60160 data 1,"line feed     : "
+60170 data lf   ,cr   ,cr+lf
+60180 data 6,4
+60190 data 1,"prg-version   : "
+60200 data "menue+cli","menue    ","cli      ",
+60210 data 4,"$5000-$5fff   : "
+60220 data prg    ,free   ,buffer ,ramdisk
+60230 data 4,"$6000-$6fff   : "
+60240 data prg    ,free   ,buffer ,ramdisk
+60250 data 4,"$7000-$7fff   : "
+60260 data prg    ,free   ,buffer ,ramdisk
+60270 data 4,"$8000-$87ff   : "
+60280 data prg    ,free   ,buffer ,ramdisk
+60290 data 4,"$c000-$cfff   : "
+60300 data rom    ,free   ,buffer ,ramdisk
+

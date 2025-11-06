@@ -1,0 +1,76 @@
+
+
+
+
+         ;BDDP1.45.S15 ==0801==
+         ;********* data bdc
+rbrec     .word 0
+         ;********* data bdb
+pwfrec    .word 0
+         ;********* data fuer teil 1
+         ;puffer fuer floppy-befehl
+         ;parameterblock f. floprw syscall
+pblock    .byt 0,0,0,0,0
+          .word 0
+          .byt 0
+         ;parameterblock fuer rwabs
+abspar    .byt 0,0
+          .word 0,0,0
+          .byt 0
+pgbbuf    .byt 0
+         ;**** bios-parameter block aktuell, enthaelt gp-struktur
+bpb                        ;
+
+         ;**** hier folgt gp-struktur
+dirclus   .word 0
+path                       ;
+
+sfirsfe   .byt 0           ; flag,ob leeren eintrag suchen
+         ;********** data fuer teil 2
+cd0attr   .byt 0           ; attribut fuer change dir
+newdrv    .byt 0           ; neues drive bei setdrv
+         ;**** hier folgt getname-transfer-puffer struktur
+actdrv    .byt 0           ; actual drive
+actflag   .byt 0           ; flag fuer getname
+actclus   .word 0           ; startcluster akt. directory
+actfil    .word 0           ; startcluster file
+actpath                    ; pfad fuer getname
+
+         ;**** zwischenspeicher fuer dir-eintrag
+dirbuf    .asc "01234567890123456789012345678901"
+         ; disk-transfer-puffer
+dtp       
+
+pa1       .word 0
+pa2       .word 0
+dword     .word 0,0
+slcsec    .word 0
+slcbuf    .byt 0
+         ;*********** data fuer teil 3
+pmc1      .word 0
+pmc2      .word 0
+pmc3      .word 0
+pmk1      .word 0
+pmk2      .word 0
+copnam    .asc "01234567"
+copfl     .byt 0
+dcrattr   .byt 0
+         ;********** data fuer teil 4
+fcpc      .word 0
+fp1       .word 0
+addprf    .byt 0
+przbank   .byt 0
+         ;********** data fuer teil time
+datum     .byt 0,0,0
+         ;********** data fuer format
+fformat   .byt 0
+         ;********** data fuer teil 5
+devbuf    
+
+          .dsb 256,0
+
+dbanz     .byt 0
+dvout     .byt 0
+dvin      .byt 0
+dvfl      .byt 0
+chdiv     .byt 0

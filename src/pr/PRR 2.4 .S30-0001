@@ -1,0 +1,533 @@
+
+
+
+
+         ;PRR 2.4 .S30 ==0801==
+svtab     
+          .word 1
+          .word jmpadr
+          .word newadr
+          .word vchout
+
+jmpadr    .word (chout-bdos)*2/3
+newadr    .word pchout
+
+dirdtext  .asc "  <dir>  "
+          .byt 0
+dirstext  .byt 13
+          .asc "diskette in laufwerk "
+          .byt 0
+dirntext  .byt 13
+          .asc "name der diskette :"
+          .byt 0
+dirftext  .asc " dateien auf der diskette"
+          .byt 13,0
+dirbtext  .asc " bytes frei"
+          .byt 13,0
+dhi       .byt >10000,>1000,>100,>10,>1
+dlo       .byt <10000,<1000,<100,<10,<1
+         ;********
+
+bef       
+          .asc "de","l"+128
+          .asc "m","d"+128
+          .asc "r","d"+128
+          .asc "creat","e"+128
+          .asc "c","d"+128
+          .asc "forma","t"+128
+          .asc "renam","e"+128
+          .asc "dat","e"+128
+          .asc "tim","e"+128
+         maxmenu=9
+          .asc "exi","t"+128
+          .asc "rea","d"+128
+          .asc "writ","e"+128
+          .asc "cop","y"+128
+          .asc "sav","e"+128
+          .asc "loa","d"+128
+          .asc "di","r"+128
+          .asc "q"+128
+          .asc "m","c"+128
+          .asc "b","p"+128
+          .asc "r","a"+128
+          .asc "w","a"+128
+          .asc "m"+128
+          .byt ";"+$80
+          .asc "p"+128
+          .asc "r"+128
+          .asc "w"+128
+          .asc "co","l"+128
+          .asc "sy","s"+128
+          .asc "u"+128
+          .asc "ca","t"+128
+          .asc "men","u"+128
+          .asc "copyco","n"+128
+          .asc "prin","t"+128
+          .asc "prtde","v"+128
+          .asc "ech","o"+128
+
+          .byt 0
+adr       .word del-1,md-1,rd-1,cr-1,cd-1
+          .word pformat-1,prename-1
+          .word pdate-1,ptime-1
+          .word ex-1,pread-1,pwrite-1,pcopy-1
+          .word psave-1,pload-1,dir-1
+          .word pq-1,pc-1,pb-1,pra-1,pwa-1
+          .word pm-1,pg-1,pp-1,pr-1,pw-1
+          .word pcol-1,lload-1
+          .word pu-1,pcat-1,pmenu-1
+          .word copycon-1,pprint-1,pprtdev-1
+          .word pecho-1
+
+coprt     .asc 19+128,17,17,"prompt v 2.4  "
+          .asc "24.08.1989 by a.fachat"
+          .byt 13,10,0
+tpon      .byt 13
+          .asc "print on"
+          .byt 13,0
+tpoff     .byt 13
+          .asc "print off"
+          .byt 13,0
+tsource   .byt 13
+          .asc "legen sie bitte die quelldiskette ein   und druecken "
+          .asc "'return'"
+          .byt 13,0
+ttarget   .byt 13
+          .asc "legen sie bitte die zieldiskette ein    und druecken "
+          .asc "'return'"
+          .byt 13,0
+tsoutar   .byt 13
+          .asc "legen sie bitte die quelldiskette und   "
+          .asc "die zieldiskette ein und druecken       "
+          .asc "'return'"
+          .byt 13,0
+
+datum     .byt 14,2,9;+1980=14.2.88
+errnum    .byt <-1,<-2,<-3,<-4,<-5,<-6,<-7
+          .byt <-8,<-9,<-10,<-11,<-12,<-13,<-14,<-15
+          .byt <-16,<-17,<-18,<-19,<-20,<-21,<-22
+          .byt <15,<8
+          .byt 65,66,67,68,69,70,71,72,73
+          .byt 32
+          .byt 2,3,5,6,9,11,14
+          .byt 29+64
+          .byt <-23,<-24,<-25
+         erranz=24+9+1+7+1+3
+ert                        ;
+          .asc "befehle nicht implementiert"
+          .byt 0
+          .asc "uebertragungsfehler"
+          .byt 0
+          .asc "keine schnelle uebertragung"
+          .byt 0
+          .asc "keine mfm-diskette"
+          .byt 0
+          .asc "parameter ausserhalb der grenzen"
+          .byt 0
+          .asc "cluster nicht gefunden"
+          .byt 0
+          .asc "pfad nicht gefunden"
+          .byt 0
+          .asc "aktuelles verzeichnis"
+          .byt 0
+          .asc "name nicht gefunden"
+          .byt 0
+          .asc "pfad zu lang"
+          .byt 0
+          .asc "unerlaubter name"
+          .byt 0
+          .asc "diskette voll"
+          .byt 0
+          .asc "datei existiert"
+          .byt 0
+          .asc "unterverzeichnis nicht leer"
+          .byt 0
+          .asc "unerlaubtes laufwerk"
+          .byt 0
+          .asc "laufwerk nicht bereit"
+          .byt 0
+          .asc "zuviele dateien"
+          .byt 0
+          .asc "datei offen"
+          .byt 0
+          .asc "datei nicht offen"
+          .byt 0
+          .asc "ende der datei"
+          .byt 0
+          .asc "kein freier puffer"
+          .byt 0
+          .asc "unterbrechung"
+          .byt 0
+          .asc "laufwerk nicht vorhanden"
+          .byt 0
+          .asc "schreibschutz an"
+          .byt 0
+          .asc "too many files"
+          .byt 0
+          .asc "file open"
+          .byt 0
+          .asc "file not open"
+          .byt 0
+          .asc "file not found"
+          .byt 0
+          .asc "device not present"
+          .byt 0
+          .asc "not input file"
+          .byt 0
+          .asc "not output file"
+          .byt 0
+          .asc "missing filename"
+          .byt 0
+          .asc "illegal device number"
+          .byt 0
+          .asc "verzeichnisliste voll"
+          .byt 0
+          .asc "sektor nicht gefunden"
+          .byt 0
+          .asc "keine adressmarke"
+          .byt 0
+          .asc "crc-datenfehler"
+          .byt 0
+          .asc "formatfehler"
+          .byt 0
+          .asc "header-pruefsummenfehler"
+          .byt 0
+          .asc "diskettenwechsel"
+          .byt 0
+          .asc "syntaxfehler"
+          .byt 0
+          .asc "load error"
+          .byt 0
+          .asc "i/o-device not present"
+          .byt 0
+          .asc "endbf "
+          .byt 0
+          .asc "endbe "
+          .byt 0
+errnumt   .asc "-meldung"
+          .byt 0
+
+mpma      .word mpm1-1,mpm2-1
+          .word mpm3-1,mpm4-1,mpm5-1
+mpm1a     .word mpm11-1,mpm12-1
+          .word mpm13-1,mpm14-1,0
+          .word mpm51-1,mpm52-1,mpm53-1
+          .word mpm54-1,mpm55-1
+mpm2a     .word mpm21-1,mpm22-1
+          .word mpm23-1,mpmread-1,mpmprint-1
+          .word mpm24-1,mpm25-1,mpm26-1
+          .word mrename-1,mpm27-1,mpm28-1
+mpm3a     .word mpm31-1,mpm32-1
+          .word mpcread-1,mpcprint-1
+          .word mpm33-1,mpm34-1
+mpm4a     .word mpm41-1,mpm42-1
+          .word mpm43-1,0,mpm45-1
+          .word mpm46-1,mpm47-1
+mpm5a     .word 0
+
+          .word mpp232-1
+
+          .word mppiec-1
+          .word mppcentr-1,0
+          .word mppnokon-1,mppacbm-1
+          .word mppcasc-1,0
+          .word mppcr-1,mpplf-1
+         ;********
+mainmenu  
+          .asc " bdos    pc    cbm    copy   print      "
+          .byt 5
+          .byt 8,128
+          .word mallg
+          .byt 14,128
+          .word mpcdisk
+          .byt 21,128
+          .word mcbmdisk
+          .byt 28,128
+          .word mcopy
+          .byt 35,128
+          .word mprint
+mallg     .byt 10
+          .byt 11,2,1
+          .byt 128
+          .asc " copyright "
+          .byt 128
+          .asc " farben    "
+          .byt 128
+          .asc " cli       "
+          .byt 128
+          .asc " ende      "
+          .byt 0
+          .asc "-sort nach-"
+          .byt 128
+hk11      .asc " nichts    "
+          .byt 128
+hk12      .asc " name      "
+          .byt 128
+hk13      .asc " ext/spur  "
+          .byt 128
+hk14      .asc " groesse   "
+          .byt 128
+hk15      .asc " auf/ab    "
+mpcdisk   .byt 11
+          .byt 10,2,9
+          .byt 128
+          .asc " dir      "
+          .byt 128
+          .asc " drive    "
+          .byt 128
+          .asc " pfad     "
+          .byt 128
+          .asc " read     "
+          .byt 128
+          .asc " print    "
+          .byt 128
+          .asc " make dir "
+          .byt 128
+          .asc " del dir  "
+          .byt 128
+          .asc " delete   "
+          .byt 128
+          .asc " rename   "
+          .byt 128
+          .asc " format   "
+          .byt 128
+          .asc " command  "
+mcbmdisk  .byt 6
+          .byt 9,2,15
+          .byt 128
+          .asc " cat     "
+          .byt 128
+          .asc " unit    "
+          .byt 128
+          .asc " read    "
+          .byt 128
+          .asc " print   "
+          .byt 128
+          .asc " scratch "
+          .byt 128
+          .asc " command "
+mcopy     .byt 7
+          .byt 12,2,22
+          .byt 128
+          .asc " pc  -> pc  "
+          .byt 128
+          .asc " pc  -> cbm "
+          .byt 128
+          .asc " cbm -> pc  "
+          .byt 0
+          .asc "--textcopy--"
+          .byt 128
+hk21      .asc " asc -> cbm "
+          .byt 128
+hk22      .asc " cbm -> asc "
+          .byt 128
+hk23      .asc " aus        "
+mprint    .byt 10+rs232
+          .byt 12,2,26
+          .byt 0
+          .asc "---device---"
+
+          .byt 128
+hk56      .asc " rs 232     "
+
+          .byt 128
+
+hk57      .asc " iec-bus    "
+          .byt 128
+hk58      .asc " centronics "
+          .byt 0
+          .asc "--konvert---"
+          .byt 128
+hk51      .asc " keine      "
+          .byt 128
+hk52      .asc " asc -> cbm "
+          .byt 128
+hk53      .asc " cbm -> asc "
+          .byt 0
+          .asc "---cr/lf----"
+          .byt 128
+hk54      .asc " cr -> crlf "
+          .byt 128
+hk55      .asc " lf -> crlf "
+coptxt    
+          .asc 19+128        ;"{clr}"
+          .asc "      menu v 2.4 "
+          .byt 13,13
+          .asc "       copyright"
+          .byt 13,13
+          .asc "24.08.1989 by a.fachat"
+          .byt 13,13
+          .asc " druecken sie 'return'"
+          .byt 0
+coltxt    
+          .asc 19+128        ;"{clr}"
+          .asc " veraendern der farben: "
+          .byt 13
+          .asc "  hintergrund mit :"
+          .byt 13
+          .asc "    cursor rechts/links "
+          .asc "  text mit :"
+          .byt 13
+          .asc "    cursor hoch/runter "
+          .byt 13,13
+          .asc " weiter mit 'return'"
+          .byt 0
+         ;********
+         menk=4
+
+menkey    .byt 29,29+128,17,13
+menka     .word menext-1,mevor-1,mesub-1,meret-1
+         ;********
+         smka=5
+
+smkey     .byt 29,29+128,17,17+128,13
+smadr     .word smnext-1,smvor-1,smdown-1,smup-1,smret-1
+         ;********
+leerzei   .asc "                                       "
+          .byt 0
+         inpanz=10
+
+inpok     .asc 29,17,17+128,29+128,19,19+128,20+128
+          .byt 13,3,20
+cppt1     .asc "drive:"
+          .byt 0
+
+gtnnt     .asc 19,"datei existiert schon !"
+          .byt 13,13
+          .asc "<run/stop>=ende"
+          .byt 13
+
+          .asc 17,"<=>       =neuen namen"
+          .byt 13
+
+          .asc 17,"<ret>     =weiter"
+          .byt 0
+
+adt       .asc 19,17,17,"  legen sie die"
+          .byt 13
+
+          .asc 17,"  quell- und die ziel-"
+          .byt 13
+
+          .asc 17,"  diskette ein !"
+          .byt 0
+
+chtkeys   .byt 13,10,17,17+128,19,19+128,29,29+128
+         anztkey=8
+gtnnt3    .asc " existiert schon"
+          .byt 0
+ptta      .word ptt1,ptt2,ptt3,ptt4
+          .word ptt5,ptt6,ptt7,ptt8,ptt9
+          .word ptt10,ptt11,ptt12,ptt13
+          .word ptt14,ptt15
+ptt1      .asc "geben sie suchmaske ein (z.b. ab?c*)"
+          .byt 0
+ptt2      .asc "<run/stop>,<sh.ret>=subdir,<ret>=ende"
+          .byt 0
+ptt3      .asc "<ret> waehlt drive"
+          .byt 0
+ptt4      .asc "geben sie neuen pfad ein"
+          .byt 0
+ptt5      .asc "geben sie den namen ein"
+          .byt 0
+ptt6      .asc "<run/stop>,<sh.ret>=subdir,<=>=waehlen"
+          .byt 0
+ptt7      .asc "<run/stop>,<=>=waehlen,<ret>=ende"
+          .byt 0
+ptt8      .asc "geben sie drive + name der disk ein"
+          .byt 0
+ptt9      .asc "geben sie befehl ein"
+          .byt 0
+ptt10     .asc "<run/stop>,<ret>=ende"
+          .byt 0
+ptt11     .asc "<ret> waehlt unit oder drive"
+          .byt 0
+ptt12     .asc "geben sie ziellaufwerk + pfad ein"
+          .byt 0
+ptt13     .asc "druecken sie eine taste"
+          .byt 0
+ptt14     .asc "geben sie neuen namen ein"
+          .byt 0
+ptt15     .asc "<run/stop>,<=>=waehlen"
+          .byt 0
+mpdt      .byt 4
+          .byt 10,10,15
+          .byt 128
+          .asc " drive a: "
+          .byt 128
+          .asc " drive b: "
+          .byt 128
+          .asc " drive c: "
+          .byt 128
+          .asc " drive d: "
+ismpt     .asc "pfad :"
+          .byt 0
+isnpt     .asc "name :"
+          .byt 0
+
+mwt       .asc 19+128,17
+
+          .asc 17,"     fehler !"
+          .byt 13,13
+
+          .asc 17,"ret      = weiter"
+          .byt 13
+
+          .asc 17,"run/stop = ende"
+          .byt 0
+sdirt     .asc " <dir>"
+          .byt 0
+dirbfrei  .asc " bytes frei"
+          .byt 0
+         ;********
+m32mt     .byt 7,9,7,13
+          .byt 128
+          .asc " unit 8  "
+          .byt 128
+          .asc " unit 9  "
+          .byt 128
+          .asc " unit 10 "
+          .byt 128
+          .asc " unit 11 "
+          .byt 0
+          .asc "         "
+          .byt 128
+          .asc " drive 0 "
+          .byt 128
+          .asc " drive 1 "
+m34t      .asc "disk-befehl :"
+          .byt 0
+ismct     .asc "maske :"
+          .byt 0
+m31bft    .asc " bl.frei"
+          .byt 0
+
+         mdiranz=19
+         mdirtbrt=27
+         ;dirmenu am ende
+         mdirtlen=mdiranz*(mdirtbrt+1)+4
+
+ast       .asc 19
+          .byt 13
+          .asc " sind sie sich sicher ?"
+          .byt 13,13
+          .asc "    run/stop =nein"
+          .byt 13,13
+          .asc "    return   =ja"
+          .byt 0
+mbeft     .asc "befehl :"
+          .byt 0
+stlt1     .asc "cbm>d"
+          .byt 0
+stlt2     .asc ":pc>"
+          .byt 0
+         stlend=39-5-4-5
+soname    .byt 2,0
+sonamend  .byt 18,8
+soext     .byt 19,8
+soextend  .byt 20,11
+sosize    .byt 0,12
+sosizend  .byt 2,16
+sollen    .byt 20,19
+
+          .end 

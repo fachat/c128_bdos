@@ -1,0 +1,331 @@
+
+
+
+
+         ;BD1 1.45.S60 ==0801==
+         ;**********
+pinit     
+          lda #0
+          sta bpb+bpbval
+          sta bpb+bpbflag
+          ldx #0
+bpbclr    stx path
+          txa 
+          jsr psdabs
+          ldy #bpbval
+          lda #0
+          sta (abszei),y
+          ldy #bpbflag
+          sta (abszei),y
+          ldy #bppath
+          sta (abszei),y
+          ldx path
+          inx 
+          cpx #anzdrv
+          bcc bpbclr
+          lda #0
+          sta path
+clbuf     lda path
+          sta int1
+          lda #0
+          sta int1+1
+          lda #<bfoffs
+          ldx #>bfoffs
+          jsr mult
+          tax 
+          lda #0
+          sta bf1val,x
+          inc path
+          lda path
+          cmp #bufanz
+          bcc clbuf
+          ldx #fpbanz
+fpbclr    stx path
+          jsr sfpzei
+          ldy #fpname
+          lda #0
+          sta (fpzei),y
+          ldx path
+          dex 
+          bne fpbclr
+          lda #0
+          sta path
+          sta dirclus
+          sta dirclus+1
+          sta actdrv
+          ldy #0
+pin1      lda vektab,y
+          sta vektor,y
+          iny 
+          cpy #anzjmp*2
+          bne pin1
+          jsr chinit
+          ldx #<vektor
+          ldy #>vektor
+          lda #0
+          rts 
+         ;*********
+pexit     jsr clrch
+          jmp ($fffc)            ; reset
+         ;*********
+pversion  ldx #<verblock
+          ldy #>verblock
+          lda #0
+          rts 
+         ;*********
+pgetbpb   sta pblock+pbdrive
+          ldy #3
+          jsr sfrbuf
+          bne pgb1e
+          stx pgbbuf
+          txa 
+          tay 
+          lda #0
+          tax 
+          jsr bfzset                ; setzt bf1z auf puffer-adr
+          ldy #0
+          sty pblock+pbside
+          sty bpb+bpbval
+          sty pblock+pbtrack
+          iny 
+          sty pblock+pbsector
+          lda bf1z
+          sta pblock+pbbuffer
+          lda bf1z+1
+          sta pblock+pbbuffer+1
+          lda #prgbank
+          sta pblock+pbbank
+          lda #0             ;lesen
+          sta pblock+pbrwflag
+          lda #<pblock
+          ldy #>pblock
+          jsr floprw
+          beq pbgetok
+          pha 
+          ldx pgbbuf
+          jsr rlbuf
+          pla 
+pgb1e     rts 
+pbgetok   lda #bflagof
+          sta bpb+bflags
+          ldy #btbps
+          lda (bf1z),y
+          sta bpb+bprecsiz
+          sta int1
+          iny 
+          lda (bf1z),y
+          sta bpb+bprecsiz+1
+          sta int1+1
+          ldy #btspc
+          lda (bf1z),y
+          sta bpb+bpclsiz
+          ldx #0
+          stx bpb+bpclsiz+1
+          jsr mult
+          sta bpb+bpclsizb
+          stx bpb+bpclsizb+1
+          ldy #btspf+1
+          lda (bf1z),y
+          sta bpb+bpfsiz+1
+          dey 
+          lda (bf1z),y
+          sta bpb+bpfsiz
+          ldy #btfat
+          lda (bf1z),y
+          ldx bpb+bpfsiz
+          ldy bpb+bpfsiz+1
+          cmp #1
+          bne pgbpb1a
+          ldx #0
+          ldy #0
+pgbpb1a   inx 
+          bne pgbpb1
+          iny 
+pgbpb1    stx bpb+bpfatrec
+          sty bpb+bpfatrec+1
+          ldy #btside
+          lda (bf1z),y
+          sta bpb+bpsides
+          tax 
+          iny 
+          lda (bf1z),y
+          sta bpb+bpsides+1
+          stx int1
+          sta int1+1
+          ldy #btspt
+          lda (bf1z),y
+          sta bpb+bpspt
+          pha 
+          iny 
+          lda (bf1z),y
+          sta bpb+bpspt+1
+          tax 
+          pla 
+          jsr mult
+          sta bpb+bpspts
+          stx bpb+bpspts+1
+          ldy #bthid
+          lda (bf1z),y
+          sta bpb+bphidden
+          iny 
+          lda (bf1z),y
+          sta bpb+bphidden+1
+          ldy #btserial
+          lda (bf1z),y
+          sta bpb+bpserial
+          iny 
+          lda (bf1z),y
+          sta bpb+bpserial+1
+          iny 
+          lda (bf1z),y
+          sta bpb+bpserial+2
+          ldy #btsec
+          lda (bf1z),y
+          sta int1
+          iny 
+          lda (bf1z),y
+          sta int1+1
+          lda bpb+bpspts
+          ldx bpb+bpspts+1
+          jsr div
+          sta bpb+bptracks
+          stx bpb+bptracks+1
+          lda #32
+          sta int1
+          lda #0
+          sta int1+1
+          ldy #btdir+1
+          lda (bf1z),y
+          tax 
+          dey 
+          lda (bf1z),y
+          jsr mult
+          sta int1
+          stx int1+1
+          lda bpb+bprecsiz
+          ldx bpb+bprecsiz+1
+          jsr div
+          sta bpb+bprdlen
+          stx bpb+bprdlen+1
+          lda bpb+bpfatrec
+          clc 
+          adc bpb+bprdlen
+          tay 
+          lda bpb+bpfatrec+1
+          adc bpb+bprdlen+1
+          tax 
+          tya 
+          clc 
+          adc bpb+bpfsiz
+          sta bpb+bpdatrec
+          txa 
+          adc bpb+bpfsiz+1
+          sta bpb+bpdatrec+1
+          ldy #btsec
+          lda (bf1z),y
+          sec 
+          sbc bpb+bpdatrec
+          sta int1
+          iny 
+          lda (bf1z),y
+          sbc bpb+bpdatrec+1
+          sta int1+1
+          lda bpb+bpclsiz
+          ldx bpb+bpclsiz+1
+          jsr div
+          sta bpb+bpnumcl
+          stx bpb+bpnumcl+1
+          lda #<-1
+          sta bpb+bpbval
+          ldx pgbbuf
+          jsr rlbuf
+          ldx #<bpb
+          ldy #>bpb
+          lda #0
+abs1end   rts 
+         ;**********
+prwabs    sta abszei
+          sty abszei+1
+          ldy #apbuffer
+          lda (abszei),y
+          sta pblock+pbbuffer
+          iny 
+          lda (abszei),y
+          sta pblock+pbbuffer+1
+          ldy #apbank
+          lda (abszei),y
+          sta pblock+pbbank
+          lda bpb+bpbval
+          bne rwabs1
+          ldy #apdrive
+          lda (abszei),y
+          jsr getbpb
+          bne abs1end
+rwabs1    ldy #apdrive
+          lda (abszei),y
+          sta pblock+pbdrive
+          ldy #aprecord
+          lda (abszei),y
+          sta int1
+          iny 
+          lda (abszei),y
+          sta int1+1
+          lda bpb+bpspts
+          ldx bpb+bpspts+1
+          jsr div
+          sta pblock+pbtrack
+          bne rwerr1a
+          ldy int1+1
+          lda int1
+          sec 
+          sbc bpb+bpspt
+          tax 
+          tya 
+          sbc bpb+bpspt+1
+          tay 
+          txa 
+          ldx #1
+          bcs rwside2
+          ldx #0
+          lda int1
+          ldy int1+1
+rwside2   clc 
+          adc #1
+          sta pblock+pbsector
+          cpy #0
+rwerr1a   bne rwerr1
+          stx pblock+pbside
+          ldy #aprwflag
+          lda (abszei),y
+          sta pblock+pbrwflag
+          lda #<pblock
+          ldy #>pblock
+          jsr floprw
+          bne absend
+          stx pblock+pbbuffer
+          sty pblock+pbbuffer+1
+          ldy #aprecord
+          lda (abszei),y
+          clc 
+          adc #1
+          sta (abszei),y
+          iny 
+          lda (abszei),y
+          adc #0
+          sta (abszei),y
+          ldy #apanz
+          lda (abszei),y
+          sec 
+          sbc #1
+          sta (abszei),y
+          iny 
+          lda (abszei),y
+          sbc #0
+          sta (abszei),y
+          dey 
+          ora (abszei),y
+          beq rwabs2
+          jmp rwabs1
+rwabs2    jmp error0
+rwerr1    jmp parrange
+absend    rts 

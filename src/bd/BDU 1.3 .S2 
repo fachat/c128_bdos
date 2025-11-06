@@ -1,0 +1,123 @@
+
+
+
+
+         ;BDU 1.3 .S2  ==0801==
+         ;********** arithmetik
+         ; int1 / a,y = a,y rest int1
+div       stx int2+1
+          sta int2
+          sty abuf
+          ldx #1
+          lda #0
+          sta int3
+          sta int3+1
+div1      lda int2
+          asl 
+          tay 
+          lda int2+1
+          rol 
+          bcs div3
+          cmp int1+1
+          bcc div2
+          bne div3
+          cpy int1
+          bcc div2
+          bne div3
+div2      sta int2+1
+          sty int2
+          inx 
+          bne div1
+div3      dex 
+          bpl div6
+          ldy abuf
+          lda int3
+          ldx int3+1
+          rts 
+div6      lda int1+1
+          cmp int2+1
+          bcc div4
+          bne div5
+          lda int1
+          cmp int2
+          bcc div4
+div5      lda int1
+          sec 
+          sbc int2
+          sta int1
+          lda int1+1
+          sbc int2+1
+          sta int1+1
+          sec 
+          .byt $24
+div4      clc 
+          rol int3
+          rol int3+1
+          lsr int2+1
+          ror int2
+          jmp div3
+         ;****
+         ; int1 * a,y = a,y
+mult      sta int2
+          lda #0
+          sta int3
+          sta int3+1
+mul1      txa 
+          lsr 
+          tax 
+          ror int2
+          ora int2
+          bcs mul2
+          beq multe
+          bcc mul3
+mul2      lda int3
+          clc 
+          adc int1
+          sta int3
+          lda int3+1
+          adc int1+1
+          sta int3+1
+mul3      asl int1
+          rol int1+1
+          jmp mul1
+multe     lda int3
+          ldx int3+1
+          sta int1
+          stx int1+1
+          rts 
+         ;****
+add       clc 
+          adc int1
+          sta int1
+          txa 
+          adc int1+1
+          sta int1+1
+          tax 
+          lda int1
+          rts 
+         ;****
+nlsr      stx int2+1
+nlsr1     lsr int2+1
+          ror 
+          dey 
+          bne nlsr1
+          ldx int2+1
+          rts 
+         ;****
+sub       sec 
+          sbc int1
+          sta int1
+          txa 
+          sbc int1+1
+          sta int1+1
+          tax 
+          lda int1
+          rts 
+         ;****
+nasl      stx int2+1
+nasl1     asl 
+          rol int2+1
+          dey 
+          bne nasl1
+          ldx int2+1
+          rts 

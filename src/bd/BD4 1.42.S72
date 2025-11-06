@@ -1,0 +1,792 @@
+
+
+
+
+         ;BD4 1.42.S72 ==0801==
+d4v       ldy #3
+          lda #0
+d4v1      sta int3,y
+          dey 
+          bpl d4v1
+          ldx #0
+          stx abuf
+          ldy #3
+d4v2      ora int2,y
+          dey 
+          bpl d4v2
+          beq d4verr
+d4v3      ldy #3
+d4v3a     lda int2,y
+          cmp int1,y
+          bcc d4v3b
+          bne d4v5
+          dey 
+          bpl d4v3a
+d4v3b     asl int2
+          rol int2+1
+          rol int2+2
+          rol int2+3
+          bcs d4verr
+          inc abuf
+          bne d4v3
+d4v5      ldx abuf
+          cpx #0
+          beq d4vok
+          lsr int2+3
+          ror int2+2
+          ror int2+1
+          ror int2
+          dec abuf
+          ldy #3
+d4v6      lda int2,y
+          cmp int1,y
+          bcc d4v6a
+          bne d4v8
+          dey 
+          bpl d4v6
+d4v6a     ldx #4
+          ldy #0
+          sec 
+d4v7      lda int1,y
+          sbc int2,y
+          sta int1,y
+          iny 
+          dex 
+          bne d4v7
+          sec 
+          .byt $24
+d4v8      clc 
+          rol int3
+          rol int3+1
+          rol int3+2
+          rol int3+3
+          jmp d4v5
+d4vok     clc 
+          rts 
+d4verr    sec 
+          rts 
+         ;**********
+         ;**********
+popen     sta fp1
+          sty fp1+1
+          lda #<fpbt              ;file par block tabelle
+          ldy #>fpbt
+          sta fpzei
+          sty fpzei+1
+          ldx #fpbanz
+open2     ldy #fpname
+          lda (fpzei),y
+          beq fpok
+          lda #<fpblen
+          clc 
+          adc fpzei
+          sta fpzei
+          lda fpzei+1
+          adc #>fpblen
+          sta fpzei+1
+open1     dex 
+          bne open2
+          jmp tmnyfile
+fpok      ldy #fphandle
+          txa 
+          sta (fpzei),y
+          ldx #$20
+          lda fp1
+          ldy fp1+1
+          jsr namedtp
+          bne fperr
+          stx bfzei
+          sty bfzei+1
+          clc 
+          jsr sgdta
+          sta bfzei
+          sty bfzei+1
+          ldy #dtplen-1
+opdtp     lda (bfzei),y
+          sta (fpzei),y
+          dey 
+          bpl opdtp
+          lda #0
+          ldy #fpos
+op4       sta (fpzei),y
+          iny 
+          cpy #fpos+4
+          bcc op4
+          jsr fcalcpos
+          bne fperr
+          lda #0
+          ldy #fpflag
+          sta (fpzei),y
+          ldx fpzei
+          ldy fpzei+1
+          lda #0
+          rts 
+fperr     pha 
+          ldy #fpname
+          lda #0
+          sta (fpzei),y
+          pla 
+          rts 
+         ;**********
+sfpzei    lda #<fpblen
+          sta int1
+          lda #>fpblen
+          sta int1+1
+          stx int2
+          lda #fpbanz
+          sec 
+          sbc int2
+          ldx #0
+          jsr mult
+          sta int1
+          stx int1+1
+          lda #<fpbt
+          ldx #>fpbt
+          jsr add
+          sta fpzei
+          stx fpzei+1
+          ldy #fpname
+          lda (fpzei),y
+          beq sfpze
+          lda #0
+          rts 
+sfpze     jmp filnopen
+sbfzei    ldy #fpbuf
+          lda (fpzei),y
+          tay 
+          lda #0
+          tax 
+          jsr bfzset
+          lda bf1z
+          ldx bf1z+1
+          sta int1
+          stx int1+1
+          sta bfzei
+          stx bfzei+1
+          rts 
+sbfbzei   jsr sbfzei
+          ldy #fpbyt+1
+          lda (fpzei),y
+          dey 
+          tax 
+          lda (fpzei),y
+          jsr add
+          sta bfzei
+          stx bfzei+1
+          rts 
+         ;**********
+pread     jsr sfpzei
+          beq prok1
+prer1     rts 
+prok1     ldy #fpdrive
+          lda (fpzei),y
+          sec 
+          jsr sgdrive
+          bne prer1
+          clc 
+          jsr sgdrive
+          ldy #4
+          jsr sfrbuf
+          bne prer1
+          txa 
+          ldy #fpbuf
+          sta (fpzei),y
+          ldy #fpadr
+          lda (fpzei),y
+          sta przei
+          iny 
+          lda (fpzei),y
+          sta przei+1
+          ldy #fpbank
+          lda (fpzei),y
+          sta przbank
+pread0    ldy #fpbyt+1
+          lda (fpzei),y
+          dey 
+          ora (fpzei),y
+          bne pread1
+         ; sektor an original adresse laden
+          ldy #fpanz+1
+          lda (fpzei),y
+          cmp bpb+bprecsiz+1
+          bcc pread1                ; war nix
+          bne pre2
+          dey 
+          lda (fpzei),y
+          cmp bpb+bprecsiz
+          bcc pread1                ; anz kleiner als sektor
+pre2      jsr prset
+          lda #0
+          sta abspar+aprwflag
+          sta abspar+apanz+1
+          lda #1
+          sta abspar+apanz
+          lda #<abspar
+          ldy #>abspar
+          jsr rwabs                ; sektor direkt in speicher lesen
+          bne prend
+          lda bpb+bprecsiz
+          ldx bpb+bprecsiz+1
+          jmp readadd
+pread1    jsr bufload
+          bne prend
+pread2    lda #<przei
+          jsr bsadr
+          sei 
+          ldy #0
+          lda (bfzei),y
+          ldx przbank
+          jsr bstash
+          cli 
+pre2b     lda #1
+          ldx #0
+readadd   jsr addbfpr
+          bne prenda
+          bcs pread0
+          bcc pread2
+prenda    cmp #1
+          bne prend
+          lda #0
+prend     pha 
+          ldy #fpbuf
+          lda (fpzei),y
+          tax 
+          jsr rlbuf
+          ldy #fpanz
+          lda (fpzei),y
+          tax 
+          iny 
+          lda (fpzei),y
+          tay 
+          pla 
+          rts 
+         ;**********
+pclose    jsr sfpzei
+          bne plse
+          pha 
+          ldy #fpflag
+          lda (fpzei),y
+          beq pclo1
+          lda fpzei
+          ldy fpzei+1
+          sec 
+          jsr sgdta
+          jsr wrentry
+          jsr writfat
+pclo1     ldy #fpname
+          lda #0
+          sta (fpzei),y
+          pla 
+plse      rts 
+         ;**********
+plseek    jsr sfpzei
+          bne plse
+          ldy #fpshift
+pls1      lda (fpzei),y
+          sta int1-fpshift,y
+          iny 
+          cpy #fpshift+4
+          bcc pls1
+          ldy #fpdir
+          lda (fpzei),y
+          beq plsnew
+          cmp #2
+          bcs plsub
+          ldy #fpos
+          ldx #4
+          clc 
+plsa1     lda (fpzei),y
+          adc int1-fpos,y
+          sta (fpzei),y
+          iny 
+          dex 
+          bne plsa1
+          beq plset
+plsub     ldy #fpos
+          ldx #4
+          sec 
+plsu1     lda (fpzei),y
+          sbc int1-fpos,y
+          sta (fpzei),y
+          iny 
+          dex 
+          bne plsu1
+          beq plset
+plsnew    ldy #fpos
+          ldx #4
+plsn1     lda int1-fpos,y
+          sta (fpzei),y
+          iny 
+          dex 
+          bne plsn1
+plset     jsr wcalcpos
+          jmp writfat
+         ;**********
+pwrite    jsr sfpzei
+          beq pwok1
+pwer1     rts 
+pwok1     ldy #fpdrive
+          lda (fpzei),y
+          sec 
+          jsr sgdrive
+          bne pwer1
+          clc 
+          jsr sgdrive
+          ldy #4
+          jsr sfrbuf
+          bne pwer1
+          txa 
+          ldy #fpbuf
+          sta (fpzei),y
+          ldy #fpadr
+          lda (fpzei),y
+          sta przei
+          iny 
+          lda (fpzei),y
+          sta przei+1
+          ldy #fpbank
+          lda (fpzei),y
+          sta przbank
+pwrit0    ldy #fpbyt+1
+          lda (fpzei),y
+          dey 
+          ora (fpzei),y
+          bne pwrit1
+         ; sektor von original adresse speichern
+          ldy #fpanz+1
+          lda (fpzei),y
+          cmp bpb+bprecsiz+1
+          bcc pwrit1                ; war nix
+          bne pwe2
+          dey 
+          lda (fpzei),y
+          cmp bpb+bprecsiz
+          bcc pwrit1                ; anz kleiner als sektor
+pwe2      jsr sbfzei
+          lda #<przei
+          jsr bfadr
+          sei 
+          ldx bpb+bprecsiz+1
+          beq pwe3
+          stx int1
+          ldy #0
+pwe2a     ldx przbank
+          jsr bfetch
+          sta (bfzei),y
+          iny 
+          bne pwe2a
+          inc przei+1
+          inc bfzei+1
+          dec int1
+          bne pwe2a
+pwe3      ldy bpb+bprecsiz
+          beq pwe2d
+pwe2c     dey 
+          ldx przbank
+          jsr bfetch
+          sta (bfzei),y
+          cpy #0
+          bne pwe2c
+pwe2d     cli 
+          lda bpb+bprecsiz
+          ldx bpb+bprecsiz+1
+          jmp writadd
+pwrit1    jsr bufload
+          bne pwend
+pwrit2    lda #<przei
+          jsr bfadr
+          sei 
+          ldy #0
+          ldx przbank
+          jsr bfetch
+          sta (bfzei),y
+          cli 
+pwe2b     lda #1
+          ldx #0
+writadd   jsr waddbfpr
+          bne pwenda
+          bcc pwrit2
+pwenda    cmp #1
+          bne pwend
+          lda #0
+pwend     pha 
+          jsr bufwrite
+          ldy #fpbuf
+          lda (fpzei),y
+          tax 
+          jsr rlbuf
+          ldy #fpanz
+          lda (fpzei),y
+          tax 
+          iny 
+          lda (fpzei),y
+          tay 
+          pla 
+          rts 
+         ;**********
+fcerr     jmp parrange
+fcalcpos  ldx #0
+          .byt $2c
+wcalcpos  ldx #<-1
+          stx addprf
+          ldy #fpos
+fcp1      lda (fpzei),y
+          sta int1-fpos,y
+          iny 
+          cpy #fpos+4
+          bne fcp1
+          lda #0
+          sta int2+2
+          sta int2+3
+          lda bpb+bpclsizb
+          sta int2
+          lda bpb+bpclsizb+1
+          sta int2+1
+          jsr d4v
+          bcs fcerr
+          lda int3+2
+          ora int3+3
+          bne fcerr
+          lda int3
+          sta fcpc
+          lda int3+1
+          sta fcpc+1
+          lda #0
+          sta int2+2
+          sta int2+3
+          lda bpb+bprecsiz
+          sta int2
+          lda bpb+bprecsiz+1
+          sta int2+1
+          jsr d4v
+          bcs fcerr
+          ldy #fpsec
+          lda int3
+          sta (fpzei),y
+          iny 
+          lda int3+1
+          sta (fpzei),y
+          ldy #fpbyt
+          lda int1
+          sta (fpzei),y
+          iny 
+          lda int1+1
+          sta (fpzei),y
+          ldy #fpstart
+          lda (fpzei),y
+          tax 
+          iny 
+          lda (fpzei),y
+          tay 
+fcnex     tya 
+          ldy #fpclus+1
+          sta (fpzei),y
+          dey 
+          txa 
+          sta (fpzei),y
+          lda fcpc
+          ora fcpc+1
+          beq fca1
+          ldy #fpclus+1
+          lda (fpzei),y
+          tax 
+          dey 
+          lda (fpzei),y
+          clc 
+          jsr sgnexcl
+          bne fcnf
+fcdec     lda fcpc
+          bne fca2
+          dec fcpc+1
+fca2      dec fcpc
+          jmp fcnex
+fca1      ldx #3
+          ldy #fpos+3
+fcb1      lda (fpzei),y
+          sta int1,x
+          dey 
+          dex 
+          bpl fcb1
+          ldx #3
+          ldy #fpsize+3
+fcb2      lda (fpzei),y
+          cmp int1,x
+          bcc fcbnew
+          bne fcbe
+          dey 
+          dex 
+          bpl fcb2
+fcbe      lda #0
+          rts 
+fcbnew    ldx #3
+          ldy #fpsize+3
+fcb3      lda int1,x
+          sta (fpzei),y
+          dey 
+          dex 
+          bpl fcb3
+          ldy #fpflag
+          lda #1
+          sta (fpzei),y
+          bne fcbe
+fcnf      lda addprf
+          bne fcnf1
+          jmp clusnfnd
+fcnf1     ldy #fpclus+1
+          lda (fpzei),y
+          tax 
+          dey 
+          lda (fpzei),y
+          jsr fextend
+          beq fcdec
+          rts 
+         ;*********
+         ;*********
+prset                      ; setzt parameter aprecord,apdrive,apbuffer aus fpb
+          ldy #fpclus+1
+          lda (fpzei),y
+          tax 
+          dey 
+          lda (fpzei),y
+          jsr clusec                ; in sektor-adr wandeln
+          ldy #fpsec
+          clc 
+          adc (fpzei),y
+          sta abspar+aprecord
+          iny 
+          txa 
+          adc (fpzei),y
+          sta abspar+aprecord+1
+          ldy #fpdrive
+          lda (fpzei),y
+          sta abspar+apdrive
+          lda przbank
+          sta abspar+apbank
+          lda przei
+          sta abspar+apbuffer
+          lda przei+1
+          sta abspar+apbuffer+1
+          rts 
+         ;*********
+bufwrite  lda #1
+          .byt $2c
+bufload   lda #0
+          sta abspar+aprwflag
+          jsr prset
+          jsr sbfzei
+          lda bfzei
+          sta abspar+apbuffer
+          lda bfzei+1
+          sta abspar+apbuffer+1
+          lda #prgbank
+          sta abspar+apbank
+          ldy #fpbuf
+          lda (fpzei),y
+          tax 
+          jsr bfcfabs
+          bne buflerr
+          jsr sbfbzei
+          lda #0
+buflerr   rts 
+         ;**********
+waddbfpr  ldy #<-1
+          .byt $2c
+addbfpr   ldy #0
+          sty addprf
+          sta int1
+          sta int1+2
+          stx int1+1
+          stx int1+3
+         ; adresse erhoehen
+          ldy #fpadr+1
+          lda (fpzei),y
+          tax 
+          dey 
+          lda (fpzei),y
+          jsr add
+          sta (fpzei),y
+          sta przei
+          iny 
+          txa 
+          sta (fpzei),y
+          sta przei+1
+         ; position erhoehen
+          ldy #fpos
+faddc2    lda (fpzei),y
+          sta int2-fpos,y
+          iny 
+          cpy #fpos+4
+          bcc faddc2
+          lda int1+2
+          clc 
+          adc int2
+          sta int2
+          lda int1+3
+          adc int2+1
+          sta int2+1
+          bcc faddc3
+          inc int2+2
+          bne faddc3
+          inc int2+3
+faddc3    ldy #fpos
+faddc4    lda int2-fpos,y
+          sta (fpzei),y
+          iny 
+          cpy #fpos+4
+          bcc faddc4
+         ; groesse kontrollieren
+          ldy #fpsize+3
+          ldx #4
+faddc5    lda int2-fpsize,y
+          cmp (fpzei),y
+          bcc faddc6
+          bne faddc5a
+          dey 
+          dex 
+          bne faddc5
+         ;beq faddc6
+faddc5a   lda addprf
+          bne faddc5b
+          jmp eof
+faddc5b   ldy #fpsize
+faddc5c   lda int2-fpsize,y
+          sta (fpzei),y
+          iny 
+          cpy #fpsize+4
+          bne faddc5c
+          lda #1
+          ldy #fpflag
+          sta (fpzei),y
+         ; byte im sektor erhoehen
+faddc6    lda int1+2
+          sta int1
+          lda int1+3
+          sta int1+1
+          ldy #fpbyt+1
+          lda (fpzei),y
+          tax 
+          dey 
+          lda (fpzei),y
+          jsr add
+          bcc addovre
+          jmp parrange
+         ; durch anzahl byte/sektor teilen
+addovre   lda bpb+bprecsiz
+          ldx bpb+bprecsiz+1
+          jsr div
+          sta int2+2
+          stx int2+3
+         ; rest neue pos byte
+          ldy #fpbyt
+          lda int1
+          sta (fpzei),y
+          iny 
+          lda int1+1
+          sta (fpzei),y
+         ; neuer sektor und schreiben, dann sektor speichern
+          lda int2+2
+          ora int2+3
+          beq wadd1
+          lda addprf
+          beq wadd1
+          jsr bufwrite
+wadd1     jsr sbfbzei
+         ; kein neuer sektor , dann ende
+addnex    lda int2+2
+          ora int2+3
+          beq addok
+          lda int2+2
+          sta int1
+          lda int2+3
+          sta int1+1
+          ldy #fpsec+1
+          lda (fpzei),y
+          tax 
+          dey 
+          lda (fpzei),y
+          jsr add
+          lda bpb+bpclsiz
+          ldx bpb+bpclsiz+1
+          jsr div
+          sta int3+2
+          stx int3+3
+          ldy #fpsec
+          lda int1
+          sta (fpzei),y
+          iny 
+          lda int1+1
+          sta (fpzei),y
+addclus   lda int3+2
+          ora int3+3
+          beq addcok
+          ldy #fpclus+1
+          lda (fpzei),y
+          dey 
+          tax 
+          lda (fpzei),y
+          clc 
+          jsr sgnexcl
+          bne faddcnf
+          tya 
+          ldy #fpclus+1
+          sta (fpzei),y
+          dey 
+          txa 
+          sta (fpzei),y
+          lda int3+2
+          bne faddc1
+          dec int3+3
+faddc1    dec int3+2
+          jmp addclus
+faddcnf   ldx addprf
+          bne faddcw
+          cmp #0
+          rts 
+faddcw    jmp faddcww
+         ; jetzt 'verwaltung' addieren
+addcok    lda #1
+          .byt $2c
+addok     lda #0
+          sta int3+3
+         ; anzahl erniedrigen
+          ldy #fpanz
+          sec 
+          lda (fpzei),y
+          sbc int1+2
+          sta (fpzei),y
+          iny 
+          lda (fpzei),y
+          sbc int1+3
+          sta (fpzei),y
+          bcc faende
+          dey 
+          ora (fpzei),y
+          bne faen1
+faende    lda #1
+          .byt $2c
+faen1     lda #0
+          pha 
+          ldy #fpanz
+          lda (fpzei),y
+          tax 
+          iny 
+          lda (fpzei),y
+          tay 
+          lda int3+3
+          beq faen5
+          sec 
+          .byt $24
+faen5     clc 
+          pla 
+          rts 
+faddcww   cmp #enclnf
+          beq facw1
+facw2     rts 
+facw1     ldy #fpclus+1
+          lda (fpzei),y
+          tax 
+          dey 
+          lda (fpzei),y
+          jsr fextend
+          bne facw2
+          jmp addclus

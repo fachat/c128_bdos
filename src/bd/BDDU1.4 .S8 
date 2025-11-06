@@ -1,0 +1,39 @@
+
+
+
+
+         ;BDDU1.4 .S8  ==0801==
+         ;*********** data fuer teil u
+         ;words fuer arithmetik
+int1      .word 0,0
+int2      .word 0,0
+int3      .word 0,0
+abuf      .byt 0
+bf1logs   .word 0           ; log sector in bf1
+bf1drv    .byt 0           ; drive in bf1
+bf1val    .byt 0           ; bf1 drive+logs gueltig
+bf1r      .word 0           ;
+bf2logs   .word 0           ; log sector in bf2
+bf2drv    .byt 0           ; drive in bf2
+bf2val    .byt 0           ; sys drive+logs gueltig
+bf2r      .word 0           ;
+bf3x                       ; speicher fuer puffer 3-bufanz
+         bfoffs=bf2drv-bf1drv
+
+cabsx     .byt 0           ; speicher fuer register
+up1       .word 0
+up2       .word 0
+up3       .word 0,0
+up4       .word 0
+up5       .word 0
+up6       .word 0
+up7       .word 0
+up0       .word 0
+         psgcnt=up5
+         psgdat=up3
+         psgend=up0
+         psgflag=up6
+bfyr      .byt 0
+bfxr      .byt 0
+bfbfo     .byt 0
+pgnbuf    .byt 0

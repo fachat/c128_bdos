@@ -1,0 +1,129 @@
+
+
+
+
+          .word $7f00
+         ;../origsrc/bdos+s1/S-RWABS.S5 ==0801==
+         prg=1
+         bdos=$a000
+
+         cursor=$fff0
+         ;********
+rdinit    jsr version
+          stx rwbzei
+          sty rwbzei+1
+          ldy #vejmpadr+1
+          lda (rwbzei),y
+          tax 
+          dey 
+          lda (rwbzei),y
+          sta rwbzei
+          stx rwbzei+1
+          ldx #0
+l1        ldy jmpadr,x
+          lda (rwbzei),y
+          sta jmpold,x
+          lda jmpnew,x
+          sta (rwbzei),y
+          inx 
+          iny 
+          lda (rwbzei),y
+          sta jmpold,x
+          lda jmpnew,x
+          sta (rwbzei),y
+          inx 
+          iny 
+          cpx #anznew*2         ; anzahl neuer routinen
+          bcc l1
+tend      lda #0
+          rts 
+         ;*********
+trwabs    sta zei
+          sty zei+1
+          pha 
+          tya 
+          pha 
+          txa 
+          pha 
+          sec 
+          jsr cursor
+          stx zeile
+          sty spalte
+          ldx #0
+          ldy #15
+          clc 
+          jsr cursor
+          ldy #aprwflag
+          lda (zei),y
+          beq l1a
+          lda #"w"
+          .byt $2c
+l1a       lda #"r"
+          jsr bsout
+          jsr spout
+          ldy #apdrive
+          lda (zei),y
+          jsr hexsout
+          ldy #aprecord+1
+          lda (zei),y
+          jsr hexout
+          dey 
+          lda (zei),y
+          jsr hexsout
+          ldy #apanz+1
+          lda (zei),y
+          jsr hexout
+          dey 
+          lda (zei),y
+          jsr hexsout
+          ldy #apbuffer+1
+          lda (zei),y
+          jsr hexout
+          dey 
+          lda (zei),y
+          jsr hexsout
+          ldy #apbank
+          lda (zei),y
+          jsr hexout
+l1b       jsr $ffe4
+          beq l1b
+          ldx zeile
+          ldy spalte
+          clc 
+          jsr cursor
+          pla 
+          tax 
+          pla 
+          tay 
+          pla 
+          jmp (vrwabs)
+zeile     .byt 0
+spalte    .byt 0
+         ;*****
+hexout    pha 
+          lsr 
+          lsr 
+          lsr 
+          lsr 
+          jsr nibout
+          pla 
+          and #$0f
+nibout    clc 
+          adc #"0"
+          cmp #"9"+1
+          bcc nib1
+          adc #6
+nib1      jmp bsout
+hexsout   jsr hexout
+spout     lda #" "
+          jmp bsout
+         ;**********
+         anznew=1
+jmpadr    
+          .word (rwabs-bdos)*2/3
+jmpnew    
+          .word trwabs
+jmpold    
+vrwabs    .word 0
+
+          .word $7e00

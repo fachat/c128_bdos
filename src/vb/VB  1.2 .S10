@@ -1,0 +1,868 @@
+
+
+
+
+         ;../origsrc/bdos+s1/VB  1.2 .S10 ==0801==
+          .word $9000
+         prg=1
+         bdos=$a000
+         bank0=%00111111
+         bank1=%01111111
+
+         ;********
+          jsr rdinit
+          jsr tdinit
+          jsr udinit
+          ldx #<svtab
+          ldy #>svtab
+          jmp setvec
+rdinit    sta rwbzei
+          sty rwbzei+1
+          lda #2
+          sta drive
+          ldx #7
+pix1      lda val,x
+          sta vadr,x
+          dex 
+          bpl pix1
+          jsr gnib
+          bcs ri1
+          sec 
+          sbc #10
+          sta drive
+ri1       jsr gadr
+          bcs ri2
+          stx vadr
+          sta vadr+1
+ri2       jsr gadr
+          bcs ria
+          stx vadr+2
+          sta vadr+3
+ria       jsr gadr
+          bcs rib
+          stx vadr+4
+          sta vadr+5
+rib       jsr gadr
+          bcs ri3
+          stx vadr+6
+          sta vadr+7
+ri3       lda #0
+          sta anztrck
+          sta c1
+          ldy #64
+          ldx #0
+ri5       asl vadr+7
+          rol vadr+6
+          rol vadr+5
+          rol vadr+4
+          rol vadr+3
+          rol vadr+2
+          rol vadr+1
+          rol vadr
+          bcc ri4
+          lda c1
+          asl 
+          asl 
+          ldx anztrck
+          sta adr,x
+          inc anztrck
+ri4       inc c1
+          dey 
+          bne ri5
+          rts 
+         ;********
+gnib      ldy #0
+          lda (rwbzei),y
+          beq gnie
+          inc rwbzei
+          bne gni2
+          inc rwbzei+1
+gni2      
+          cmp #" "
+          beq gnib
+          cmp #"a"
+          bcc gni1
+          sbc #8
+gni1      sbc #"0"-1
+          and #15
+          clc 
+          rts 
+gae gnie  sec 
+          rts 
+gadr      lda #0
+          sta int1
+          sta int1+1
+          jsr gnib
+          bcs gae
+          asl 
+          asl 
+          asl 
+          asl 
+          sta int1+1
+          jsr gnib
+          bcs gae
+          ora int1+1
+          sta int1+1
+gbyt      jsr gnib
+          bcs gae
+          asl 
+          asl 
+          asl 
+          asl 
+          sta int1
+          jsr gnib
+          bcs gae
+          ora int1
+          ldx int1+1
+          clc 
+          rts 
+         ;****
+tquery    cmp drive
+          beq tqend
+          jmp (vquery)
+tqend     lda #0
+          sta mediafl
+          rts 
+         ;****
+tmediach  cmp drive
+          beq tmedia
+          jmp (vmediach)
+tmedia    lda mediafl
+          rts 
+         ;****
+tfloprw   sta rwbzei
+          sty rwbzei+1
+          ldy #pbdrive
+          lda (rwbzei),y
+          cmp drive
+          beq tflrw
+          lda rwbzei
+          ldy rwbzei+1
+          jmp (vfloprw)
+tflrw     
+         ;****
+          ldy #pbsector
+          lda (rwbzei),y
+          beq trr1
+          cmp #9
+          bcs trr1
+          ldy #pbside
+          lda (rwbzei),y
+          bne trr1
+          ldy #pbbank
+          lda (rwbzei),y
+          sta dbank
+          ldy #pbtrack
+          lda (rwbzei),y
+          tax 
+          cmp anztrck
+          bcc trw1
+trr1      lda #enprange
+          rts 
+trw1      lda adr,x
+          ldx #bank0
+          asl 
+          bcc bbbn0
+          ldx #bank1
+bbbn0     stx rbank
+          ldy #pbsector
+          clc 
+          adc (rwbzei),y
+          tax 
+          dex                    ;sektor =1-8
+          ldy #pbrwflag
+          lda (rwbzei),y
+          pha 
+          ldy #pbbuffer
+          lda (rwbzei),y
+          sta tzei
+          iny 
+          lda (rwbzei),y
+          sta tzei+1
+          stx rwbzei+1
+          lda #0
+          sta rwbzei
+          pla 
+          bne twrite
+         ;****
+          lda #tzei
+          jsr bsadr
+          lda #rwbzei
+          jsr bfadr
+          ldy #0
+          sei 
+tre1      ldx rbank
+          jsr bfetch
+          ldx dbank
+          jsr bstash
+          iny 
+          bne tre1
+          cli 
+          ldx tzei
+          ldy tzei+1
+          iny 
+          lda #0
+          rts 
+         ;****
+twrite    lda #tzei
+          jsr bfadr
+          lda #rwbzei
+          jsr bsadr
+          ldy #0
+          sei 
+twr1      ldx dbank
+          jsr bfetch
+          ldx rbank
+          jsr bstash
+          iny 
+          bne twr1
+          cli 
+          ldx tzei
+          ldy tzei+1
+          iny 
+          lda #0
+          rts 
+         ;****
+tformat   cmp drive
+          beq tfmt
+          jmp (vformat)
+tfmt      sta rwb+pbdrive
+          lda #1
+          sta rwb+pbrwflag
+          lda #prgbank
+          sta rwb+pbbank
+          lda #0
+          sta rwb+pbside
+          sta rwb+pbtrack
+          lda #1
+          sta rwb+pbsector
+          ldy #0
+tff1      lda bootsec,y
+          sta clrsec,y
+          iny 
+          bne tff1
+          lda anztrck
+          sta clrsec+btsec
+          cmp #43
+          bcs fspf1
+          cmp #22
+          bcs fspf2
+          lda #1
+          .byt $2c
+fspf2     lda #2
+          .byt $2c
+fspf1     lda #3
+          sta clrsec+btspf
+          lda #0
+          sta clrsec+btspf+1
+          lda #0
+          asl clrsec+btsec
+          rol 
+          asl clrsec+btsec
+          rol 
+          asl clrsec+btsec
+          rol 
+          sta clrsec+btsec+1
+          lda #<clrsec
+          sta rwb+pbbuffer
+          lda #>clrsec
+          sta rwb+pbbuffer+1
+          lda #<rwb
+          ldy #>rwb
+          jsr floprw
+          lda #0
+          tay 
+tff2      sta clrsec,y
+          iny 
+          bne tff2
+          lda #<clrsec
+          sta rwb+pbbuffer
+          lda #>clrsec
+          sta rwb+pbbuffer+1
+          lda #$ff
+          sta clrsec+0
+          sta clrsec+1
+          sta clrsec+2
+          lda #2
+          sta rwb+pbsector
+          lda #<rwb
+          ldy #>rwb
+          jsr floprw
+          lda #0
+          sta clrsec+0
+          sta clrsec+1
+          sta clrsec+2
+          lda #3
+          sta rwb+pbsector
+l2        lda #<rwb
+          ldy #>rwb
+          jsr floprw
+          inc rwb+pbsector
+          lda rwb+pbsector
+          cmp #8
+          bcc l2
+          lda #1
+          sta mediafl
+          lda #0
+          rts 
+         ;*********
+psgtime   bcs pstime
+          jmp pgtime
+pstime    lda tcia+15
+          and #127
+          sta tcia+15
+          jmp timereg
+psalarm   cmp #0
+          beq psalar
+          cmp #1
+          beq paon
+          lda #%00000100
+          sta tcia+13
+          lda #0
+          rts 
+psalar    lda tcia+15
+          ora #128
+          sta tcia+15
+          jsr timereg
+paon      lda #%10000100
+          sta tcia+13
+          lda #0
+          rts 
+timereg   stx rwbzei
+          sty rwbzei+1
+          ldy #2
+          lda (rwbzei),y
+          jsr hourbcd
+          sta tcia+11
+          dey 
+          lda (rwbzei),y
+          jsr bytbcd
+          sta tcia+10
+          dey 
+          lda (rwbzei),y
+          jsr bytbcd
+          sta tcia+9
+          lda #0
+          sta tcia+8          ; 10th sec
+          lda #0
+          rts 
+hourbcd   ldx #0
+          stx int1+1
+hour1a    cmp #12
+          bcc hour1
+          sbc #12
+          pha 
+          lda int1+1
+          eor #128
+          sta int1+1
+          pla 
+          bne hour1a
+hour1     jsr bytbcd
+          cmp #0
+          bne hour2
+          lda #$92
+hour2     eor int1+1
+          rts 
+bytbcd    pha 
+          lda #0
+          sta int1
+          pla 
+          cmp #61
+          bcc bbcd1
+          lda #0
+          rts 
+bbcd1     sec 
+          sbc #10
+          bcc bbcd2
+          inc int1
+          bne bbcd1
+bbcd2     clc 
+          adc #10
+          asl int1
+          asl int1
+          asl int1
+          asl int1
+          ora int1
+          rts 
+pgtime    lda tcia+11
+          jsr bcdhour
+          sta int1+2
+          lda tcia+10
+          jsr bcdbyt
+          sta int1+1
+          lda tcia+9
+          jsr bcdbyt
+          sta int1
+          lda tcia+8
+          ldx #<int1
+          ldy #>int1
+          lda #0
+          rts 
+bcdhour   tax 
+          and #127
+          cmp #$12
+          bne bcdh1
+          txa 
+          eor #128
+          tax 
+          and #127
+bcdh1     jsr bcdbyt
+          tay 
+          txa 
+          bpl bcdh2
+          tya 
+          clc 
+          adc #12
+          tay 
+bcdh2     tya 
+          cmp #24
+          bcc bcdh3
+          sbc #24
+bcdh3     rts 
+bcdbyt    tay 
+          and #15
+          sta int2+1
+          tya 
+          and #%11110000
+          lsr 
+          lsr 
+          sta int2
+          lsr 
+          lsr 
+          clc 
+          adc int2
+          asl 
+          clc 
+          adc int2+1
+          rts 
+psgdate   bcs psdate
+          ldx #<datum
+          ldy #>datum
+          lda #0
+          rts 
+psdate    stx rwbzei
+          sty rwbzei+1
+          ldy #2
+psdate1   lda (rwbzei),y
+          sta datum,y
+          dey 
+          bpl psdate1
+          lda #0
+          rts 
+         ;**********
+pbcan     pha 
+          txa 
+          pha 
+          tya 
+          pha 
+          jsr $cd6f
+          jmp pban1
+pbcaus    pha 
+          txa 
+          pha 
+          tya 
+          pha 
+          lda #1
+          ldy $ec
+          jsr $cd9f
+pban1     pla 
+          tay 
+          pla 
+          tax 
+          pla 
+          rts 
+pbin      txa 
+          pha 
+          tya 
+          pha 
+          lda #1
+          sta $d6
+          lda $eb
+          clc 
+          adc #1
+          sta $0a30
+          jsr $c009
+          sta $0a30
+          pla 
+          tay 
+          pla 
+          tax 
+          lda $0a30
+          rts 
+         ;********
+pbout     jmp bsout
+pbcpos    jmp $fff0
+pbgkey    jmp getkey
+pbbcol    sta 53280
+          sta 53281
+          rts 
+pbtcol    and #$0f
+          tax 
+          lda farben,x
+          jsr bout
+          rts 
+pbfadr    sta fetvec
+          rts 
+pbsadr    sta stavec
+          rts 
+pbfetch   jmp fetch
+pbstash   jmp stash
+         ser=3
+         iec=4
+         dev1=2
+         dev2=3
+         dev3=4
+         ;
+         unlisten=$ffae
+         untalk=$ffab
+         serst=$0a14
+         ;
+         ;********
+tdinit    
+          jsr gbyt
+          bcs tddi1
+          sta fname
+          jsr gbyt
+          bcs tddi1
+          sta fname+1
+tddi1     lda fname
+          ora fname+1
+          bne tddi2
+          lda #endnp
+          bne operx
+tddi2     lda #2
+          ldx #<fname
+          ldy #>fname
+          jsr setfnpar
+          lda #ser
+          ldx #2
+          ldy #2
+          jsr setfpar
+          jsr open
+          bcc operr
+          cmp #$f0
+          beq operr
+          ora #64
+          .byt $2c
+operr     lda #0
+operx     sta dev1err
+          rts 
+         ;********
+tdevout   cpx #dev1
+          beq tdo1
+          jmp udevout
+tdo1      ldx dev1err
+          bne td1x
+          jsr bsout
+          rts 
+td1x      sec 
+          txa 
+          rts 
+         ;****
+tdevin    cpx #dev1
+          beq tdi1
+          jmp udevin
+tdi1      ldx dev1err
+          bne td1x
+          jsr waitser
+          clc 
+          rts 
+         ;****
+tdevcmd   cpx #dev1
+          beq tdc1
+          jmp udevcmd
+tdc1      ldx dev1err
+          bne td1x
+          tax 
+          bne tdc2
+          ldx $029e
+          inx 
+          cpx $029d
+          beq tdc11
+          lda #0
+          rts 
+tdc11     lda #endbf
+          rts 
+tdc2      dex 
+          bne tdc3
+          ldx $029b
+          cpx $029c
+          beq tdc21
+          lda #0
+          rts 
+tdc21     lda #endbe
+          rts 
+tdc3      dex 
+          bne tdc4
+          ldx #ser
+          jsr ckout
+          lda #0
+          rts 
+tdc4      dex 
+          bne tdc5
+          lda #3
+          sta $9a
+          lda #0
+          rts 
+tdc5      dex 
+          bne tdc6
+          ldx #ser
+          jsr chkin
+          lda #0
+          rts 
+tdc6      dex 
+          bne tdc7
+          lda #0
+          sta $99
+          rts 
+tdc7      lda #ennotimp
+          rts 
+         ;********
+udinit    
+          lda #4
+          sta int2
+          lda #0
+          sta int2+1
+          jsr gbyt
+          bcs uddi1
+          sta int2
+          jsr gbyt
+          bcs uddi1
+          sta int2+1
+uddi1     lda #0
+          jsr setfnpar
+          lda #iec
+          ldx int2
+          ldy int2+1
+          jsr setfpar
+          jsr open
+          bcc uperr
+          cmp #$f0
+          beq uperr
+          ora #64
+          .byt $2c
+uperr     lda #0
+          sta dev2err
+          rts 
+         ;********
+udevout   cpx #dev2
+          beq udo1
+          jmp cdevout
+udo1      ldx dev2err
+          bne td2x
+          jsr bsout
+          rts 
+td2x      jmp td1x
+         ;****
+udevin    cpx #dev2
+          beq udi1
+          jmp cdevin
+udi1      ldx dev2err
+          bne td2x
+          jsr basin
+          clc 
+          rts 
+         ;****
+udevcmd   cpx #dev2
+          beq udc1
+          jmp cdevcmd
+udc1      ldx dev2err
+          bne td2x
+          stx status
+          tax 
+          bne udc2
+          lda #0
+          rts 
+udc2      dex 
+          bne udc3
+          lda #endbe
+          rts 
+udc3      dex 
+          bne udc4
+          ldx #iec
+          jsr ckout
+          jmp tstst
+udc4      dex 
+          bne udc5
+          jsr unlisten
+          lda #3
+          sta $9a
+          lda #0
+          rts 
+udc5      dex 
+          bne udc6
+          ldx #iec
+          jsr chkin
+          jmp tstst
+udc6      dex 
+          bne udc7
+          jsr untalk
+          lda #0
+          sta $99
+          rts 
+udc7      lda #ennotimp
+          rts 
+         ;****
+waitser   lda $0a18
+          cmp $0a19
+          beq waitser
+          jmp $ffe4
+tstst     lda status
+          bne tstst1
+          lda #0
+          rts 
+tstst1    lda #endnp
+          rts 
+         ;********
+cdinit    lda #$ff
+          sta cia2+3
+          lda cia2+2
+          ora #4
+          sta cia2+2
+          lda cia2+0
+          ora #4
+          sta cia2+0
+          lda #0
+          clc 
+          rts 
+cdevout   cpx #dev3
+          beq cdo1
+          jmp (vdevout)
+cdo1      sta cia2+1
+          lda cia2+0
+          and #ff-4
+          sta cia2+0
+          lda cia2+0
+          ora #4
+          sta cia2+0
+cdo2      jsr $ffe1
+          beq cdo3
+          lda cia2+13
+          and #16
+          beq cdo2
+          clc 
+          rts 
+cdo3      lda #endnp
+          sec 
+          rts 
+cdevin    cpx #dev3
+          beq cdi1
+          jmp (vdevin)
+cdi1      lda #endnp
+          sec 
+          rts 
+cdevcmd   cpx #dev3
+          beq cdc1
+          jmp (vdevcmd)
+cdc1      cmp #2
+          beq cdinit
+          lda #0
+          rts 
+         ;**********
+svtab     
+          .word anznew
+          .word jmpadr
+          .word jmpnew
+          .word jmpold
+         anznew=22
+jmpadr    
+          .word (query-bdos)*2/3
+          .word (mediach-bdos)*2/3
+          .word (floprw-bdos)*2/3
+          .word (flopfmt-bdos)*2/3
+          .word (devout-bdos)*2/3
+          .word (devin-bdos)*2/3
+          .word (devcmd-bdos)*2/3
+          .word (sgtime-bdos)*2/3
+          .word (sgdate-bdos)*2/3
+          .word (salarm-bdos)*2/3
+          .word (bout-bdos)*2/3
+          .word (bin-bdos)*2/3
+          .word (bcan-bdos)*2/3
+          .word (bcaus-bdos)*2/3
+          .word (bbcol-bdos)*2/3
+          .word (btcol-bdos)*2/3
+          .word (bcpos-bdos)*2/3
+          .word (bgkey-bdos)*2/3
+          .word (bfetch-bdos)*2/3
+          .word (bstash-bdos)*2/3
+          .word (bfadr-bdos)*2/3
+          .word (bsadr-bdos)*2/3
+jmpnew    
+          .word tquery
+          .word tmediach
+          .word tfloprw
+          .word tformat
+          .word tdevout
+          .word tdevin
+          .word tdevcmd
+          .word psgtime
+          .word psgdate
+          .word psalarm
+          .word pbout
+          .word pbin
+          .word pbcan
+          .word pbcaus
+          .word pbbcol
+          .word pbtcol
+          .word pbcpos
+          .word pbgkey
+          .word pbfetch
+          .word pbstash
+          .word pbfadr
+          .word pbsadr
+farben    
+          .byt $90,$05,$1c,$9f,$9c,$1e,$1f,$9e
+          .byt $81,$95,$96,$97,$98,$99,$9a,$9b
+val       .byt $00,$03,$c0,$fe
+          .byt $3f,$ff,$ff,$fe
+bootsec   
+          .word 0,0,0,0
+          .byt $c0,$64,$00
+          .word 256
+          .byt 1
+          .word 1
+          .byt 1
+          .word 24
+          .word 0              ; sektoren = btsec
+          .byt 0
+          .word 2              ; btspf
+          .word 8
+          .word 1
+          .word 0
+fname     .byt 6,0
+
+jmpold    
+vquery    .word 0
+vmediach  .word 0
+vfloprw   .word 0
+vformat   .word 0
+vdevout   .word 0
+vdevin    .word 0
+vdevcmd   .word 0
+          .word 0,0,0,0,0
+          .word 0,0,0,0,0
+          .word 0,0,0,0,0
+int2      .word 0,0
+rwb       .word 0,0,0,0
+mediafl   .byt 0
+drive     .byt 0
+c1        .byt 0
+anztrck   .byt 0
+rbank     .byt 0
+dbank     .byt 0
+dev1err   .byt 0
+dev2err   .byt 0
+int1      .word 0,0
+datum     .byt 0,0,0
+vadr      .word 0,0,0,0
+adr       
+          .word 0,0,0,0,0,0,0,0
+          .word 0,0,0,0,0,0,0,0
+          .word 0,0,0,0,0,0,0,0
+          .word 0,0,0,0,0,0,0,0
+clrsec    
+         varend=*+256
+          .text 
+          .word varend
+          .end 

@@ -1,0 +1,226 @@
+
+
+
+
+         ;BD5 1.45.S16 ==0801==
+psetvec   sei 
+          stx rwbzei
+          sty rwbzei+1
+          ldy #svanz
+          lda (rwbzei),y
+          asl 
+          sta int1
+          ldy #svadr
+          lda (rwbzei),y
+          sta abszei
+          iny 
+          lda (rwbzei),y
+          sta abszei+1
+          ldy #svold
+          lda (rwbzei),y
+          sta zei
+          iny 
+          lda (rwbzei),y
+          sta zei+1
+          ldy #0
+psv1      
+          lda (abszei),y
+          tax 
+          lda vektor,x
+          sta (zei),y
+          iny 
+          lda vektor+1,x
+          sta (zei),y
+          iny 
+          cpy int1
+          bcc psv1
+          ldy #svnew
+          lda (rwbzei),y
+          sta zei
+          iny 
+          lda (rwbzei),y
+          sta zei+1
+          ldy #0
+psv2      
+          lda (abszei),y
+          tax 
+          lda (zei),y
+          sta vektor,x
+          iny 
+          lda (zei),y
+          sta vektor+1,x
+          iny 
+          cpy int1
+          bcc psv2
+          cli 
+          lda #0
+          rts 
+         ;********
+prtbuf    lda dvfl
+          bmi prb1
+prbx      lda #endbe
+prbe      sec 
+          rts 
+prb1      lda dbanz
+          beq prbx
+          ldx dvout
+          lda #2             ; listen
+          jsr devcmd
+          bne prbc
+          ldy #0
+prbl      
+          jsr chost
+          beq prb2
+          cmp #endbf
+          beq prbl
+          bne prbc
+prb2      lda devbuf,y
+          ldx dvout
+          jsr devout
+          bcs prbc
+          iny 
+          cpy dbanz
+          bne prbl
+          lda #0
+prbc      pha 
+          ldx dvout
+          lda #3             ; unlisten
+          jsr devcmd
+          lda #0
+          sta dbanz
+          pla 
+          bne prby
+          clc 
+          rts 
+prby      sec 
+          rts 
+         ;****
+pchout    sta chdiv
+          pha 
+          tya 
+          pha 
+          txa 
+          pha 
+          lda chdiv
+          jsr ppchout
+          sta chdiv
+          pla 
+          tax 
+          pla 
+          tay 
+          pla 
+          bcc pco0
+          lda chdiv
+pco0      rts 
+ppchout   bit dvfl
+          bmi pco1
+pcol      jsr chost
+          beq pco2
+          cmp #endbf
+          beq pcol
+          sec 
+          rts 
+pco2      lda chdiv
+          ldx dvout
+          jmp devout
+pco1      ldy dbanz
+          sta devbuf,y
+          iny 
+          sty dbanz
+          cmp #13
+          bne pco5
+          jmp prtbuf
+pco5      iny 
+          iny 
+          bne pco4
+          lda #endbf
+          sec 
+          rts 
+pco4      lda #0
+          clc 
+          rts 
+         ;****
+pchodev   pha 
+          bit dvfl
+          bpl pcod1
+          jsr prtbuf
+          jmp pcod2
+pcod1     ldx dvout
+          lda #3
+          jsr devcmd
+pcod2     pla 
+          sta dvfl
+          and #127
+          sta dvout
+          lda dvfl
+          bmi pchost
+          ldx dvout
+          lda #2
+          jmp devcmd
+         ;****
+pchost    ldx dvout
+          lda #0
+          jmp devcmd
+         ;****
+pchin     tya 
+          pha 
+          txa 
+          pha 
+          ldx dvin
+          jsr chist
+          beq pci1
+          cmp #endbe
+          beq pchin
+          sec 
+          bcs pci2
+pci1      ldx dvin
+          jsr devin
+pci2      sta chdiv
+          pla 
+          tax 
+          pla 
+          tay 
+          lda chdiv
+          rts 
+         ;****
+pchidev   pha 
+          ldx dvin
+          lda #5
+          jsr devcmd
+          pla 
+          sta dvin
+          tax 
+          lda #4
+          jmp devcmd
+         ;****
+pchist    ldx dvin
+          lda #1
+          jmp devcmd
+         ;****
+chinit    lda #0
+          sta dbanz
+          jsr chodev
+          lda #0
+          jsr chidev
+          rts 
+         ;********
+pdevout   cpx #0
+          beq pdo1
+pdie      jmp dnotpr
+pdo1      
+          jsr bout
+          clc 
+          rts 
+         ;****
+pdevin    cpx #0
+          bne pdie
+pdi1      jsr bgkey
+          beq pdi1
+          sta chdiv
+          clc 
+          rts 
+         ;****
+pdevcmd   cpx #0
+          bne pdie
+          lda #0
+          rts 

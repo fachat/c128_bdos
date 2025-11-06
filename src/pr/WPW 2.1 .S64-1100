@@ -1,0 +1,10 @@
+
+
+
+
+         ;WPW 2.1 .S64 ==0801==
+
+setbck    jmp bbcol
+settxt    jmp btcol
+
+          .end 

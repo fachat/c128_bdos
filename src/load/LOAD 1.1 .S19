@@ -1,0 +1,159 @@
+
+
+
+
+          .word $8000
+         ;../origsrc/bdos+s1/LOAD 1.1 .S19 ==0801==
+
+         adr=$fb
+         load=$ffd5
+          lda #$36
+          sta 1
+          lda #$0e
+          sta $ff00
+          lda basirq
+          and #$ff-1
+          sta basirq
+          lda #127
+          sta nmicr
+          lda #<buf
+          sta adr
+          lda #>buf
+          sta adr+1
+          lda #namlen
+          ldx #<name
+          ldy #>name
+          jsr setfnpar
+          ldx $ba
+          stx drv
+          ldy #0
+          sty $c7
+          sty $c6
+          jsr setfpar
+          ldx #<buf
+          ldy #>buf
+          lda #0
+          jsr load
+          bcc l1
+          rts 
+l1        stx adr
+          sty adr+1
+          lda #0
+          tay 
+          sta (adr),y
+          lda #<buf
+          sta badr
+          lda #>buf
+          sta badr+1
+lloop     lda #0
+          sta $ce
+          lda badr
+          sta adr
+          lda badr+1
+          sta adr+1
+          ldy #0
+lr1       lda (adr),y
+          cmp #13
+          beq lr2
+          iny 
+          bne lr1
+lr2       lda #0
+          sta (adr),y
+          ldy #<-1
+ll1       iny 
+          lda (adr),y
+          beq lle
+          cmp #$5c             ;"\"
+          bne ll1
+          tya 
+          ldx adr
+          ldy adr+1
+          jsr setfnpar
+          ldx drv
+          ldy #1
+          jsr setfpar
+          lda #0
+          jsr load
+          bcc ll2a
+          rts 
+ll2a      ldy $b7
+          jsr getadr
+          lda (adr),y
+          cmp #$5c             ;"\"
+          bne ll2
+          iny 
+ll2       tya 
+          clc 
+          adc adr
+          ldy adr+1
+          bcc ll3
+          iny 
+ll3       jsr ajsr
+          lda badr
+          sta adr
+          lda badr+1
+          sta adr+1
+          ldy #0
+ll4       lda (adr),y
+          beq ll5
+          iny 
+          bne ll4
+ll5       iny 
+          tya 
+          clc 
+          adc adr
+          sta badr
+          tax 
+          lda adr+1
+          adc #0
+          sta badr+1
+          jmp lloop
+lle       lda #$37
+          sta 1
+          rts 
+ajsr      jmp (jadr)
+getadr    lda #0
+          sta jadr
+          sta jadr+1
+gta2      jsr getnib
+          bcc gta1
+          rts 
+gta1      tax 
+          lda jadr+1
+          asl jadr
+          rol 
+          asl jadr
+          rol 
+          asl jadr
+          rol 
+          asl jadr
+          rol 
+          sta jadr+1
+          txa 
+          ora jadr
+          sta jadr
+          jmp gta2
+getnib    iny 
+          lda (adr),y
+          beq gtne
+          cmp #"0"
+          bcc gtne
+          cmp #"9"+1
+          bcc gtn1
+          cmp #"a"
+          bcc gtne
+          cmp #"f"+1
+          bcs gtne
+          sbc #6
+gtn1      and #15
+          clc 
+          rts 
+gtne      sec 
+          rts 
+badr      .word 0
+jadr      .word 0
+len       .byt 0
+drv       .byt 0
+name      .asc "autoload"
+         namlen=8
+         buf=*

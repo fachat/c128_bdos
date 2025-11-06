@@ -1,0 +1,96 @@
+
+
+
+
+         ;PR2 2.4 .S60 ==0801==
+
+pformat   sta czei
+          sty czei+1
+          lda #1
+          sta fformat
+pff0      jsr chrgot
+          beq pfo1
+          cmp #"/"
+          bne pff1
+          jsr chrget
+          jsr gbyt
+          bne pff0
+          stx fformat
+          beq pff0
+pff1      tax 
+          ldy #1
+          lda (czei),y
+          cmp #":"
+          bne pfo1
+          jsr chrget
+          jsr chrget
+          txa 
+          sec 
+          sbc #"a"
+          jmp pfo2
+pfo1      clc 
+          jsr sgdrive
+pfo2      sta fadr
+          ldx fformat
+          jsr flopfmt
+          bne pfoe
+          jsr chrgot
+          beq pfoe
+          lda fadr
+          sec 
+          jsr sgdrive
+          bne pfoe
+          lda #<ddtp
+          ldy #>ddtp
+          sec 
+          jsr sgdta
+          lda #0
+          tax 
+          ldy #1             ; ersten leeren eintrag
+          jsr sfirso
+          bne pfoe
+          ldy #0
+          ldx #0
+pfo3      lda (czei),y
+          beq pfoleer
+          cmp #"."
+          beq pfoext
+          sta ddtp+dgname,x
+          iny 
+          inx 
+          cpx #8
+          bcc pfo3
+pfo3a     lda (czei),y
+          beq pfoleer
+          cmp #"."
+          beq pfoext
+          iny 
+          bne pfo3a
+pfoleer   dey 
+pfoext    lda #" "
+          cpx #8
+          beq pfoex1
+          sta ddtp+dgname,x
+          inx 
+          bne pfoext
+pfoex1    iny 
+          ldx #0
+pfo4      lda (czei),y
+          beq pfoend
+          sta ddtp+dgext,x
+          iny 
+          inx 
+          cpx #3
+          bne pfo4
+pfoend    lda #" "
+          cpx #3
+          beq pfoe1
+          sta ddtp+dgext,x
+          inx 
+          bne pfoend
+pfoe1     lda #$08
+          sta ddtp+dgattr
+          jmp wrentry
+pfoe      rts 
+
+          .end 

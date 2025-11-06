@@ -1,0 +1,429 @@
+
+
+
+
+         ;BDC 1.35.S15 ==0801==
+         ;****
+clusec    sec 
+          sbc #2
+          sta int1
+          txa 
+          sbc #0
+          sta int1+1
+          lda bpb+bpclsiz
+          ldx bpb+bpclsiz+1
+          jsr mult
+          sta int1
+          stx int1+1
+          lda bpb+bpdatrec
+          ldx bpb+bpdatrec+1
+          jsr add
+          rts 
+         ;****
+clufat    tay 
+          lda bpb+bflags
+          and #1
+          bne fat16b
+          tya 
+          and #1
+          sta cabsx                ; bit 0 retten
+          tya 
+          and #%11111110
+          sta int1
+          stx int1+1
+          txa 
+          lsr 
+          tax 
+          lda int1
+          ror 
+          jsr add
+          lda cabsx
+          ldx #0
+          jsr add
+fat16ba   lda bpb+bprecsiz
+          ldx bpb+bprecsiz+1
+          jsr div
+          rts 
+fat16b    tya 
+          asl 
+          sta int1
+          txa 
+          rol 
+          sta int1+1
+          jmp fat16ba
+         ;*****
+psgnexcl  bcc pgnexcl
+          jmp psnexcl
+pgnerr    jmp diskerr
+pgnexcl   jsr cluspr
+          bne pgnerr
+          sta up2
+          jsr clufat
+          ldy int1
+          sty up1
+          ldy int1+1
+          sty up1+1
+          clc 
+          adc bpb+bpfatrec
+          pha 
+          txa 
+          adc bpb+bpfatrec+1
+          tay 
+          pla 
+          tax 
+          stx up4
+          sty up4+1
+          lda #0
+          sta up2+1
+          lda bpb+bpbfat
+          sta pgnbuf
+          lda up4
+          ldx up4+1
+          jsr readfat
+          beq pgnex
+          jmp diskerr
+pgnex     lda up1
+          ldx up1+1
+          ldy pgnbuf
+          jsr bfzset
+          jsr bfget
+          sta up1
+          bcc gnex1
+          lda up4
+          clc 
+          adc #1
+          tax 
+          lda up4+1
+          adc #0
+          tay 
+          jsr gnexload
+gnex1     jsr bfget
+          sta int1+1
+          lda up1
+          sta int1
+          lda bpb+bflags
+          and #1
+          bne gnex3
+          lda up2
+          lsr 
+          bcc gnex2a
+          ldy #4
+          lda int1
+          ldx int1+1
+          jsr nlsr
+          sta int1
+          stx int1+1
+gnex2a    lda int1+1
+          and #$0f
+          tax 
+          stx int1+1
+          cpx #$0f
+          bcc gnexr
+          bcs gnex3a
+gnex3     ldx int1+1
+          cpx #$ff
+          bcc gnexr
+gnex3a    lda int1
+          cmp #$f7
+          bcs gnexre
+gnexr     ldx int1
+          ldy int1+1
+          lda up2+1
+          bne gnexrr                ; anderer fehler
+          cpy #0
+          bne gnexa1
+          cpx #2
+          bcc gnexre
+gnexa1    lda bpb+bpnumcl
+          ldy bpb+bpnumcl+1
+          clc 
+          adc #2
+          bcc gnexb1
+          iny 
+gnexb1    cpy int1+1
+          bne gnexb2
+          cmp int1
+          beq gnexre
+gnexb2    sec 
+          sbc int1
+          tya 
+          sbc int1+1
+          bcc gnexre
+gnexr2    ldx int1
+          ldy int1+1
+          lda #0
+gnexrr    rts 
+gnexre    ldx int1
+          ldy int1+1
+          jmp clusnfnd
+gnexload                   ;
+          txa 
+          pha 
+          tya 
+          tax 
+          pla 
+          jsr readfat
+          beq gnexra
+          sta up2+1          ;fehler
+gnexra    lda #0
+          tax 
+          ldy pgnbuf
+          jsr bfzset
+          rts 
+         ;**********
+psnexcl   sta dzei
+          sty dzei+1
+          lda #0
+          sta up2+1
+          ldx bpb+bpbfat
+          stx pgnbuf
+          ldy #3
+          lda (dzei),y
+          sta up3+1
+          dey 
+          lda (dzei),y
+          sta up3
+          dey 
+          lda (dzei),y
+          tax 
+          dey 
+          lda (dzei),y
+          sta up4
+          jsr clufat
+          ldy int1
+          sty up1
+          ldy int1+1
+          sty up1+1
+          clc 
+          adc bpb+bpfatrec
+          pha 
+          txa 
+          adc bpb+bpfatrec+1
+          tax 
+          pla 
+          sta up0
+          stx up0+1
+          jsr readfat
+          lda bpb+bflags
+          and #1
+          beq snex16a
+          jmp snex16b
+snex16a   lda up1
+          ldx up1+1
+          ldy pgnbuf
+          jsr bfzset
+          jsr bfget
+          sta up2
+          bcc snex1
+          lda up0
+          clc 
+          adc #1
+          tax 
+          lda up0+1
+          adc #0
+          tay 
+          jsr gnexload
+          lda #0
+          tax 
+          ldy pgnbuf
+          jsr bfzset
+snex1     jsr bfget
+          sta int1+1
+          lda up2
+          sta int1
+          ldy #$f0
+          ldx #$00
+          lda up4
+          lsr 
+          bcc snex2
+          ldy #$00
+          ldx #$0f
+snex2     tya 
+          eor #$ff
+          sta up5+1
+          txa 
+          eor #$ff
+          sta up5
+          tya 
+          and int1+1
+          sta int1+1
+          txa 
+          and int1
+          sta int1
+          ldy #3
+          lda (dzei),y
+          tax 
+          dey 
+          lda (dzei),y
+          tay 
+          lda up4
+          lsr 
+          tya 
+          bcc snex4
+          tya 
+          ldy #4
+          jsr nasl
+snex4     and up5
+          pha 
+          txa 
+          and up5+1
+          tax 
+          pla 
+          jsr add
+          sta up3
+          stx up3+1
+         ;up3/+1 ist neuer 2 byte wert
+snex16b   lda up0
+          ldx up0+1
+          jsr readfat
+          bne snexr
+          lda bpb+bpbflag
+          ora #dfwrit
+          sta bpb+bpbflag
+          lda up1
+          ldx up1+1
+          ldy pgnbuf
+          jsr bfzset
+          lda up3
+          jsr bfset
+          bcc snex5
+          jsr snexwr
+          jsr gnexload                ; parameter von snexwr
+          lda bpb+bpbflag
+          ora #dfwrit
+          sta bpb+bpbflag
+snex5     lda up3+1
+          jsr bfset
+snexr     lda up2+1
+          rts 
+snexwr    
+          lda up0
+          clc 
+          adc #1
+          sta up0
+          tax 
+          lda up0+1
+          adc #0
+          sta up0+1
+          tay 
+          rts 
+         ;**********
+cluspr    sta up7
+          stx up7+1
+          sec 
+          sbc #2
+          tay 
+          txa 
+          sbc #0
+          bcc clpe
+          cmp bpb+bpnumcl+1
+          bcc clpr2
+          bne clpe
+clpr1     cpy bpb+bpnumcl
+          bcs clpe
+clpr2     lda up7
+          ldx up7+1
+          ldy #0
+          rts 
+clpe      jmp parrange
+         ;*****
+psfrclus  jsr cluspr
+          beq psfr1a
+          lda #2
+          ldx #0
+psfr1a    sta psgcnt
+          stx psgcnt+1
+          sta psgdat
+          stx psgdat+1
+          lda bpb+bpnumcl
+          clc 
+          adc #2
+          sta psgend
+          lda bpb+bpnumcl+1
+          adc #0
+          sta psgend+1
+          lda #0
+          sta psgflag
+psfrl1    lda psgcnt
+          ldx psgcnt+1
+          jsr cluspr
+          bne psfr1
+          jsr gnexclus
+          beq psfrok
+          lda #1
+          clc 
+          adc psgcnt
+          sta psgcnt
+          bcc psfr2
+          inc psgcnt+1
+psfr2     lda psgcnt+1
+          cmp psgend+1
+          bcc psfrl1
+          bne psfr1
+          lda psgcnt
+          cmp psgend
+          bcc psfrl1
+psfr1     lda psgflag
+          bne psfrnf
+          eor #1
+          sta psgflag
+          lda psgdat
+          sta psgend
+          lda psgdat+1
+          sta psgend+1
+          lda #2
+          sta psgcnt
+          lda #0
+          sta psgcnt+1
+          jmp psfr2
+psfrok    ldx psgcnt
+          ldy psgcnt+1
+          lda #0
+          rts 
+psfrnf    jmp clusnfnd
+         ;*****
+pgtdskfr  sta dzei
+          sty dzei+1
+          ldy #3
+          lda #0
+pgfl2     sta psgdat,y
+          dey 
+          bpl pgfl2
+          lda #2
+          sta psgcnt
+          lda #0
+          sta psgcnt+1
+pgfl1     lda psgcnt
+          ldx psgcnt+1
+          jsr cluspr
+          bne pgf2
+          jsr gnexclus
+          bne pgf1
+          lda bpb+bpclsizb
+          clc 
+          adc psgdat
+          sta psgdat
+          lda bpb+bpclsizb+1
+          adc psgdat+1
+          sta psgdat+1
+          bcc pgf1
+          inc psgdat+2
+          bne pgf1
+          inc psgdat+3
+pgf1      inc psgcnt
+          bne pgfl1
+          inc psgcnt+1
+          jmp pgfl1
+pgf2      ldy #3
+pgfl3     lda psgdat,y
+          sta (dzei),y
+          dey 
+          bpl pgfl3
+          jmp error0
+         ;******
+gnexclus  clc 
+          jsr sgnexcl
+          stx int1
+          tya 
+          ora int1
+          rts 

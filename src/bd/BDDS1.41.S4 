@@ -1,0 +1,11 @@
+
+
+
+
+         ;BDDS1.41.S4  ==0801==
+         ;********** data allgemein
+drvbpb                     ;
+
+fpbt                       ;
+
+         ; .assert bufanz-*<=15, "more data than buffer"

@@ -1,0 +1,330 @@
+
+
+
+
+         ;BD3 1.42.S42 ==0801==
+pdelete   jsr namedtp
+          php 
+          ldx #0
+          stx pmc1
+          stx pmc1+1
+          plp 
+          bne delnfb
+          beq delentry
+delnext   jsr snext
+          bne delr
+delentry  lda #$e5
+          ldy #dgname
+          sta (dtadr),y
+          jsr wrentry
+          bne delr
+          ldy #dgclus
+          lda (dtadr),y
+          tax 
+          iny 
+          lda (dtadr),y
+          tay 
+delnexcl  stx pmc3
+          sty pmc3+1
+          txa 
+          pha 
+          tya 
+          tax 
+          pla 
+          tay 
+          ora pmc3+1
+          beq delnexf
+          tya 
+          clc 
+          jsr sgnexcl
+          stx pmc2
+          sty pmc2+1
+          php 
+          lda pmc3
+          ldx pmc3+1
+          jsr delcl
+          bne delnfa
+          plp 
+          beq delnexcl
+          .byt $24
+delnfa    plp 
+delnexf   inc pmc1
+          bne delnf1
+delnfb    bne delnf
+          inc pmc1+1
+delnf1    jmp delnext
+delr      ldx pmc1
+          ldy pmc1+1
+          lda #0
+delerr    rts 
+delcl     sta dword
+          stx dword+1
+          lda #0
+          sta dword+2
+          sta dword+3
+          lda #<dword
+          ldy #>dword
+          sec 
+          jsr sgnexcl
+          bne delerr
+          jsr writfat
+          ldx pmc2
+          ldy pmc2+1
+          lda #0
+          rts 
+delnf     jmp notfound
+         ;**********
+copdsdg   ldy #dsname
+          ldx #0
+          stx copfl
+cop1      lda (dtadr),y
+          sta copnam,x
+          iny 
+          inx 
+          cpx #8
+          bcc cop1
+          ldy #dgname
+          ldx #0
+cop2      lda copnam,x
+          cmp #"?"
+          beq cop2b
+          cmp #"*"
+          bne cop2a
+cop2b     sta copfl
+cop2a     sta (dtadr),y
+          iny 
+          inx 
+          cpx #8
+          bcc cop2
+          ldy #dsext
+          ldx #0
+cop3      lda (dtadr),y
+          sta copnam,x
+          iny 
+          inx 
+          cpx #3
+          bcc cop3
+          ldy #dgext
+          ldx #0
+cop4      lda copnam,x
+          cmp #"?"
+          beq cop4b
+          cmp #"*"
+          bne cop4a
+cop4b     sta copfl
+cop4a     sta (dtadr),y
+          iny 
+          inx 
+          cpx #3
+          bcc cop4
+          lda copfl
+          rts 
+         ;**********
+pdcreate  stx dcrattr
+          jsr namedtp
+          pha 
+          stx pzei
+          sty pzei+1
+          ldy #gnact
+          lda (pzei),y
+          sta dword
+          iny 
+          lda (pzei),y
+          sta dword+1
+          pla 
+          beq dcrexist
+          cmp #ennotfnd               ;error nummer entry not found
+          bne dcrend
+dcra1     lda dword
+          ldx dword+1
+          ldy #<-1           ;leeren eintrag
+          jsr sfirso
+          bne dcrdfull
+          lda #2
+          ldx #0
+          jsr sfrclus
+          bne dcrdfull
+          stx dword
+          sty dword+1
+          tya 
+          ldy #dgclus+1
+          sta (dtadr),y
+          dey 
+          txa 
+          sta (dtadr),y
+          lda #$ff
+          sta dword+3
+          lda #$f7
+          sta dword+2
+          ldy #dgsize
+          lda #0
+dcr1      sta (dtadr),y
+          iny 
+          cpy #dgsize+4
+          bcc dcr1
+          jsr copdsdg
+          bne dcrnam
+          ldy #dgattr
+          lda dcrattr
+          sta (dtadr),y
+          jsr wrentry
+          bne dcrend
+          lda #<dword
+          ldy #>dword
+          sec 
+          jsr sgnexcl
+          bne dcrend
+          jsr writfat
+          ldx dword
+          ldy dword+1
+          lda #0
+          rts 
+dcrend    jmp diskerr
+dcrpar    jmp parrange
+dcrexist  jmp filexist
+dcrnam    jmp illname
+dcrdfull  jmp diskfull
+         ;**********
+pmkdir    ldx #%00010000
+          jsr dcreate
+          bne dcrend
+          stx pmk1
+          sty pmk1+1
+          txa 
+          pha 
+          tya 
+          tax 
+          pla 
+          jsr dclinit
+          bne dcrend
+          ldy #dtstart
+          lda (dtadr),y
+          sta pmk2
+          iny 
+          lda (dtadr),y
+          sta pmk2+1
+          lda pmk1
+          ldx pmk1+1
+          ldy #$ff
+          jsr sfirso
+          bne dkdend
+          jsr dgnamini
+          lda #"."
+          ldy #dgname
+          sta (dtadr),y
+          ldy #dgclus
+          lda pmk1
+          sta (dtadr),y
+          iny 
+          lda pmk1+1
+          sta (dtadr),y
+          ldy #dgattr
+          lda #$10
+          sta (dtadr),y
+          jsr wrentry
+          bne dkdend
+          lda pmk1
+          ldx pmk1+1
+          ldy #$ff
+          jsr sfirso
+          bne dkdend
+          jsr dgnamini
+          ldy #dgname
+          lda #"."
+          sta (dtadr),y
+          iny 
+          sta (dtadr),y
+          ldy #dgattr
+          lda #$10
+          sta (dtadr),y
+          ldy #dgclus
+          lda pmk2
+          sta (dtadr),y
+          iny 
+          lda pmk2+1
+          sta (dtadr),y
+          jsr wrentry
+dkdend    cmp #0
+          rts 
+mkdroot   .asc ".."
+         ;.byt 0
+         ;**********
+dgnamini  ldx #8
+          ldy #dgname
+          lda #" "
+dgni1     sta (dtadr),y
+          iny 
+          dex 
+          bne dgni1
+          ldx #3
+          ldy #dgext
+dgni2     sta (dtadr),y
+          iny 
+          dex 
+          bne dgni2
+          rts 
+dsnamini  ldx #8
+          ldy #dsname
+          lda #" "
+dsni1     sta (dtadr),y
+          iny 
+          dex 
+          bne dsni1
+          ldx #3
+          ldy #dgext
+dsni2     sta (dtadr),y
+          iny 
+          dex 
+          bne dsni2
+          rts 
+         ;**********
+prmdir    sta pmk1
+          sty pmk1+1
+          ldx #%00010000
+          jsr namedtp
+          bne pmdend
+          stx pzei
+          sty pzei+1
+          ldy #gnact
+          lda (pzei),y
+          sta pmk2
+          iny 
+          lda (pzei),y
+          sta pmk2+1
+          jsr snext
+          beq pmdnam
+          jsr dsnamini
+          lda #"*"
+          ldy #dsname
+          sta (dtadr),y
+          ldy #dsext
+          sta (dtadr),y
+          ldy #dsattr
+          lda #$f7
+          sta (dtadr),y
+          ldy #gnfile+1
+          lda (pzei),y
+          tax 
+          dey 
+          lda (pzei),y
+          cmp dirclus
+          bne rmd1
+          cpx dirclus+1
+          beq pmdact
+rmd1      ldy #0
+          jsr sfirso
+          jmp pmd1
+pmd2      jsr snext
+pmd1      bne pmddel
+          ldy #dgname
+          lda (dtadr),y
+          cmp #"."
+          beq pmd2
+          jmp notempty
+pmddel    lda pmk1
+          ldy pmk1+1
+          ldx #%00010000
+          jmp delete
+pmdend    rts 
+pmdnam    jmp illname
+pmdact    jmp eactdir

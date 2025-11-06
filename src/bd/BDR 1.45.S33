@@ -1,0 +1,101 @@
+
+
+
+
+         ;BDR 1.45.S33 ==0801==
+         ;**********
+         ; ab hier beginnt rom-data
+         ; dieser teil muss im rom stehen
+verblock                   ;
+          .byt va
+          .byt vb
+          .byt bufanz
+          .byt pathlen
+          .byt anzdrv
+          .byt fpbanz
+          .word vektor
+          .word 0,0,0,0
+          .asc "bdos+ 1.45 17.08.1989 by a.fachat "
+          .byt 0
+         ;********
+crsrcol   
+          .byt $90,$05,$1c,$9f,$9c,$1e,$1f,$9e
+          .byt $81,$95,$96,$97,$98,$99,$9a,$9b
+         ;**********
+bfdindex                   ; tabelle der offsets fuer bf1-daten
+
+          .byt 0
+          .byt bfoffs
+          .byt 2*bfoffs
+          .byt 3*bfoffs
+
+         ;*********
+vektab                     ; tabelle der vektoren fuer die jumps am anfang hier rom
+          .word pinit
+          .word pexit
+          .word illdrv                ; query
+          .word illdrv                ; mediach
+          .word pgetbpb
+          .word illdrv                ; floprw
+          .word prwabs
+          .word illdrv                ; format
+          .word psgdta
+          .word psgdrive
+          .word pgtpath
+          .word psgnexcl
+          .word psfrclus
+          .word pgtdskfr
+          .word psfirst
+          .word psfirso
+          .word psnext
+          .word pchdir
+          .word pnamdtp
+          .word pwrentry
+          .word pdelete
+          .word pdcreate
+          .word pmkdir
+          .word prmdir
+          .word popen
+          .word pclose
+          .word pread
+          .word pwrite
+          .word plseek
+          .word pversion
+          .word notimpl
+          .word notimpl
+          .word notimpl
+          .word notimpl
+          .word notimpl
+          .word notimpl
+          .word pwritfat
+          .word preadfat
+          .word pwritbuf
+          .word preadbuf
+          .word psfrbuf
+          .word prlbuf
+          .word pbufabs
+          .word pbfzset
+          .word pbfset
+          .word pbfget
+          .word notimpl
+          .word notimpl
+          .word notimpl
+          .word notimpl
+          .word notimpl
+          .word notimpl
+          .word notimpl
+          .word notimpl
+          .word notimpl
+          .word notimpl
+          .word notimpl
+          .word notimpl
+          .word psetvec
+          .word pchout
+          .word pchodev
+          .word pchost
+          .word pchin
+          .word pchidev
+          .word pchist
+          .word pdevout
+          .word pdevin
+          .word pdevcmd

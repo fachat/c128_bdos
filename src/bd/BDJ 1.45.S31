@@ -1,0 +1,77 @@
+
+
+
+
+         ;BDJ 1.45.S31 ==0801==
+         ; 1000 .if prg 
+         ;.goto 1620
+
+         anzjmp=68
+init      jmp pinit             ; start von vorne
+exit      jmp (vexit)           ; start von vorne
+query     jmp (vquery)           ; disk-format feststellen
+mediach   jmp (vmediach)           ; disk gewechselt
+getbpb    jmp (vgetbpb)           ; adr des bpb holen
+floprw    jmp (vfloprw)           ; pfloprw  ; block lesen/schreiben
+rwabs     jmp (vrwabs)           ; blockreihe r/w ueber log blocknummer
+flopfmt   jmp (vformat)           ; floppy formatieren
+sgdta     jmp (vsgdta)           ; adresse dta-puffer setzten/holen
+sgdrive   jmp (vsgdrive)           ; drive holen/setzen
+gtpath    jmp (vgtpath)           ; holt adresse des aktuellen pfades
+sgnexcl   jmp (vsgnexcl)           ; folgecluster holen/setzen
+sfrclus   jmp (vsfrclus)           ; naechsten freien sektor suchen
+gtdskfr   jmp (vgtdskfr)           ; freien platz auf der diskette berechnen
+sfirst    jmp (vsfirst)           ; ersten eintrag in dir suchen nach dta
+sfirso    jmp (vsfirso)           ; file umbenennen
+snext     jmp (vsnext)           ; naechsten eintrag
+chdir     jmp (vchdir)           ; directory wechseln
+namedtp   jmp (vnamdtp)           ; pfad fuer prg setzen
+wrentry   jmp (vwrentry)           ; entry in dta auf disk schreiben
+delete    jmp (vdelete)           ; file loeschen
+dcreate   jmp (vdcreate)           ; file zum ersten mal oeffnen
+mkdir     jmp (vmkdir)           ; directory anlegen
+rmdir     jmp (vrmdir)           ; directory loeschen
+dopen     jmp (vopen)           ; file oeffnen
+dclose    jmp (vclose)           ; file schliessen
+dread     jmp (vread)           ; aus file lesen
+dwrite    jmp (vwrite)           ; in file schreiben
+lseek     jmp (vlseek)           ; position in file bestimmen
+version   jmp pversion             ; version des bdos holen
+reschain  jmp (vreset)           ;
+irqchain  jmp (virq)           ;
+nmichain  jmp (vnmi)           ;
+sgtime    jmp (vsgtime)           ;
+sgdate    jmp (vsgdate)           ;
+salarm    jmp (vsalarm)           ;
+writfat   jmp (v37)           ;
+readfat   jmp (v38)           ;
+writbuf   jmp (v39)           ;
+readbuf   jmp (v40)           ;
+sfrbuf    jmp (v41)           ;
+rlbuf     jmp (v42)           ;
+bufabs    jmp (v43)           ;
+bfzset    jmp (v44)           ;
+bfset     jmp (v45)           ;
+bfget     jmp (v46)           ;
+bout      jmp (v47)           ;
+bin       jmp (v48)           ;
+bcan      jmp (v49)           ;
+bcaus     jmp (v50)           ;
+bbcol     jmp (v51)           ;
+btcol     jmp (v52)           ;
+bcpos     jmp (v53)           ;
+bgkey     jmp (v54)           ;
+bfetch    jmp (v55)           ;
+bstash    jmp (v56)           ;
+bfadr     jmp (v57)           ;
+bsadr     jmp (v58)           ;
+setvec    jmp (v59)           ;
+chout     jmp (v60)           ;
+chodev    jmp (v61)           ;
+chost     jmp (v62)           ;
+chin      jmp (v63)           ;
+chidev    jmp (v64)           ;
+chist     jmp (v65)           ;
+devout    jmp (v66)           ;
+devin     jmp (v67)           ;
+devcmd    jmp (v68)           ;

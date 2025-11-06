@@ -1,0 +1,985 @@
+
+
+
+
+         ;BD2 1.43.S07 ==0801==
+         ;**********
+psgdta    bcc pgetdta
+          sta dtadr
+          sty dtadr+1
+pgetdta   lda dtadr
+          ldy dtadr+1
+          rts 
+         ;*********
+psgdrive  bcs psetdrv
+pgetdrv   lda actdrv
+          rts 
+psetdrv   cmp #anzdrv
+          bcc psd1
+          jmp illdrv
+psd1      sta newdrv
+          lda actdrv
+          cmp newdrv
+          beq psdv2
+         ;ac=drv
+          jsr psdabs
+          ldy #0
+psd1a     lda bpb,y
+          sta (abszei),y
+          iny 
+          cpy #bpplen
+          bne psd1a
+          lda newdrv
+          sta actdrv
+          lda newdrv
+          jsr psdabs
+          ldy #0
+psdv4     lda (abszei),y
+          sta bpb,y
+          iny 
+          cpy #bpplen
+          bne psdv4
+psdv2     ldy #bpbval
+          lda bpb,y
+          beq psdv3
+          lda newdrv
+          jsr mediach
+          bne psdv3
+          rts 
+psdv3     ldy #bpbval
+          lda #0
+          sta bpb,y
+          lda newdrv
+          jsr query
+          beq psdga
+          jmp diskerr
+psdga     
+          lda newdrv
+          jsr getbpb
+          stx rwbzei
+          sty rwbzei+1
+          beq psd2
+          jmp dnotrdy
+psd2      ldy #0
+psd2a     lda (rwbzei),y
+          sta bpb,y
+          iny 
+          cpy #bpplen
+          bne psd2a
+          lda #0
+          sta path
+          sta dirclus
+          sta dirclus+1
+          ldy #0
+psdd1     ldx bfdindex,y
+          lda bf1drv,x
+          cmp actdrv
+          bne psdd3
+          lda bf1val,x
+          and #255-$40
+          sta bf1val,x
+psdd3     iny 
+          cpy #bufanz
+          bne psdd1
+          lda bpb+bpbflag
+          and #dfval
+          bne psdx1
+          lda actdrv
+          ldy #1
+          jsr sfrbuf
+          stx bpb+bpbfat
+          lda bpb+bpbflag
+          ora #dfval
+          and #ff-dfwrit
+          sta bpb+bpbflag
+psdx1     jmp error0
+psdabs    sta int1
+          lda #0
+          sta int1+1
+          lda #<bpplen
+          ldx #>bpplen
+          jsr mult
+          lda #<drvbpb
+          ldx #>drvbpb
+          jsr add
+          sta abszei
+          stx abszei+1
+          rts 
+         ;**********
+pgtpath   lda #<dirclus
+          ldy #>dirclus
+          rts 
+         ;**********
+         ;psfirse lda #<-1
+         ;.byt $2c
+psfirst   ldy #0
+          lda dirclus
+          ldx dirclus+1
+psfirso   sty sfirsfe
+          ldy #dtclus
+          sta (dtadr),y
+          pha 
+          iny 
+          txa 
+          sta (dtadr),y
+          ldy #dtstart+1
+          sta (dtadr),y
+          pla 
+          dey 
+          sta (dtadr),y
+          ldy #dtflag
+          lda sfirsfe
+          sta (dtadr),y
+          lda bpb+bprecsiz
+          sta int1
+          lda bpb+bprecsiz+1
+          sta int1+1
+          lda #32
+          ldx #0
+          jsr div
+          ldy #dtanz
+          sta (dtadr),y
+          ldy #dtdrv
+          lda actdrv
+          sta (dtadr),y
+          ldy #dtpos
+          lda #0
+          sta (dtadr),y
+          ldy #dtsec
+          sta (dtadr),y
+          iny 
+          sta (dtadr),y
+          jmp sload
+         ;********
+psnext    ldy #dtflag
+          lda (dtadr),y
+          sta sfirsfe
+          ldy #dtpos
+          lda (dtadr),y
+          clc 
+          adc #1
+          sta (dtadr),y
+          ldy #dtanz
+          cmp (dtadr),y
+          bcc slok
+          lda #0
+          ldy #dtpos
+          sta (dtadr),y
+          ldy #dtsec
+          lda (dtadr),y
+          clc 
+          adc #1
+          sta (dtadr),y
+          tax 
+          iny 
+          lda (dtadr),y
+          adc #0
+          sta (dtadr),y
+          pha 
+          ldy #dtclus
+          lda (dtadr),y
+          iny 
+          ora (dtadr),y
+          beq slmain
+          pla 
+          cmp bpb+bpclsiz+1
+          bcc slok
+          bne slnclus
+          cpx bpb+bpclsiz
+          bcc slok
+slnclus   lda #0
+          ldy #dtsec
+          sta (dtadr),y
+          iny 
+          sta (dtadr),y
+          ldy #dtclus+1
+          lda (dtadr),y
+          tax 
+          dey 
+          lda (dtadr),y
+          clc 
+          jsr sgnexcl
+          bne clnotfnd
+          tya 
+          ldy #dtclus+1
+          sta (dtadr),y
+          dey 
+          txa 
+          sta (dtadr),y
+slok      jmp sload
+slmain    pla                 ;main-directory
+          cmp bpb+bprdlen+1
+          bcc slok
+          bne notfound
+          cpx bpb+bprdlen
+          bcc slok
+notfound  jmp enotfnd
+clnotfnd  lda sfirsfe
+          beq notfound
+          ldy #dtclus+1
+          lda (dtadr),y
+          tax 
+          dey 
+          lda (dtadr),y
+          jsr fextend
+          bne notfound
+          tya 
+          ldy #dtclus+1
+          sta (dtadr),y
+          pha 
+          txa 
+          dey 
+          sta (dtadr),y
+          tay 
+          pla 
+          tax 
+          tya 
+          jsr dclinit
+          bne notfound
+          jmp sload
+         ;****
+notfnd    jmp enotfnd
+sloadr    rts 
+sload     lda #0
+          jsr slcalcr
+          bne sloadr
+          ldx #dename
+          lda sfirsfe
+          beq sfirsf
+          lda dirbuf,x
+          beq slfound1
+          cmp #$e5
+          bne slnexe
+slfound1  jmp slfound
+sfirsf    ldy #dsname
+          lda dirbuf,x
+          beq notfnd
+          cmp #$e5
+          beq slnexe                ; geloescht
+          ldx #dename+8
+slxx      dex 
+          lda dirbuf,x
+          cmp #" "
+          beq slxx2
+          cmp #95
+          bne slxx1
+slxx2     cpx #dename
+          bne slxx
+slxx1     stx int1
+          ldx #dename
+slncomp   lda (dtadr),y
+          beq slnexe
+          cmp #"?"
+          beq slnnext
+          cmp #"*"
+          beq slext                ;extension
+          cmp dirbuf,x
+          beq slnnext                ; next entry
+          cmp #" "
+          bne slnexe
+          cpx int1
+          bcs slnexe
+          lda dirbuf,x
+          cmp #95
+          beq slnnext
+slnexe    jmp snext
+slnnext   inx 
+          iny 
+          cpx #dename+8
+          bne slncomp
+slext     
+          ldx #deext+3
+slxy      dex 
+          lda dirbuf,x
+          cmp #" "
+          beq slxy2
+          cmp #95
+          bne slxy1
+slxy2     cpx #deext
+          bne slxy
+slxy1     stx int1
+          ldy #dsext
+          ldx #deext
+slecomp   lda (dtadr),y
+          cmp #"?"
+          beq slenext
+          cmp #"*"
+          beq slattr
+          cmp dirbuf,x
+          beq slenext
+          cmp #" "
+          bne slnexe
+          cpx int1
+          bcs slnexe
+          lda dirbuf,x
+          cmp #95
+          bne slnexe
+slenext   inx 
+          iny 
+          cpx #deext+3
+          bne slecomp
+slattr    ldy #dsattr
+          ldx #deattr
+          lda (dtadr),y
+          and #$1f
+          and dirbuf,x
+          bne slfound
+          lda (dtadr),y
+          and #$20
+          beq slnexe
+          lda dirbuf,x
+          and #$1f
+          bne slnexe
+slfound   ldx #dename
+          ldy #dgname
+slfn      lda dirbuf,x
+          sta (dtadr),y
+          inx 
+          iny 
+          cpy #dgname+8
+          bne slfn
+          ldx #deext
+          ldy #dgext
+slfe      lda dirbuf,x
+          sta (dtadr),y
+          inx 
+          iny 
+          cpy #dgext+3
+          bne slfe
+          ldx #deattr
+          ldy #dgattr
+          lda dirbuf,x              ;attribut
+          sta (dtadr),y
+          ldx #defclus
+          ldy #dgclus
+          lda dirbuf,x
+          sta (dtadr),y
+          iny 
+          inx 
+          lda dirbuf,x
+          sta (dtadr),y
+          ldx #desize
+          ldy #dgsize
+slfs      lda dirbuf,x
+          sta (dtadr),y
+          iny 
+          inx 
+          cpx #desize+5
+          bne slfs
+          ldx #deuhr
+          lda dirbuf,x
+          sta int1
+          and #%00011111
+          asl 
+          ldy #dgsec
+          sta (dtadr),y
+          inx 
+          lda dirbuf,x
+          sta int1+1
+          tax 
+          lda int1
+          ldy #5
+          jsr nlsr
+          and #%00111111
+          ldy #dgmin
+          sta (dtadr),y
+          lda int1
+          ldx int1+1
+          ldy #11
+          jsr nlsr
+          and #%00011111
+          ldy #dghour
+          sta (dtadr),y
+          ldx #dedate
+          lda dirbuf,x
+          sta int1
+          and #%00011111
+          ldy #dgday
+          sta (dtadr),y
+          inx 
+          lda dirbuf,x
+          sta int1+1
+          tax 
+          lda int1
+          ldy #5
+          jsr nlsr
+          and #%00001111
+          ldy #dgmonth
+          sta (dtadr),y
+          lda int1
+          ldx int1+1
+          ldy #9
+          jsr nlsr
+          and #%01111111
+          ldy #dgyear
+          sta (dtadr),y
+          jmp writfat
+         ;**********
+cdexit    ldx #<actdrv
+          ldy #>actdrv
+          lda #0
+cdderr    rts 
+         ;*****
+pnamdtp   stx cd0attr
+          sta pzei
+          sty pzei+1
+          lda #<dtp
+          ldy #>dtp
+          sec 
+          jsr sgdta
+          lda #"*"
+          sta dtp+dsname
+          sta dtp+dsext
+          clc 
+          jsr sgdrive
+          sta newdrv
+          ldy #<-1
+cdd3      iny 
+          lda (pzei),y
+          beq cdd2
+          cmp #backs
+          beq cdd2
+          cmp #" "
+          beq cdd3
+          iny 
+          lda (pzei),y
+          dey 
+          cmp #":"
+          bne cdd2
+          sty pa1+1
+          lda (pzei),y
+          and #$0f
+          tay 
+          dey 
+          sty newdrv
+          ldy pa1+1
+          iny 
+          iny 
+cdd2      sty pa1+1
+          lda newdrv
+          sec 
+          jsr sgdrive
+          bne cdderr
+          jsr gtpath
+          sta dzei
+          sty dzei+1
+          ldy #gpclus
+          lda (dzei),y
+          sta actfil
+          sta actclus
+          iny 
+          lda (dzei),y
+          sta actfil+1
+          sta actclus+1
+          ldy #gppath
+gn2       lda (dzei),y
+          sta actpath-gppath,y
+          beq gn1
+          iny 
+          bne gn2
+gn1                        ;
+          ldy pa1+1
+          lda (pzei),y
+          cmp #backs
+          bne cdsub
+          iny 
+          lda #0
+          sta actfil
+          sta actfil+1
+          sta actpath
+         ;****
+cdsub     sty pa1+1
+          lda actfil
+          ora actfil+1
+          sta actflag
+cds1      lda (pzei),y
+          beq cdex1
+          cmp #"/"
+          beq cdex1
+          cmp #" "
+          bne cdsub2
+          iny 
+          bne cds1
+          jmp pathovrf
+cdex1     jmp cdexit
+cdsub2    ldx #7
+          lda #" "
+cds0a     sta dtp+dsname,x
+          dex 
+          bpl cds0a
+          ldx #2
+cds0b     sta dtp+dsext,x
+          dex 
+          bpl cds0b
+          inx 
+          lda (pzei),y
+          cmp #"."
+          bne cdsn1
+          ldx #3
+          sta dtp+dsname
+          iny 
+          lda (pzei),y
+          cmp #"."
+          bne cdse1
+          sta dtp+dsname+1
+          beq cdse1
+cdsn1     lda (pzei),y
+          beq cdattr
+          cmp #backs
+          beq cdattr
+          cmp #"/"
+          beq cdattr
+          iny 
+          cmp #"."
+          beq cdse
+          cpx #8
+          bcs cdsn1
+          sta dtp+dsname,x
+          inx 
+          bne cdsn1
+cdse      ldx #0
+cdse1     lda (pzei),y
+          beq cdattr
+          cmp #backs
+          beq cdattr
+          cmp #"/"
+          beq cdattr
+          iny 
+          cpx #3
+          bcs cdse1
+          sta dtp+dsext,x
+          inx 
+          bne cdse1
+cdattr    cmp #backs
+          beq cdattr1
+          lda cd0attr
+          .byt $2c
+cdattr1   lda #%00010000
+          sta dtp+dsattr
+          sty pa1+1
+          lda actfil
+          ldx actfil+1
+          sta actclus
+          stx actclus+1
+          ldy #0
+          jsr sfirso
+          beq cd00a1
+          cmp #ennotfnd
+          bne cd00at
+          pha 
+          ldy pa1+1
+          lda (pzei),y
+          cmp #backs
+          beq cd00a2
+cd00ar    pla 
+          ldx #<actdrv              ;getname tp
+          ldy #>actdrv
+cd00at    rts 
+cd00a2    pla 
+          jmp dirnfnd
+cd00a1    lda dtp+dgclus
+          sta actfil
+          lda dtp+dgclus+1
+          sta actfil+1
+          ldx #<-1
+cda1      inx 
+          lda actpath,x
+          bne cda1
+cda2      stx pa2
+          cpx #pathlen-14
+          bcs cdovr
+          lda dtp+dgname
+          cmp #"."
+          bne cdc1
+          lda dtp+dgname+1
+          cmp #"."
+          bne cdident
+          ldx pa2
+          beq cdc2a
+cdc2      dex 
+          beq cdc2a
+          lda actpath,x
+          cmp #backs
+          bne cdc2
+cdc2a     lda #0
+          sta actpath,x
+          beq cdident
+cdc1      lda #backs
+          sta actpath,x
+          inx 
+          ldy #0
+cdb1      lda dtp+dgname,y
+          sta actpath,x
+          inx 
+          iny 
+          cpy #8
+          bcc cdb1
+cdbaa1    dex 
+          lda actpath,x
+          cmp #" "
+          beq cdbaa1
+          inx 
+          lda #"."
+          sta actpath,x
+          inx 
+          ldy #0
+cdb2      lda dtp+dgext,y
+          sta actpath,x
+          inx 
+          iny 
+          cpy #3
+          bcc cdb2
+cdbaa2    dex 
+          lda actpath,x
+          cmp #" "
+          beq cdbaa2
+          cmp #"."
+          beq cdbaa3
+          inx 
+cdbaa3    lda #0
+          sta actpath,x
+cdident   ldy pa1+1
+          lda (pzei),y
+          beq cdid1
+          cmp #"/"
+          beq cdid1
+          iny 
+cdid1     jmp cdsub
+cdovr     ldx pa2
+          lda #0
+          sta actpath,x
+          jmp pathovrf
+pchdir    ldx #%00010000
+          jsr namedtp
+          bne pdx
+          stx pzei
+          sty pzei+1
+          ldy #gnfile
+          lda (pzei),y
+          sta dirclus
+          iny 
+          lda (pzei),y
+          sta dirclus+1
+          ldy #gnpath
+pcd1      lda (pzei),y
+          sta path-gnpath,y
+          beq pcd2
+          iny 
+          bne pcd1
+pcd2      lda #0
+pdx       rts 
+         ;**********
+wener     jmp illname
+pwrentry  
+          ldy #dgname
+          ldx #dename
+we1       lda (dtadr),y
+          cmp #"*"
+          beq wener
+          cmp #"?"
+          beq wener
+          sta dirbuf,x
+          iny 
+          inx 
+          cpx #dename+8
+          bcc we1
+          ldy #8
+wex1      dex 
+          dey 
+          bmi wener
+          lda dirbuf,x
+          cmp #" "
+          beq wex1
+wex3      dex 
+          dey 
+          bmi wex2
+          lda dirbuf,x
+          cmp #" "
+          bne wex3
+          lda #95
+          sta dirbuf,x
+          bne wex3
+wex2      ldy #dgext
+          ldx #deext
+we2       lda (dtadr),y
+          cmp #"*"
+          beq wener
+          cmp #"?"
+          beq wener
+          sta dirbuf,x
+          iny 
+          inx 
+          cpx #deext+3
+          bcc we2
+          ldy #3
+wey1      dex 
+          dey 
+          bmi wey2
+          lda dirbuf,x
+          cmp #" "
+          beq wey1
+wey3      dex 
+          dey 
+          bmi wey2
+          lda dirbuf,x
+          cmp #" "
+          bne wey3
+          lda #95
+          sta dirbuf,x
+          bne wey3
+wey2      ldy #dgattr
+          lda (dtadr),y
+          sta dirbuf+deattr
+          ldy #dgclus
+          lda (dtadr),y
+          sta dirbuf+defclus
+          iny 
+          lda (dtadr),y
+          sta dirbuf+defclus+1
+          clc 
+          jsr sgtime
+          stx rwbzei
+          sty rwbzei+1
+          ldy #2
+we3a      lda (rwbzei),y
+          sta int1,y
+          dey 
+          bpl we3a
+          ldy #dgsec
+we3b      lda int1-dgsec,y
+          sta (dtadr),y
+          iny 
+          cpy #dghour+1
+          bne we3b
+          clc 
+          jsr sgdate
+          stx rwbzei
+          sty rwbzei+1
+          ldy #2
+we3c      lda (rwbzei),y
+          sta int1,y
+          dey 
+          bpl we3c
+          ldy #dgday
+we3d      lda int1-dgday,y
+          sta (dtadr),y
+          iny 
+          cpy #dgyear+1
+          bne we3d
+          ldy #dgsize+3
+          ldx #3
+we3       lda (dtadr),y
+          sta dirbuf+desize,x
+          dey 
+          dex 
+          bpl we3
+          ldy #dghour
+          lda (dtadr),y
+          and #%00011111
+          ldx #0
+          ldy #11
+          jsr nasl
+          sta int1
+          stx int1+1
+          ldy #dgmin
+          lda (dtadr),y
+          and #%00111111
+          ldx #0
+          ldy #5
+          jsr nasl
+          jsr add
+          ldy #dgsec
+          lda (dtadr),y
+          lsr 
+          and #%00011111
+          ldx #0
+          jsr add
+          sta dirbuf+deuhr
+          stx dirbuf+deuhr+1
+          ldy #dgyear
+          lda (dtadr),y
+          and #%01111111
+          ldx #0
+          ldy #9
+          jsr nasl
+          sta int1
+          stx int1+1
+          ldy #dgmonth
+          lda (dtadr),y
+          and #%00001111
+          ldx #0
+          ldy #5
+          jsr nasl
+          jsr add
+          ldy #dgday
+          lda (dtadr),y
+          and #%00011111
+          ldx #0
+          jsr add
+          sta dirbuf+dedate
+          stx dirbuf+dedate+1
+          lda #1
+          jmp slcalcr
+         ;*****
+slcalcr   pha 
+          ldy #dtdrv
+          lda (dtadr),y
+          ldy #2
+          jsr sfrbuf
+          stx slcbuf
+          bne slcerr1
+          ldy #dtdrv
+          lda (dtadr),y
+          sec 
+          jsr sgdrive
+          bne sln3x1
+          ldy #dtclus+1
+          lda (dtadr),y
+          tax 
+          dey 
+          ora (dtadr),y
+          beq sldmain
+          lda (dtadr),y
+          jsr clusec
+          sta int1
+          stx int1+1
+          jmp slddir
+slcerr1   tay 
+          pla 
+          tya 
+          rts 
+sln3b     bne sln3a
+sln3x1    bne sln3x
+sldmain   lda bpb+bpfatrec
+          sta int1
+          ldx bpb+bpfatrec+1
+          stx int1+1
+          lda bpb+bpfsiz
+          ldx bpb+bpfsiz+1
+          jsr add
+slddir    ldy #dtsec+1
+          lda (dtadr),y
+          tax 
+          dey 
+          lda (dtadr),y
+          jsr add
+          sta slcsec
+          stx slcsec+1
+          ldy slcbuf
+          clc                    ;lesen
+          jsr bufabs
+          pha 
+          ldy #dtpos
+          lda (dtadr),y
+          sta int1
+          lda #0
+          sta int1+1
+          lda #32
+          ldx #0
+          jsr mult
+          ldy slcbuf
+          jsr bfzset
+          lda bf1z
+          ldx bf1z+1
+          sta dirzei
+          stx dirzei+1
+          pla 
+sln3x     tax 
+          pla 
+          beq slca1
+          txa 
+sln3a     bne sln3
+          ldy #31
+sln2      lda dirbuf,y
+          sta (bf1z),y
+          dey 
+          bpl sln2
+          lda slcsec
+          ldx slcsec+1
+          ldy slcbuf
+          sec 
+          jsr bufabs
+          jmp sln3
+slca1     ldy #31
+sln1      lda (bf1z),y
+          sta dirbuf,y
+          dey 
+          bpl sln1
+          txa 
+sln3      pha 
+          ldx slcbuf
+          jsr rlbuf
+          pla 
+cliee     rts 
+         ;**********
+dclinit   jsr clusec
+          sta abspar+aprecord
+          stx abspar+aprecord+1
+          clc 
+          jsr sgdrive
+          ldy #2
+          jsr sfrbuf
+          stx slcbuf
+          bne cliee
+          lda #0
+          sta pa1
+          sta pa1+1
+          tax 
+          ldy slcbuf
+          jsr bfzset
+dcli1     lda #0
+          jsr bfset
+          bcc dcli1
+dclie     lda abspar+aprecord
+          ldx abspar+aprecord+1
+          ldy slcbuf
+          sec 
+          jsr bufabs
+          bne dclier
+          inc pa1
+          bne dcli3
+          inc pa1+1
+dcli3     lda pa1+1
+          cmp bpb+bpclsiz+1
+          bcc dclie
+          bne dcliee
+          lda pa1
+          cmp bpb+bpclsiz
+          bcc dclie
+dcliee    lda #0
+dclier    pha 
+          ldx slcbuf
+          jsr rlbuf
+          pla 
+          rts 
+         ;**********
+fextend   sta dword
+          stx dword+1
+          jsr sfrclus
+          bne fxnotf2                ;neuen dir-cluster anlegen fuer empty entry
+          stx dword+2
+          sty dword+3
+          lda #<dword
+          ldy #>dword
+          sec 
+          jsr sgnexcl
+          bne fxnotfnd
+          lda dword+2
+          sta dword
+          lda dword+3
+          sta dword+1
+          lda #$ff
+          sta dword+3
+          lda #$f7
+          sta dword+2
+          lda #<dword
+          ldy #>dword
+          sec 
+          jsr sgnexcl
+          bne fxnotfnd
+          ldx dword
+          ldy dword+1
+          lda #0
+          rts 
+fxnotfnd  rts 
+fxnotf2   jmp diskfull

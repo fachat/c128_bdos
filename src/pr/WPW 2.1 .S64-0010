@@ -1,0 +1,503 @@
+
+
+
+
+         ;WPW 2.1 .S64 ==0801==
+
+         cursor=bcpos
+         esc=27
+         ;********
+         manz=40
+         mtab=41
+         smanz=0
+         sml=1
+         smor=2
+         smlr=3
+         smtab=4
+         ;********
+wminit    jmp pminit
+wmenloop  jmp menuloop
+wopen     jmp pwopen
+wclose    jmp pwclose
+wout      jmp bout
+wcursor   jmp cursor
+wgetkey   jmp bgkey
+wsubmenu  jmp submenu
+wsmclose  jmp smclose
+wsubloop  jmp smloop
+wexloop   jmp sml1a
+wprntcmd  jmp ppcmd
+wclrcmd   jmp pclrcmd
+wprnterr  jmp pperr
+wclrerr   jmp pclrerr
+wopenmsg  jmp popmsg
+wprnttxt  jmp pptxt
+winput    jmp pwinput
+wcuran    jmp bcan
+wcuraus   jmp bcaus
+wgetscr   jmp bin
+
+setbck    jmp bbcol
+settxt    jmp btcol
+
+         ;********
+pwopen    pha 
+          txa 
+          pha 
+          jsr wescout
+          lda #"t"
+          jsr wout
+          pla 
+          tax 
+          pla 
+          tay 
+          clc 
+          jsr wcursor
+          jsr wescout
+          lda #"b"
+          jsr wout
+          jsr wclr
+          lda #0
+          rts 
+         ;********
+pwclose   jsr wclr
+          lda #19             ;"{home}"
+          jsr wout
+          jsr wout
+          lda #18+128       ;"{rvof}"
+          jsr wout
+          lda #0
+          rts 
+         ;********
+wclr      lda #19+128    ;"{clr}"
+          .byt $2c
+wescout   lda #esc
+          jmp wout
+         ;********
+pminit    sta wzei
+          sty wzei+1
+          jsr wclose
+          jsr wclr
+          jsr wescout
+          lda #"o"
+          jsr wout
+          ldx #1
+          ldy #0
+          clc 
+          jsr wcursor
+          lda #18             ;"{rvon}"
+          jsr wout
+          ldy #0
+pmi1      lda (wzei),y
+          jsr wout
+          iny 
+          cpy #40
+          bne pmi1
+          lda #18+128       ;"{rvof}"
+          jsr wout
+          lda #0
+          sta wmenu
+          rts 
+menuloop  jsr mnorm
+mnl1      jsr wgetkey
+          beq mnl1
+mnl1a     ldy #menk-1
+mnl2      cmp menkey,y
+          beq mnl3
+          dey 
+          bpl mnl2
+          jmp menuloop
+mnl3      tya 
+          asl 
+          tax 
+          jsr mnl4
+          bcc menuloop
+          cmp #13
+          bne mnl1a
+          ldx wmenu
+          rts 
+mnl4      lda menka+1,x
+          pha 
+          lda menka,x
+          pha 
+          rts 
+         ;****
+menext    jsr mrevers
+          inc wmenu
+          ldy #manz
+          lda (wzei),y
+          cmp wmenu
+          bne mener
+          lda #0
+          sta wmenu
+mener     clc 
+          rts 
+mevor     jsr mrevers
+          lda wmenu
+          beq mev1
+          dec wmenu
+          clc 
+          rts 
+mev1      ldy #manz
+          lda (wzei),y
+          sta wmenu
+          dec wmenu
+merr      clc 
+          rts 
+meret     jsr mrevers
+          lda wmenu
+          jsr mtadr
+          iny 
+          lda (wzei),y
+          and #64
+          beq merr
+          lda #13
+          ldy #0
+          sec 
+          rts 
+mesub     lda wmenu
+          jsr mtadr
+          iny 
+          lda (wzei),y
+          bpl merr
+          iny 
+          lda (wzei),y
+          pha 
+          iny 
+          lda (wzei),y
+          tay 
+          pla 
+          ldx #0
+          jsr wsubmenu
+mesub1    jsr wsubloop
+mesub2    cmp #17          ;"{down}"
+          beq mesub1
+          jmp wsmclose
+         ;********
+mtadr     asl 
+          asl 
+          clc 
+          adc #mtab
+          tay 
+          rts 
+mrevers   lda #18          ;"{rvon}"
+          .byt $2c
+mnorm     lda #18+128    ;"{rvof}"
+          jsr wout
+          lda wmenu
+          beq mno1
+          sec 
+          sbc #1
+          jsr mtadr
+          lda (wzei),y
+          tay 
+          .byt $2c
+mno1      ldy #0
+          sty wza
+          ldx #1
+          clc 
+          jsr wcursor
+          lda wmenu
+          jsr mtadr
+          lda (wzei),y
+          ldy wza
+          sta wza
+mno2      lda (wzei),y
+          jsr wout
+          iny 
+          cpy wza
+          bne mno2
+          lda #18+128       ;"{rvof}"
+          jmp wout
+         ;****************
+submenu   sta wszei
+          sty wszei+1
+          stx smf
+          cpx #128
+          bcs subm1
+          ldy #smor
+          lda (wszei),y
+          tax 
+          iny 
+          lda (wszei),y
+          tay 
+          clc 
+          jsr wcursor
+          ldy #smanz
+          lda (wszei),y
+          tax 
+          dex 
+          iny 
+          lda (wszei),y
+          jsr wopen
+subm1     lda #0
+          sta wsmenu
+          jsr wclr
+          bit smf
+          bvs smi11
+smi1      jsr smrevers
+          inc wsmenu
+          ldy #smanz
+          lda (wszei),y
+          cmp wsmenu
+          bne smi1
+          lda #0
+          sta wsmenu
+smi11     rts 
+smloop    jsr smnorm
+sml1      jsr wgetkey
+          beq sml1
+sml1a     ldy #smka-1
+sml2      cmp smkey,y
+          beq sml3
+          dey 
+          bpl sml2
+          bmi smend
+sml3      tya 
+          asl 
+          tax 
+          jsr sml4
+          bcc smloop
+smend     sec 
+          ldy wsmenu
+          rts 
+sml4      lda smadr+1,x
+          pha 
+          lda smadr,x
+          pha 
+          rts 
+         ;****
+smnext    lda #29          ;"{rght}"
+          jmp smend
+smvor     lda #29+128    ;"{left}"
+          jmp smend
+smdown    jsr smrevers
+          ldy #smanz
+          lda (wszei),y
+          sec 
+          sbc #1
+          cmp wsmenu
+          beq smd1
+          inc wsmenu
+          clc 
+          rts 
+smd1      lda #17          ;"{down}"
+          sec 
+          rts 
+smup      jsr smrevers
+          lda wsmenu
+          beq smu1
+          dec wsmenu
+          clc 
+          rts 
+smu1      lda #17+128    ;"{up}"
+          jmp smend
+smclose   pha 
+          jsr wclose
+          pla 
+          sec 
+          rts 
+smret     jsr smtadr
+          ldy #0
+          lda (lmzei),y
+          bpl smrr
+          lda #13
+          bne smend
+smrr      clc 
+          rts 
+         ;****
+smtadr    ldy #sml
+          lda (wszei),y
+          clc 
+          adc #1
+          sta int1
+          ldx #0
+          stx int1+1
+          lda wsmenu
+          jsr mult
+          clc 
+          adc #smtab
+          bcc sma1
+          inx 
+sma1      clc 
+          adc wszei
+          sta lmzei
+          txa 
+          adc wszei+1
+          sta lmzei+1
+          rts 
+         ;****
+smrevers  lda #18          ;"{rvon}"
+          .byt $2c
+smnorm    lda #18+128    ;"{rvof}"
+          pha 
+          ldx wsmenu
+          ldy #0
+          clc 
+          jsr wcursor
+          ldy #sml
+          lda (wszei),y
+          sta sma
+          jsr smtadr
+          ldy #1
+          pla 
+          jsr wout
+          cmp #18+128       ;"{rvof}"
+          bne smrv1
+          lda smf
+          and #32
+          bne smn1
+smrv1     lda (lmzei),y
+          jsr wout
+          iny 
+          dec sma
+          bne smrv1
+          rts 
+smn1      lda #18          ;"{rvon}"
+          jsr wout
+          lda #"("
+          jsr wout
+          iny 
+          dec sma
+          dec sma
+          jsr smrv1
+          lda #")"
+          jmp wout
+         ;********
+pclrcmd   lda #<leerzei
+          ldy #>leerzei
+ppcmd     sta wczei
+          sty wczei+1
+          ldy #0
+          ldx #0
+          clc 
+          jsr wcursor
+ppe1      lda wczei
+          ldy wczei+1
+pptxt     sta wczei
+          sty wczei+1
+          ldy #0
+ppc1      lda (wczei),y
+          beq ppc2
+          jsr wout
+          iny 
+          bne ppc1
+ppc2      rts 
+         ;****
+pclrerr   lda #<leerzei
+          ldy #>leerzei
+pperr     sta wczei
+          sty wczei+1
+          ldy #0
+          ldx #24
+          clc 
+          jsr wcursor
+          jmp ppe1
+         ;********
+popmsg    sta wczei
+          sty wczei+1
+          ldx #8
+          ldy #8
+          clc 
+          jsr wcursor
+          lda #23
+          ldx #7
+          jsr wopen
+          lda wczei
+          ldy wczei+1
+          jmp pptxt
+         ;********
+pwinput   sta wczei
+          sty wczei+1
+          ldx #15
+          ldy #0
+          clc 
+          jsr wcursor
+          lda wczei
+          ldy wczei+1
+          jsr wprnttxt
+          sec 
+          jsr wcursor
+          sty wza
+          lda #39
+          sec 
+          sbc wza
+          sta wza
+          sec 
+          sbc #1
+          ldx #0
+          jsr wopen
+winloop   jsr wcuran
+winl      jsr wgetkey
+          beq winl
+          pha 
+          jsr wcuraus
+          pla 
+          cmp #3
+          beq wil2
+          tax 
+          and #127
+          cmp #32
+          bcs winl1
+          ldy #inpanz-1
+          txa 
+winl2     cmp inpok,y
+          beq winl1
+          dey 
+          bpl winl2
+          bmi winloop
+winl1     txa 
+          cmp #19             ;"{home}"
+          bne wil1
+          cmp int1
+          beq winloop
+wil1      cmp #13
+          beq wil2
+          sta int1
+          jsr wout
+          jmp winloop
+wil2      sta sma
+          lda #19             ;"{home}"
+          cmp int1
+          beq wil3
+          jsr wout
+wil3      ldy #0
+wil4      jsr wgetscr
+          sta iobuf,y
+          iny 
+          cpy wza
+          bne wil4
+          dey 
+wil5      lda iobuf,y
+          cmp #" "
+          bne wil6
+          dey 
+          bpl wil5
+wil6      iny 
+          lda #0
+          sta iobuf,y
+          tya 
+          pha 
+          jsr wclose
+          ldy #0
+          ldx #15
+          clc 
+          jsr wcursor
+          ldy #39
+wil7      lda #" "
+          jsr wout
+          dey 
+          bne wil7
+          pla 
+          ldx sma
+          cpx #3
+          bne winlx
+          sec 
+          lda #enbreak
+          rts 
+winlx     ldx #<iobuf
+          ldy #>iobuf
+          clc 
+          rts 
+
+          .end 
