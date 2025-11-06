@@ -788,7 +788,7 @@ ptttt     jsr bgkey
           cmp #keystp
           rts 
          ;**********
-	; load a file from CBM disk and store the PC disk
+	; load a file from CBM disk and store to the PC disk
 pload                      
 	; store pointer to cmdline
           sta zei
@@ -796,15 +796,23 @@ pload
           ldx #0
           ldy #<-1
 	; skip leading spaces
+	lda #" "
+	sta qflag
 plc1      iny 
           lda (zei),y
           beq plce
           cmp #" "
           beq plc1
-	; copy source (cbm) filename until next space into dbuf
+	; set quoteflag
+	cmp #$22	; quote
+	bne plc2
+	sta qflag
+	iny
+	; copy source (cbm) filename until next space/quote into dbuf
 plc2      lda (zei),y
-          cmp #" "
-          beq plc3a
+	beq plc3a
+          cmp qflag
+          beq plc3aq
           sta dbuf,x
           cmp #0
           beq plce
@@ -812,16 +820,25 @@ plc2      lda (zei),y
           inx 
           bne plc2
 	; finish source filename in dbuf
+plc3aq
 plc3a plce lda #0
           sta dbuf,x
           stx st1	; len
           dey 
 	; find 2nd filename
+	lda #" "
+	sta qflag
 	; skip leading spaces
 plc4      iny 
           lda (zei),y
           cmp #" "
           beq plc4
+	; check quote 
+	cmp #$22	; quote
+	bne noquote
+	sta qflag
+	iny
+noquote
 	; calculate start of target filename address and store in nadr(+1)
           tya 
           clc 
@@ -832,6 +849,16 @@ plc4      iny
           adc #0
 	sta zei+1
           sta nadr+1
+	; find end of filename and terminate
+	ldy #0
+plc4a	lda (zei),y
+	beq plc4b
+	cmp qflag
+	beq plc4b
+	iny
+	bne plc4a
+plc4b 	lda #0
+	sta (zei),y
 
 	; scan source (cbm) filename 
 	; skip leading spaces (although should not have any from above)

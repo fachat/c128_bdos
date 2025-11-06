@@ -44,6 +44,7 @@ pblock    .word 0,0,0,0,0
 llvec     .word 0
 clitcol   .byt 0
 clibcol   .byt 0
+qflag	.byt 0
          ;********
 #endif
 #if fmn-1
