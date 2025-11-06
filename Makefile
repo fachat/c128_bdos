@@ -1,5 +1,5 @@
 
-DIRS=bd  cb  cd  install  load  pr  prg1  prg2  s-floprw  s-rwabs  vb  vd
+DIRS=recreation src
 
 all:
 	for i in ${DIRS}; do make -C $$i ; done
