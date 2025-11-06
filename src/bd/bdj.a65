@@ -5,7 +5,7 @@
          ;BDJ 1.45.S31 ==0801==
          ; 1000 .if prg 
          ;.goto 1620
-
+#if 1-prg
          anzjmp=68
 init      jmp pinit             ; start von vorne
 exit      jmp (vexit)           ; start von vorne
@@ -75,3 +75,78 @@ chist     jmp (v65)           ;
 devout    jmp (v66)           ;
 devin     jmp (v67)           ;
 devcmd    jmp (v68)           ;
+
+#else
+
+
+	init    =bdos        ; start von vorne
+	exit    =bdos+3      ; start von vorne
+	query   =bdos+6      ; disk-format feststellen
+	mediach =bdos+9      ; disk gewechselt
+	getbpb  =bdos+12     ; adr des bpb holen
+	floprw  =bdos+15     ; pfloprw  ; block lesen/schreiben
+	rwabs   =bdos+18     ; blockreihe r/w ueber log blocknummer
+	flopfmt =bdos+21     ; floppy formatieren
+	sgdta   =bdos+24     ; adresse dta-puffer setzten/holen
+	sgdrive =bdos+27     ; drive holen/setzen
+	gtpath  =bdos+30     ; holt adresse des aktuellen pfades
+	sgnexcl =bdos+33     ; folgecluster holen/setzen
+	sfrclus =bdos+36     ; naechsten freien sektor suchen
+	gtdskfr =bdos+39     ; freien platz auf der diskette berechnen
+	sfirst  =bdos+42     ; ersten eintrag in dir suchen nach dta
+	sfirso  =bdos+45     ; file umbenennen
+	snext   =bdos+48     ; naechsten eintrag
+	chdir   =bdos+51     ; directory wechseln
+	namedtp =bdos+54     ; pfad fuer prg setzen
+	wrentry =bdos+57     ; entry in dta auf disk schreiben
+	delete  =bdos+60     ; file loeschen
+	dcreate =bdos+63     ; file zum ersten mal oeffnen
+	mkdir   =bdos+66     ; directory anlegen
+	rmdir   =bdos+69     ; directory loeschen
+	dopen   =bdos+72     ; file oeffnen
+	dclose  =bdos+75     ; file schliessen
+	dread   =bdos+78     ; aus file lesen
+	dwrite  =bdos+81     ; in file schreiben
+	lseek   =bdos+84     ; position in file bestimmen
+	version =bdos+87     ; versionsblock holen
+	reschain =bdos+90     ;
+	irqchain =bdos+93     ;
+	nmichain =bdos+96     ;
+	sgtime  =bdos+99     ;
+	sgdate  =bdos+102    ;
+	salarm  =bdos+105    ;
+	writfat =bdos+108
+	readfat =bdos+111
+	writbuf =bdos+114
+	readbuf =bdos+117
+	sfrbuf  =bdos+120
+	rlbuf   =bdos+123
+	bufabs  =bdos+126
+	bfzset  =bdos+129
+	bfset   =bdos+132
+	bfget   =bdos+135
+	bout    =bdos+138
+	bin     =bdos+141
+	bcan    =bdos+144
+	bcaus   =bdos+147
+	bbcol   =bdos+150
+	btcol   =bdos+153
+	bcpos   =bdos+156
+	bgkey   =bdos+159
+	bfetch  =bdos+162
+	bstash  =bdos+165
+	bfadr   =bdos+168
+	bsadr   =bdos+171
+	setvec  =bdos+174
+	chout   =bdos+177
+	chodev  =bdos+180
+	chost   =bdos+183
+	chin    =bdos+186
+	chidev  =bdos+189
+	chist   =bdos+192
+	devout  =bdos+195
+	devin   =bdos+198
+	devcmd  =bdos+201
+	
+
+#endif

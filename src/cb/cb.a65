@@ -18,6 +18,10 @@
          rev=$c7
          cczei=$ae
          ;.if #
+	.include "BDJ.A65"
+	.include "BDS.A65"
+	.include "BDK.A65"
+	.include "BDE.A65"
          ;.goto 170
 
          ;********
@@ -1217,6 +1221,8 @@ farben
 fname     .byt 6,0
          ;.if #
          ;.goto 50940
+
+	.bss
 
 wzeil     .byt 0
 wspal     .byt 0

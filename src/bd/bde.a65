@@ -31,7 +31,7 @@
          endbe=<-25
          ;  320 .if prg
          ;.end
-
+#if prg-1
          ;**********
 error0    lda #enok
           .byt $2c
@@ -86,4 +86,5 @@ dbufull   lda #endbf
 dbufemp   lda #endbe
          ; dev-puffer leer
 diskerr   cmp #0
-          rts 
+          rts
+#endif 
