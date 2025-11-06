@@ -13,7 +13,7 @@ TRG=vb
 all: ${TRG}
 
 ${TRG}: ${SRC}
-	${XA} -P "$@".lst -O PETSCII -R -bt 36862 -bb 38512 -o "$@".o65 "$<"
+	${XA} -I../bd -P "$@".lst -O PETSCII -R -bt 36862 -bb 38512 -o "$@".o65 "$<"
 	${FILE} "$@".o65
 	${RELOC} -v -X -o "$@" -bb 38512 "$@".o65
 	hexdump -C "$@" > "$@".hex

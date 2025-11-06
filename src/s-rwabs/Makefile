@@ -13,7 +13,7 @@ TRG=s-rwabs
 all: ${TRG}
 
 ${TRG}: ${SRC}
-	${XA} -P "$@".lst -O PETSCII -R -bt 32510 -o "$@".o65 "$<"
+	${XA} -I../bd -P "$@".lst -O PETSCII -R -bt 32510 -o "$@".o65 "$<"
 	${FILE} "$@".o65
 	${RELOC} -v -X -o "$@"  "$@".o65
 	hexdump -C "$@" > "$@".hex
