@@ -30,6 +30,7 @@ clean:
 	for i in ${DIRS}; do make -C $$i clean; done
 
 dist: all ${D64}
+	c1541 -format bdos,15 d64 ${D64}
 	for i in ${DISTFILES}; do c1541 -attach ${D64} -write $$i; done
 
 ${D64}:
