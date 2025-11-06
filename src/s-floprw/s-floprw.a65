@@ -2,10 +2,15 @@
 
 
 
-          .word $7f00
-         ;../origsrc/bdos+s1/S-RWABS.S5 ==0801==
+          .word $7e00
+         ;../origsrc/bdos+s1/S-FLOPRW.S5 ==0801==
          prg=1
          bdos=$a000
+
+	.include "BDS.A65"
+	.include "BDK.A65"
+	.include "BDJ.A65"
+	.include "BDE.A65"
 
          cursor=$fff0
          ;********
@@ -38,7 +43,7 @@ l1        ldy jmpadr,x
 tend      lda #0
           rts 
          ;*********
-trwabs    sta zei
+tfloprw   sta zei
           sty zei+1
           pha 
           tya 
@@ -50,10 +55,10 @@ trwabs    sta zei
           stx zeile
           sty spalte
           ldx #0
-          ldy #15
+          ldy #18
           clc 
           jsr cursor
-          ldy #aprwflag
+          ldy #pbrwflag
           lda (zei),y
           beq l1a
           lda #"w"
@@ -61,28 +66,25 @@ trwabs    sta zei
 l1a       lda #"r"
           jsr bsout
           jsr spout
-          ldy #apdrive
+          ldy #pbdrive
           lda (zei),y
           jsr hexsout
-          ldy #aprecord+1
+          ldy #pbside
+          lda (zei),y
+          jsr hexsout
+          ldy #pbtrack
+          lda (zei),y
+          jsr hexsout
+          ldy #pbsector
+          lda (zei),y
+          jsr hexsout
+          ldy #pbbuffer+1
           lda (zei),y
           jsr hexout
           dey 
           lda (zei),y
           jsr hexsout
-          ldy #apanz+1
-          lda (zei),y
-          jsr hexout
-          dey 
-          lda (zei),y
-          jsr hexsout
-          ldy #apbuffer+1
-          lda (zei),y
-          jsr hexout
-          dey 
-          lda (zei),y
-          jsr hexsout
-          ldy #apbank
+          ldy #pbbank
           lda (zei),y
           jsr hexout
 l1b       jsr $ffe4
@@ -96,7 +98,7 @@ l1b       jsr $ffe4
           pla 
           tay 
           pla 
-          jmp (vrwabs)
+          jmp (vfloprw)
 zeile     .byt 0
 spalte    .byt 0
          ;*****
@@ -120,10 +122,10 @@ spout     lda #" "
          ;**********
          anznew=1
 jmpadr    
-          .word (rwabs-bdos)*2/3
+          .word (floprw-bdos)*2/3
 jmpnew    
-          .word trwabs
+          .word tfloprw
 jmpold    
-vrwabs    .word 0
+vfloprw   .word 0
 
-          .word $7e00
+          .word 0
