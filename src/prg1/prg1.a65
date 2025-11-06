@@ -7,6 +7,9 @@
          bdos=$a000           ; startadresse bdos
          prg=1           ; fuer include-datei
 
+	.include "BDJ.A65"
+	.include "BDS.A65"
+
          ;
          ;   jsr init   ; init bdos, bei prompt verboten
          ;
