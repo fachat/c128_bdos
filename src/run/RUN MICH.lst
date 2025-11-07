@@ -14,6 +14,6 @@
    71 print"{down}       pc  --  d i s k e t t{$a0}e n            {$a0}{$a0}
    75 print"{down}endlich auch auf ihrem commodore 64/128
    80 print"{down}     bitte warten, ich lade noch !
-  110 ifa=0thena=1:load"loader 1.1a8",8,1
+  110 ifa=0thena=1:load"loader",8,1
   120 sys32768
 
