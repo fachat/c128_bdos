@@ -757,5 +757,5 @@ drvd1     .byt 0           ;drive 0 on unit 9
 actunit   .byt 0           ;unit on air
          varend=*
           .text 
-          .word varend
+          ;.word varend
           .end 

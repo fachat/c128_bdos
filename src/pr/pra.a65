@@ -58,7 +58,7 @@
 	.include "PRD.A65"
          varend=*
           .text 
-          .word varend                ;=listanf
-          .word bufanf                ;=listend
+         ; .word varend                ;=listanf
+         ; .word bufanf                ;=listend
 
           .end 
