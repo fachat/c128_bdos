@@ -24,12 +24,13 @@ DISTFILES=\
 DIRS=bd  cb  cd  install  load  pr  prg1  prg2  s-floprw  s-rwabs  vb  vd
 
 all:
-	for i in ${DIRS}; do make -C $$i ; done
+	for i in ${DIRS}; do make -C $$i || return 1; done
 
 clean:
 	for i in ${DIRS}; do make -C $$i clean; done
 
 dist: all ${D64}
+	c1541 -format bdos,15 d64 ${D64}
 	for i in ${DISTFILES}; do c1541 -attach ${D64} -write $$i; done
 
 ${D64}:
