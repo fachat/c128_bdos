@@ -379,8 +379,14 @@ wrie      lda #eneof
           ldy tplen+1
           rts 
          ;*********
-pcopy     sta zei
+	; copy a file from PC disk to PC disk
+pcopy   .(
+	  sta zei
           sty zei+1
+	; scan source filename
+	lda #" "
+	sta qflag
+	; skip leading spaces
           ldx #0
           ldy #<-1
 pcc1      iny 
@@ -388,42 +394,75 @@ pcc1      iny
           beq pcce
           cmp #" "
           beq pcc1
-pcc2      lda (zei),y
-          cmp #" "
-          beq pcc3a
+	cmp #$22	; quote
+	bne pcc2
+	sta qflag
+	iny
+pcc2    ; copy source filename to dbuf
+	  lda (zei),y
+	beq pcc3a
+        cmp qflag
+        beq pcc3b
           sta dbuf,x
-          cmp #0
-          beq pcce
           iny 
           inx 
           bne pcc2
+pcc3b	iny
 pcc3a pcce lda #0
           sta dbuf,x
           dey 
-pcc4      iny 
+	; find 2nd filename
+	lda #" "
+	sta qflag
+pcc4    
+	; skip leading spaces
+	  iny 
           lda (zei),y
           cmp #" "
           beq pcc4
+	cmp #$22	; quote
+	bne pcc4a
+	sta qflag
+	iny
+pcc4a
+	; calculate start of 2nd name to nadr
           tya 
           clc 
           adc zei
+          sta zei
           sta nadr
           lda zei+1
           adc #0
+          sta zei+1
           sta nadr+1
+	; find end of 2nd filename and terminate
+	ldy #0
+pcc4a1	lda (zei),y
+	beq pcc4a2
+	cmp qflag
+	beq pcc4a2
+	iny
+	bne pcc4a1
+pcc4a2	lda #0
+	sta (zei),y
+
+	; ask for source and target disks
           jsr gsoutar
           bne pcc3
           lda #enbreak
           rts 
+	; open source file
 pcc3      lda #<dbuf
           ldy #>dbuf
           jsr rwopen
           bne pcerr1a
+	; create target file
           lda nadr
           ldy nadr+1
           ldx #$20
           jsr dcreate
 pcerr1a   bne pcerr1b
+	; open target file
           lda nadr
           ldy nadr+1
           jsr dopen
@@ -456,6 +495,7 @@ pcread    lda fadr
           ldy #fpbank
           lda #prgbank
           sta (zei),y
+	; read a block from the source file
           ldx handle
           jsr dread
           sta st1
@@ -521,9 +561,16 @@ pcerr1    pha
           jsr dclose
           pla 
           rts 
+	.)
          ;**********
-psave     sta zei
+	; save a PC file to a CBM disk
+psave   .(
+	; pointer to cmdline
+	  sta zei
           sty zei+1
+	; skip leading spaces
+	lda #" "
+	sta qflag
           ldx #0
           ldy #<-1
 pss1      iny 
@@ -531,22 +578,36 @@ pss1      iny
           beq psse
           cmp #" "
           beq pss1
+	cmp #$22	; quote
+	bne pss2
+	sta qflag
+	iny
 pss2      lda (zei),y
-          cmp #" "
-          beq pss3a
+	beq pss3a
+	cmp qflag
+          beq pss3b
           sta dbuf,x
-          cmp #0
-          beq psse
           iny 
           inx 
           bne pss2
+pss3b	iny
 pss3a psse lda #0
           sta dbuf,x
           dey 
+	; find 2nd filename
+	lda #" "
+	sta qflag
+	; skip leading spaces
 pss4      iny 
           lda (zei),y
           cmp #" "
           beq pss4
+	cmp #$22
+	bne pss4a
+	sta qflag
+	iny
+pss4a
+	; calculate start of 2nd filname
           tya 
           clc 
           adc zei
@@ -554,13 +615,17 @@ pss4      iny
           lda zei+1
           adc #0
           sta zei+1
+	; copy 2nd filename to buf
           ldy #0
 psa1      lda (zei),y
           sta buf,y
           beq psa2
+	cmp qflag
+	beq psa2
           iny 
           bne psa1
 psa2      sty dint1
+	; set CBM file/-name parameters
           tya 
           ldx #<buf
           ldy #>buf
@@ -570,6 +635,8 @@ psa2      sty dint1
           ldy #1
           jsr setfpar
          ;****
+	; check drives
+	; CBM filename
           ldy #0
 pts1      lda buf,y
           iny 
@@ -582,6 +649,7 @@ pts1      lda buf,y
           beq pts2
           lda #0
           sta dr1
+	; check PC filename for drive
 pts2      ldy #0
 pts3      lda dbuf,y
           iny 
@@ -593,31 +661,41 @@ pts3      lda dbuf,y
           lda dbuf,y
           cmp #":"
           beq pts4
+	; set PC drive if given
           clc 
           jsr sgdrive
           sta dr2
+	; check if we can copy between same or different drives
 pts4      jsr drvtest
           bcc pls1
+	; same drive
           jmp pss
          ;****
+	; different drive
+	; ask for source and target file
 pls1      jsr gsoutar
           bne pls1a
           lda #enbreak
           rts 
-pls1a     lda #<dbuf
+pls1a  	; open PC file for reading
+	; also sets file length in variable laenge
+	  lda #<dbuf
           ldy #>dbuf
           jsr rwopen
           bne psaerr1a
+	; open CBM file
           jsr open
           bcc psa3
           lda #ennotimp
           bne psaerr2
 psaerr1a  bne psaerr1
 psa3      
-psread    lda fadr
+psread 	; read into buffer
+	  lda fadr
           sta zei
           lda fadr+1
           sta zei+1
+	; set parameters for read
           ldy #fpanz
           lda prblen
           sta (zei),y
@@ -633,30 +711,37 @@ psread    lda fadr
           ldy #fpbank
           lda #prgbank
           sta (zei),y
+	; read from PC
           ldx handle
           jsr dread
           bne psa4
+	; no prob reading, write full buffer to CBM
           ldx prblen
           ldy prblen+1
 psa5      jsr ppsave
           beq psa4a
           lda #endnrdy
           bne psa4
-psa4a     lda laenge
+psa4a   ; adjust length
+	  lda laenge
           sec 
           sbc prblen
           sta laenge
           lda laenge+1
           sbc prblen+1
           sta laenge+1
+	; upper 16bits of file len
           bcs rs1
           lda laenge+2
           bne rs2
           dec laenge+3
 rs2       dec laenge+2
+	; loop to read next buffer
 rs1       jmp psread
-psa4      cmp #eneof
+psa4    ; have we reached end-of-file?
+	  cmp #eneof
           bne psaerr2
+	; yes, end-of-file, save rest
           ldx laenge
           ldy laenge+1
           jsr ppsave
@@ -670,7 +755,10 @@ psaerr1   pha
           jsr dclose
           pla 
           rts 
-ppsave    stx tplen
+	.)
+	; save buffer of x/y length to CBM file #1
+ppsave 	.(
+	  stx tplen
           sty tplen+1
           txa 
           ora tplen+1
@@ -703,6 +791,7 @@ pssa3     dec tplen
           lda status
           and #255-64
 pssx      rts 
+	.)
          ;****
 pss       jsr gsource
           beq psse3
@@ -763,6 +852,7 @@ psse3     lda #enbreak
 psse2     lda #ennotimp
 pssee     rts 
          ;****
+	; output to enter source disk
 gsource   lda #<tsource
           ldy #>tsource
           jsr textout
@@ -770,6 +860,7 @@ pllo7     jsr bgkey
           beq pllo7
           cmp #keystp
           rts 
+	; output to enter target disk
 gtarget   lda #<ttarget
           ldy #>ttarget
           jsr textout
@@ -777,6 +868,7 @@ pllo6     jsr bgkey
           beq pllo6
           cmp #keystp
           rts 
+	; output to pls enter source and target disk
 gsoutar   lda #<tsoutar
           ldy #>tsoutar
           jsr textout
@@ -785,66 +877,115 @@ ptttt     jsr bgkey
           cmp #keystp
           rts 
          ;**********
-pload                      ;
+	; load a file from CBM disk and store to the PC disk
+pload                      
+	; store pointer to cmdline
           sta zei
           sty zei+1
           ldx #0
           ldy #<-1
+	; skip leading spaces
+	lda #" "
+	sta qflag
 plc1      iny 
           lda (zei),y
           beq plce
           cmp #" "
           beq plc1
+	; set quoteflag
+	cmp #$22	; quote
+	bne plc2
+	sta qflag
+	iny
+	; copy source (cbm) filename until next space/quote into dbuf
 plc2      lda (zei),y
-          cmp #" "
-          beq plc3a
+          cmp qflag
+          beq plc3aq
           sta dbuf,x
           cmp #0
           beq plce
           iny 
           inx 
           bne plc2
+	; finish source filename in dbuf
+plc3aq
 plc3a plce lda #0
           sta dbuf,x
-          stx st1
+          stx st1	; len
           dey 
+	; find 2nd filename
+	lda #" "
+	sta qflag
+	; skip leading spaces
 plc4      iny 
           lda (zei),y
           cmp #" "
           beq plc4
+	; check quote 
+	cmp #$22	; quote
+	bne noquote
+	sta qflag
+	iny
+noquote
+	; calculate start of target filename address and store in nadr(+1)
           tya 
           clc 
           adc zei
+	sta zei
           sta nadr
           lda zei+1
           adc #0
+	sta zei+1
           sta nadr+1
+	; find end of filename and terminate
+	ldy #0
+plc4a	lda (zei),y
+	beq plc4b
+	cmp qflag
+	beq plc4b
+	iny
+	bne plc4a
+plc4b 	lda #0
+	sta (zei),y
+
+	; scan source (cbm) filename 
+	; skip leading spaces (although should not have any from above)
+	; but may have had in prev version where name was entered on
+	; separate prompt
           ldy #0
 ptl1      lda dbuf,y
           iny 
           cmp #" "
           beq ptl1
+	; separate drive
           and #$0f
           sta dr1
+	; check colon after drive
           lda dbuf,y
           cmp #":"
           beq ptl2
+	; no colon - clear drive again
           lda #0
           sta dr1
+	; scan PC filename for drive
+	; skip leading spaces
 ptl2      ldy #0
-ptl3      lda buf,y
+ptl3      lda (zei),y
           iny 
           cmp #" "
           beq ptl3
           sec 
+	; check PC drive
           sbc #"a"
           sta dr2
-          lda buf,y
+          lda (zei),y
           cmp #":"
           beq ptl4
           clc 
+	; if PC drive was specified, set it
           jsr sgdrive
           sta dr2
+	; set CBM filename
 ptl4      lda st1
           ldx #<dbuf
           ldy #>dbuf
@@ -853,78 +994,86 @@ ptl4      lda st1
           lda #1
           ldy #0
           jsr setfpar
+	; check if drive is already set
           jsr drvtest
+	; CBM and PC are same unit, continue at pll1
+	; (i.e. need to swap)
           bcs pll1
          ;****
+	; pls enter source and target disks
 pll1y     jsr gsoutar
           bne pll1a
           lda #enbreak
           rts 
+	; open CBM (source) file
 pll1a     jsr open
           bcc plo3
           lda #ennotimp
           bne plerr2
+	; create PC file
 plo3      lda nadr
           ldy nadr+1
           ldx #$20
           jsr dcreate
           bne plerr2
+	; open PC file for rw
+	; sets fadr as pointer to fp struct
+	; sets handle to enable access to file
           lda nadr
           ldy nadr+1
           jsr rwopen
           bne plerr2
-plloop    jsr plinput
+	; transfer data
+plloop    
+	; read a CBM buffer
+	; returns bytes read in x/y
+	  jsr read_buffer_from_cbm
           sta st1
           stx tplen
           sty tplen+1
+	; fp struct
           lda fadr
           sta zei
           lda fadr+1
           sta zei+1
-          ldy #fpanz
-          lda tplen
-          sta (zei),y
-          iny 
-          lda tplen+1
-          sta (zei),y
-          ldy #fpadr
-          lda #<buffer
-          sta (zei),y
-          iny 
-          lda #>buffer
-          sta (zei),y
-          ldy #fpbank
-          lda #prgbank
-          sta (zei),y
-          ldx handle
-          jsr dwrite
+	; write PC buffer
+	  jsr write_buffer_to_pc
           bne plerr2
+	; if no error then continue
           lda st1
           beq plloop
           lda #0
 plerr1    pha 
+	; close PC file
           ldx handle
           jsr dclose
           pla 
 plerr2    pha 
+	; close CBM file
           lda #1
           jsr close
           pla 
 plerr1a   rts 
          ;****
+	; enter source disk
 pll1      jsr gsource
           beq pllo4c
           jsr open
           bcc pllo3
           lda #ennotimp
           bne plloerr
-pllo3     jsr plinput
+pllo3  	; read buffer
+	  jsr read_buffer_from_cbm
           sta st1
+	; are we any other error? If not, error as we must
+	; read file in one go if multiple drives
           and #255-64
           bne pllo4b
+	; are we end-of-file? that is ok
           lda st1
           and #64
           bne pllo4a
+	; not yet end-of-file? then range error as file too large
 pllo4     lda #enprange
           .byt $2c
 pllo4a    lda #enok
@@ -935,22 +1084,37 @@ pllo4b    lda #endnrdy
           stx tplen
           sty tplen+1
 plloerr   pha 
+	; close CBM file
           lda #1
           jsr close
           pla 
           beq pllo5
           rts 
-pllo5     jsr gtarget
+	; write to PC disk
+pllo5  	; ask for target disk
+	  jsr gtarget
           beq pllo4c
+	; create file
           lda nadr
           ldy nadr+1
           ldx #$20
           jsr dcreate
           bne plerr1a
+	; open file for writing
+	; sets fadr as pointer to fp struct
+	; sets handle to enable access to file
           lda nadr
           ldy nadr+1
           jsr rwopen
           bne plerr1
+	; write PC buffer
+	  jsr write_buffer_to_pc
+	; close and handle errors
+          jmp plerr1
+         ;****
+	; write a PC buffer to disk
+write_buffer_to_pc .(
+	; set write params ...
           ldy #fpanz
           lda tplen
           sta (zei),y
@@ -966,11 +1130,14 @@ pllo5     jsr gtarget
           ldy #fpbank
           lda #prgbank
           sta (zei),y
+	; ... and write data to disk
           ldx handle
-          jsr dwrite
-          jmp plerr1
+          jmp dwrite
+	.)
          ;****
-plinput   lda #0
+	; read a CBM buffer from file#1
+read_buffer_from_cbm .(
+	  lda #0
           sta tplen
           sta tplen+1
           sta status
@@ -1004,7 +1171,13 @@ plie      pha
           ldy tplen+1
           pla 
           rts 
+	.)
          ;**********
+	; check if PC drive (dr2) is what is configured
+	; in 1st or 2nd drive, and if IEC unit/drive matches 
+	; returns c=1 on match, c=0 on error
+	; basically returns c=1 when CBM and PC drive are the same
+	; physical unit.
 drvtest   lda dr2
           ldx #0
           cmp dosd0,x
