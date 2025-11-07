@@ -4,45 +4,42 @@ RELOC=~/8bit/xa65/xagit/xa/reloc65
 XA=~/8bit/xa65/xagit/xa/xa
 #XA=xa
 
-#BSS=-bb 4352
-BSS=
-
 TRG=pr_a pr_b pr_c pe_a pe_b pe_c
 
 all: ${TRG} 
 
 pr_a: pra*.a65 *.a65
 	${XA} -I../bd -k -Dfmn=0 -Dfci=0 -Deng=0 -P "$@".lst -O PETSCII -bt 10238 -R -o "$@".o65 "$<"
-	${RELOC} -v -X -bb 25279 -o "$@" "$@".o65
+	${RELOC} -v -X -o "$@" "$@".o65
 	hexdump -C "$@" > "$@".hex
 
 pr_b: pra*.a65 *.a65
 	${XA} -I../bd -k -Dfmn=0 -Dfci=1 -Deng=0 -P "$@".lst -O PETSCII -bt 10238 -R -o "$@".o65 "$<"
-	${RELOC} -v -X -bb 20762 -o "$@" "$@".o65
+	${RELOC} -v -X -o "$@" "$@".o65
 	hexdump -C "$@" > "$@".hex
 
 pr_c: pra*.a65 *.a65
 	${XA} -I../bd -k -Dfmn=1 -Dfci=0 -Deng=0 -P "$@".lst -O PETSCII -bt 10238 -R -o "$@".o65 "$<"
-	${RELOC} -v -X -bb 16553 -o "$@" "$@".o65
+	${RELOC} -v -X -o "$@" "$@".o65
 	hexdump -C "$@" > "$@".hex
 
 pe_a: pra*.a65 *.a65
 	${XA} -I../bd -k -Dfmn=0 -Dfci=0 -Deng=1 -P "$@".lst -O PETSCII -bt 10238 -R -o "$@".o65 "$<"
-	${RELOC} -v -X -bb 24951 -o "$@" "$@".o65
+	${RELOC} -v -X -o "$@" "$@".o65
 	hexdump -C "$@" > "$@".hex
 
 pe_b: pra*.a65 *.a65
 	${XA} -I../bd -k -Dfmn=0 -Dfci=1 -Deng=1 -P "$@".lst -O PETSCII -bt 10238 -R -o "$@".o65 "$<"
-	${RELOC} -v -X -bb 20514 -o "$@" "$@".o65
+	${RELOC} -v -X -o "$@" "$@".o65
 	hexdump -C "$@" > "$@".hex
 
 pe_c: pra*.a65 *.a65
 	${XA} -I../bd -k -Dfmn=1 -Dfci=0 -Deng=1 -P "$@".lst -O PETSCII -bt 10238 -R -o "$@".o65 "$<"
-	${RELOC} -v -X -bb 16351 -o "$@" "$@".o65
+	${RELOC} -v -X -o "$@" "$@".o65
 	hexdump -C "$@" > "$@".hex
 
 %: %.o65
-	${RELOC} -v -X ${BSS} -bb 25279 -o "$@" "$<"
+	${RELOC} -v -X -o "$@" "$<"
 	hexdump -C "$@" > "$@".hex
 
 comp: ${TRG}

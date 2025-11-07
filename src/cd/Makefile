@@ -13,9 +13,9 @@ TRG=cd
 all: ${TRG}
 
 ${TRG}: ${SRC}
-	${XA} -I../bd -P "$@".lst -O PETSCII -R -bt 34814 -bb 36329 -o "$@".o65 "$<"
+	${XA} -I../bd -P "$@".lst -O PETSCII -R -bt 34814 -o "$@".o65 "$<"
 	${FILE} "$@".o65
-	${RELOC} -v -X -o "$@" -bb 36329 "$@".o65
+	${RELOC} -v -X -o "$@" "$@".o65
 	hexdump -C "$@" > "$@".hex
 
 comp: ${TRG}

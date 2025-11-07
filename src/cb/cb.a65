@@ -1262,5 +1262,5 @@ clrsec
          ;.goto 50960
           .text 
          ;.opt p
-          .word varend
+         ; .word varend
           .end 
