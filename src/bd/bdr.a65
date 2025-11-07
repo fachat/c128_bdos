@@ -15,7 +15,7 @@ verblock                   ;
           .byt fpbanz
           .word vektor
           .word 0,0,0,0
-          .asc "bdos+ 1.45 17.08.1989 by a.fachat "
+          .asc "bdos+ 1.5  07.11.2025 by a.fachat "
           .byt 0
          ;********
 crsrcol   

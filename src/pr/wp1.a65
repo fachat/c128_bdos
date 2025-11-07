@@ -265,34 +265,52 @@ m34aa     lda status
 m34y      lda #eneof
           rts 
          ;******** (cbmcatalog)
-ismcbm    lda #1
+	; prepare the directory open filename ($0mask)
+ismcbm  .(
+	; output to enter search mask  
+	; use search mask to create
+	; CBM directory read mask in iobuf
+	; e.g. "$0:foo"
+	  lda #1
           jsr prntcmd
+	; get input with "mask:" as prompt
+	; returns x/y address of name, a has len
           lda #<ismct
           ldy #>ismct
           jsr winput
           bcc ismcx
           rts 
-ismcx     pha 
+ismcx   ; save len
+	  pha 
+	; add space for "$0:" in front of name 
           cmp #0
           bne ismc3
           lda #1
 ismc3     clc 
           adc #3
+	; set file name parameters
           jsr setfnpar
+	; pull orig len from stack to X
+	; use extended len in Y
           tay 
           pla 
           pha 
           tax 
+	; copy over filename to the extended place
+	; to make space for $0:
 ismc1     lda iobuf,x
           sta iobuf,y
           dey 
           dex 
           bpl ismc1
+	; length of file
           pla 
           bne ismc2
+	; if no filename given, just add "*" has wildcard
           sta iobuf+4
           lda #"*"
           sta iobuf+3
+	; add the directory name "$" and drive in front
 ismc2     lda #"$"
           sta iobuf
           lda iecdrive
@@ -302,40 +320,58 @@ ismc2     lda #"$"
           clc 
           rts 
          ;****
+	.)
+	.(
 m31err    jmp m31i1
          ;****
-gtcbmdir  jsr ismcbm
+	; read in a CBM directory, display it
+	; and let the user select a file
+&gtcbmdir 
+	; enter search mask and prepare open filename for directory
+	; in iobuf.
+	  jsr ismcbm
           bcc gtcbm1
           rts 
 gtcbm1    lda #19          ;"{home}"
           jsr wout
+	; set file parameter for CBM kernal
           lda #1
           ldx iecunit
           ldy #0
           jsr setfpar
+	; open file
           jsr open
+	; translate error code
           ora #64
           bcs m31err
+	; set input from file
           ldx #1
           jsr chkin
           ora #64
           bcs m31err
+	; read directory
+	; load address
           jsr basin
           jsr basin
+	; link address 1st line (volume name)
           jsr basin
           jsr basin
+	; low byte drive
           jsr basin
           pha 
+	; high byte drive is always zero
           jsr basin
           pla 
           and #15
           clc 
+	; store drive and rest of volumne name into iobuf
           adc #"0"
           sta iobuf
           lda #" "
           sta iobuf+1
           ldy #2
 m31a      jsr basin
+	; special (ctrl) char? esp. 12 = REV
           cmp #" "
           bcc m31b
           sta iobuf,y
@@ -343,47 +379,68 @@ m31a      jsr basin
 m31b      
           ldx status
           beq m31aa
+	; error detected, close and display not ready
           lda #0
           sta iobuf,y
           lda #endnrdy
           bne m31err
+	; skip special char
 m31aa     cmp #0
           bne m31a
+	; end volume info
           sta iobuf,y
+
+	; initialize list pointer	
           lda #<liste
           sta lzei
           lda #>liste
           sta lzei+1
+	; number of entries is zero
           lda #0
           sta lanz
+	; get list entry
+	; append it to liste which is pointed to by (lzei)
 m31e      jsr getencbm
           bcs m31c
-          lda #20
+	; advance list entry in (lzei)
+          lda #dirlistentrylen
           clc 
           adc lzei
           sta lzei
           bcc m31d
           inc lzei+1
+	; increase number of entries
 m31d      inc lanz
+	; check if we reached the end of available memory
           jsr testlist
           bcc m31e
+	; directory list full error
           lda #32
           jmp m31i1
+	
+	; end of list reached
+	; lzei points to last entry
 m31c      ldy #0
           lda (lzei),y
           sta int1
           iny 
           lda (lzei),y
           sta int1+1
+
+	; iobuf has the volume info
+	; find end of it	
           ldx #0
 m31f      lda iobuf,x
           beq m31g
           inx 
           bne m31f
-m31g      lda #","
+m31g  	; append "," to mask
+	  lda #","
           sta iobuf,x
           inx 
+	; print out size (in int1) to iobuf,x
           jsr getdez
+	; print blocks free message
           ldy #0
 m31h      lda m31bft,y
           sta iobuf,x
@@ -393,60 +450,84 @@ m31h      lda m31bft,y
           bne m31h
 m31i      lda #0
 m31i1     
+	; close dir file
           pha 
           jsr clrch
           lda #1
           jsr close
           pla 
+	; check for error
           bne m31sor
           ldx #0
           ldy lanz
           beq m31sor0
           dey 
           lda #0
+	; sort the list
           jsr sort
 m31sor0   lda #0
 m31sor    rts 
+	.)
          ;****
-getencbm  jsr basin
-          jsr basin                ; kettenadresse
+	; get an entry from a CBM directory
+	; stores the entry in (lzei), where
+	; first two bytes are size (in blocks)
+	; then up to 16 chars filename
+	; then zero terminator
+	; then type (single byte at position 19)
+	; so list entry is 20 bytes (dirlistentrylen)
+getencbm  .(
+	  jsr basin		; link address low
+          jsr basin             ; kettenadresse (link address) high
           ldy #0
-          jsr basin
+          jsr basin		; file size in blocks, lo
           sta (lzei),y
           iny 
-          jsr basin
+          jsr basin		; file size in blocks, hi
           sta (lzei),y
           iny 
+	; skip until quote
 gec1      jsr basin
           cmp #34
           beq gec2
           lda status
           beq gec1
           bne gecr
+	; store filename in list buffer
 gec2      jsr basin
           cmp #34
           beq gec4a
           cmp #" "
           bcs gec3
+	; non-printable (ctrl) chars are converted (64 is added)
           adc #"@"
 gec3      sta (lzei),y
-          iny 
+	; max length check (should add * at the end at some point TODO)
+	cpy #dirlistentrylen-2
+	bcs gec3a
+	iny
+gec3a
           lda status
           beq gec2
           bne gecr
+	; end of filename, terminate entry
 gec4a     lda #0
           sta (lzei),y
+	; wait until extension
 gec4      jsr basin
           cmp #" "
           bne gec5
           lda status
           beq gec4
           bne gecr
+	; store in list (after max filename plus zero terminator)
 gec5      ldy #19
           sta (lzei),y
+	; ensure filename is zero-terminated
           lda #0
           dey 
           sta (lzei),y
+	; skip till end of line for directory entry
 gec6      jsr basin
           cmp #0
           beq gec7
@@ -456,33 +537,46 @@ gecr      sec
           rts 
 gec7      clc 
           rts 
+	.)
          ;****
-inimlist  lda lseit
+	; prepare a page of a CBM directory 
+	; store the page to output in direntry+4
+inimlist  .(
+	; page number
+	  lda lseit
           sta int1
           lda #0
           sta int1+1
+	; number of entries per page
           lda #mdiranz
           ldx #0
+	; multiply
           jsr mult
+	; to get actual dir entry
           sta int1
+	; are we still in limits?
           lda lanz
           sec 
           sbc int1
           cmp #mdiranz
           bcc iml1
-          beq iml1
+          ;beq iml1	; does not matter
           lda #mdiranz
-iml1      sta dirmenu
+iml1    ; number of entries on page  
+	  sta dirmenu
           sta lmanz
+	; width of dir page "menu"
           lda #mdirtbrt
           sta dirmenu+1
+	; position of menu on screen
           lda #3
           sta dirmenu+2
           lda #6
           sta dirmenu+3
+	; calculate pointer to entry in liste
           lda #0
           sta int1+1
-          lda #20
+          lda #dirlistentrylen
           ldx #0
           jsr mult
           clc 
@@ -491,14 +585,17 @@ iml1      sta dirmenu
           txa 
           adc #>liste
           sta lzei+1
+	; pointer to?
           lda #<dirmenu+4
           sta lmzei
           lda #>dirmenu+4
           sta lmzei+1
+	; start in iobuf
 iml2      lda #" "
           sta iobuf
           sta iobuf+1
           sta iobuf+2
+	; copy filename of dir entr to iobuf
           ldy #2
 iml3      lda (lzei),y
           beq iml4
@@ -506,6 +603,7 @@ iml3      lda (lzei),y
           iny 
           cpy #18
           bne iml3
+	; fill with space
 iml4      lda #" "
 iml5      cpy #19
           beq iml6
@@ -513,14 +611,18 @@ iml5      cpy #19
           iny 
           bne iml5
 iml6      sta iobuf+21
+	; copy over file type
           lda (lzei),y
           sta iobuf+1,y
+	; is selected?
           ldy #18
           lda (lzei),y
           bpl iml6a
+	; set marker if selected
           lda #">"
           sta iobuf+1
-iml6a     ldy #0
+iml6a   ; output the file size  
+	  ldy #0
           lda (lzei),y
           sta int1
           iny 
@@ -528,12 +630,14 @@ iml6a     ldy #0
           sta int1+1
           ldx #22
           jsr getdez
+	; fill with spaces
           lda #" "
 iml7      sta iobuf,x
-          cpx #26
+          cpx #mdirtbrt-1
           beq iml8
           inx 
           bne iml7
+	; store calculated entry into lmzei (dirmenu)
 iml8      ldy #mdirtbrt
 iml9      lda iobuf-1,y
           sta (lmzei),y
@@ -541,9 +645,10 @@ iml9      lda iobuf-1,y
           bne iml9
           lda #128
           sta (lmzei),y
+	; advance to next entry
           lda lzei
           clc 
-          adc #20
+          adc #dirlistentrylen
           sta lzei
           bcc iml10
           inc lzei+1
@@ -554,41 +659,62 @@ iml10
           sta lmzei
           bcc iml11
           inc lmzei+1
-iml11     dec lmanz
+iml11   ; are we done yet?  
+	dec lmanz
 	bne iml2
-          rts 
+          rts
+	.) 
          ;********
-mpm31     jsr gtcbmdir
+	; read a directory and display it
+catalog .(
+	  jsr gtcbmdir
           beq mpm31x
           rts 
-mpm31x    lda #<iobuf
+mpm31x  ; print the iobuf with volume and bytes free on the bottom
+	  lda #<iobuf
           ldy #>iobuf
           jsr wprnterr
+	; do we have any file at all?
           lda lanz
           bne mpm31y
           rts 
-mpm31y    lda #10
+mpm31y  ; output "stop, ret to end"  
+	  lda #10
           jsr prntcmd
+	
           lda #0
-mpdirin   sta mpdf
+	; jmp mpdirin
+	.)
+	; fall-through
+	;
+	; read directory, display it, and optionally
+	; allow selecting one or multiple files
+mpdirin .(
+	  sta mpdf
+	; page for the dir listing (page with crsr left/right)
           lda #0
           sta lseit
           .byt $2c
 mp31a1    lda #128
           pha 
+	; prepare a page of files in dirmenu+4 (dirmenu has the submenu)
           jsr inimlist
+	; create submenu and print it
           pla 
           ora #32
           tax 
           lda #<dirmenu
           ldy #>dirmenu
           jsr wsubmenu
+	; char entry
 mp31a     jsr wsubloop
 mp31al    cmp #29          ;"{rght}"
           beq mp31aa
           cmp #17             ;"{down}"
           bne mp31b
-mp31aa    lda lseit
+
+mp31aa  ; next page (exit with right or down)
+	  lda lseit
           sta int1
           inc int1
           lda #0
@@ -602,25 +728,32 @@ mp31aa    lda lseit
           bcs mp31a
           inc lseit
           bne mp31a1
+
 mp31b     cmp #29+128    ;"{left}"
           beq mp31ba
           cmp #17+128       ;"{up}"
           bne mp31c
-mp31ba    lda lseit
+mp31ba  ; previous page (exit with up or left)
+	  lda lseit
           beq mp31a
           dec lseit
           jmp mp31a1
-mp31c     cmp #"="
+
+	; test further chars
+mp31c     cmp #"="	; select
           beq mp31d
-          cmp #"#"
+          cmp #"#"	; select
           beq mp31d
-          cmp #3
+          cmp #3	; Ctrl-C / STOP
           beq mp31e
-          cmp #13
-          bne mp31a
-          bit mpdf
+          cmp #13	; CR
+          bne mp31a	; back to loop
+	; mpdirin option
+          bit mpdf	; if bit 6 is set, select/CR goes to execute
           bvs mp31xx
-mp31e     pha 
+
+mp31e   ; end of directory
+	  pha 
           jsr wclose
           jsr wclrerr
           pla 
@@ -630,9 +763,14 @@ mp31e     pha
           rts 
 mp31ea    lda #enbreak
           rts 
-mp31d     lda mpdf
-          bpl mp31e
+
+mp31d   ; select a file
+	  lda mpdf
+          bpl mp31e	; if positive, select ends
+
+	; store selected	
           sty sma
+	; multiply page with entries per page
           lda lseit
           sta int1
           lda #0
@@ -640,15 +778,18 @@ mp31d     lda mpdf
           lda #mdiranz
           ldx #0
           jsr mult
+	; add entry in page
           clc 
           adc sma
           sta int1
           bcc mp31f
           inx 
-mp31f     stx int1+1
-          lda #20
+mp31f   ; multiply with size of list entry
+	  stx int1+1
+          lda #dirlistentrylen
           ldx #0
           jsr mult
+	; add base address and store as pointer to file
           clc 
           adc #<liste
           sta lzei
@@ -657,21 +798,26 @@ mp31f     stx int1+1
           sta lzei+1
           ldy #18
           lda (lzei),y
-          eor #$80
+          eor #$80		; mark as selected / deselected
           sta (lzei),y
+	; make entry in menu list
           ldy #2
           lda (lmzei),y
           eor #$1e
           sta (lmzei),y
+	; check option
           bit mpdf
           bvc mp31xx
-          lda #0
-          beq mp31e
+	; if set, end directory at first selected
+          lda #0		
+          beq mp31e		; always - end of directory
 mp31xx    
           lda #17             ;"{down}"
-          jsr wexloop
+          jsr wexloop		; execute "down" command (smdown)
           jmp mp31al
+	.)
          ;********
+
 mpm33     jsr gtcbmdir
           beq mpm33x
           rts 
@@ -732,7 +878,7 @@ mp33b     iny
           bcs mp33ee
 mp33c     lda lzei
           clc 
-          adc #20
+          adc #dirlistentrylen
           sta lzei
           bcc mp33e
           inc lzei+1
@@ -763,11 +909,14 @@ ertxrx    lda #entxrx
 ernotimp  lda #ennotimp
           rts 
          ;****
-getdez    ldy #0
+	; takes int1, and prints it out in decimal into iobuf
+getdez    .(
+	  ldy #0
           stx gdb
 go1       lda dhi,y
           tax 
           lda dlo,y
+	; divide int1 by a/x; return result in a/x and rest in int1 (keeps y)
           jsr ddiv
           iny 
           cmp #0
@@ -794,6 +943,7 @@ go3       lda dhi,y
           bcc go3
           ldx gdb
           rts 
+	.)
          ;********
 stline    ldx #23
           ldy #0

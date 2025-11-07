@@ -229,7 +229,9 @@ gtnnam    jsr wclose
           lda #0
           rts 
          ;****
-askdisks  lda #<adt
+	; modal dialog to enter src and target disks
+askdisks  .(
+	  lda #<adt
           ldy #>adt
           jsr wopenmsg
 adl1      jsr wgetkey
@@ -245,6 +247,7 @@ adl2      lda #0
           jsr wclose
           pla 
           rts 
+	.)
          ;********
 mpm42                      ; pc->cbm
           lda #128
@@ -463,26 +466,35 @@ cwre      pha
           pla 
           rts 
          ;********
-mpm43                      ; cbm->pc
+	; load a file from the CBM disk and store it on the PC disk
+load	;.(                      ; cbm->pc
+	; get a directory into liste
           jsr gtcbmdir
           beq m43x1
 m43x2     rts 
-m43x1     lda #<iobuf
+m43x1   ; print the iobuf with volume and bytes free on the bottom
+	  lda #<iobuf
           ldy #>iobuf
           jsr wprnterr
+	; print message "stop, = select, ret to end"
           lda #7
           jsr prntcmd
+	; do we actually have a file?
           lda lanz
           beq m43x2
+	; call mpdirin with option 128, i.e. allow selection
           lda #128
           jsr mpdirin
           bne m43x2
+	; print message "enter target drive and path"
           lda #12
           jsr prntcmd
+	; prompt and input for target drive
           lda #<cppt1
           ldy #>cppt1
           jsr winput
           bcs m43x2
+	; ask for the disks to be inserted
           txa 
           pha 
           tya 
@@ -497,11 +509,14 @@ m43x1     lda #<iobuf
 m43xx     pla 
           tay 
           pla 
+	; change PC disk director
           jsr chdir
           bne m43x2
+	; get current drive
           clc 
           jsr sgdrive
           sta newdrv
+	; init list pointer
           lda #<liste
           sta lzei
           lda #>liste
@@ -607,7 +622,7 @@ m43l      ldx newhdl
           jsr dclose
 m43next   lda lzei
           clc 
-          adc #20
+          adc #dirlistentrylen
           sta lzei
           bcc m43j
           inc lzei+1
