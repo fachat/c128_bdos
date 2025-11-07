@@ -102,7 +102,8 @@ pcsuch
          pcdta=ddtp
          liste=*
 #endif
+dirlistentrylen = 20
          buffer=bufanf
          dbuf=$0100
-         listend=bufanf
+         listend=bufanf-dirlistentrylen
           .end 

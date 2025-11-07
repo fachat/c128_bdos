@@ -49,6 +49,7 @@ hk1clr    lda #" "
           sta hk14
           rts 
          ;********
+	; sort the list in liste
 sort      stx sofirst
           sty solast
           cpy sofirst

@@ -607,7 +607,7 @@ m43l      ldx newhdl
           jsr dclose
 m43next   lda lzei
           clc 
-          adc #20
+          adc #dirlistentrylen
           sta lzei
           bcc m43j
           inc lzei+1

@@ -9,11 +9,12 @@
          ;********
          manz=40
          mtab=41
-         smanz=0
-         sml=1
-         smor=2
-         smlr=3
-         smtab=4
+	; submenu struct entries
+         smanz=0	; number of entries
+         sml=1		; length of a line (cols)
+         smor=2		; upper line of start on screen (for wcursor)
+         smlr=3		; left col of start on screen (for wcursor)
+         smtab=4	; lenght of struct
          ;********
 wminit    jmp pminit
 wmenloop  jmp menuloop
