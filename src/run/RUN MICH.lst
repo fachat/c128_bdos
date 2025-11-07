@@ -15,5 +15,6 @@
    75 print"{down}endlich auch auf ihrem commodore 64/128
    80 print"{down}     bitte warten, ich lade noch !
   110 ifa=0thena=1:load"loader",8,1
-  120 sys32768
+  120 ifa=1thena=2:sys32768
+  130 ifa=2thena=3:load"install?mich",8
 
