@@ -265,34 +265,52 @@ m34aa     lda status
 m34y      lda #eneof
           rts 
          ;******** (cbmcatalog)
-ismcbm    lda #1
+	; catalog the CBM disk
+ismcbm  .(
+	; output to enter search mask  
+	; use search mask to create
+	; CBM directory read mask in iobuf
+	; e.g. "$0:foo"
+	  lda #1
           jsr prntcmd
+	; get input with "mask:" as prompt
+	; returns x/y address of name, a has len
           lda #<ismct
           ldy #>ismct
           jsr winput
           bcc ismcx
           rts 
-ismcx     pha 
+ismcx   ; save len
+	  pha 
+	; add space for "$0:" in front of name 
           cmp #0
           bne ismc3
           lda #1
 ismc3     clc 
           adc #3
+	; set file name parameters
           jsr setfnpar
+	; pull orig len from stack to X
+	; use extended len in Y
           tay 
           pla 
           pha 
           tax 
+	; copy over filename to the extended place
+	; to make space for $0:
 ismc1     lda iobuf,x
           sta iobuf,y
           dey 
           dex 
           bpl ismc1
+	; length of file
           pla 
           bne ismc2
+	; if no filename given, just add "*" has wildcard
           sta iobuf+4
           lda #"*"
           sta iobuf+3
+	; add the directory name "$" and drive in front
 ismc2     lda #"$"
           sta iobuf
           lda iecdrive
@@ -302,24 +320,35 @@ ismc2     lda #"$"
           clc 
           rts 
          ;****
+	.)
 m31err    jmp m31i1
          ;****
-gtcbmdir  jsr ismcbm
+	; read in a CBM directory, display it
+	; and let the user select a file
+gtcbmdir  
+	; enter search mask and prepare open filename for directory
+	; in iobuf.
+	  jsr ismcbm
           bcc gtcbm1
           rts 
 gtcbm1    lda #19          ;"{home}"
           jsr wout
+	; set file parameter for CBM kernal
           lda #1
           ldx iecunit
           ldy #0
           jsr setfpar
+	; open file
           jsr open
+	; translate error code
           ora #64
           bcs m31err
+	; set input from file
           ldx #1
           jsr chkin
           ora #64
           bcs m31err
+	; read directory
           jsr basin
           jsr basin
           jsr basin

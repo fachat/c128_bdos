@@ -41,29 +41,39 @@ setbck    jmp bbcol
 settxt    jmp btcol
 #if fmn-1
          ;********
+	; set a screen window starting at the current cursor position
+	; giving the number of lines for the window in x, the cols in y
 pwopen    pha 
           txa 
           pha 
+	; c128 escape code to set top of window at cursor position
           jsr wescout
           lda #"t"
           jsr wout
+	; set the cursor at the given position (end position of window)
           pla 
           tax 
           pla 
           tay 
           clc 
-          jsr wcursor
+          jsr wcursor	; c128 fff0, x=line, y=col, c=0 -> set
+	; c128 esc code to set bottom of screen window at cursor pos
           jsr wescout
           lda #"b"
           jsr wout
+	; clear the screen window
           jsr wclr
           lda #0
           rts 
          ;********
-pwclose   jsr wclr
+	; close a screen window and disable it
+pwclose ; clear the screen window  
+	  jsr wclr
+	; disable it by printing home twice
           lda #19             ;"{home}"
           jsr wout
           jsr wout
+	; make sure rev is off
           lda #18+128       ;"{rvof}"
           jsr wout
           lda #0
@@ -407,17 +417,26 @@ popmsg    sta wczei
           ldy wczei+1
           jmp pptxt
          ;********
-pwinput   sta wczei
+	; display a prompt, and ask for input
+	; input is pointer to prompt text in a/y
+	; returns on C=0 x/y address of input value, a length of input value
+	; on C=1 a has error code
+pwinput .(
+	  sta wczei
           sty wczei+1
+	; position cursor to row 15, col 0
           ldx #15
           ldy #0
           clc 
           jsr wcursor
+	; output prompt
           lda wczei
           ldy wczei+1
           jsr wprnttxt
+	; get cursor position
           sec 
           jsr wcursor
+	; store col and calculate rest till end of line
           sty wza
           lda #39
           sec 
@@ -425,79 +444,105 @@ pwinput   sta wczei
           sta wza
           sec 
           sbc #1
+	; open a window with single line and to the end of the line
           ldx #0
           jsr wopen
+	; switch on cursor blinking
 winloop   jsr wcuran
+	; input loop
 winl      jsr wgetkey
           beq winl
           pha 
+	; switch off cursor blinking
           jsr wcuraus
           pla 
+	; is Ctrl-C (STOP)?
           cmp #3
           beq wil2
           tax 
+	; check if printable, if so go to winl1
           and #127
           cmp #32
           bcs winl1
+	; check for allowed control chars
           ldy #inpanz-1
           txa 
 winl2     cmp inpok,y
           beq winl1
           dey 
           bpl winl2
+	; ignore if not allowed
           bmi winloop
+	; handle input char
 winl1     txa 
           cmp #19             ;"{home}"
           bne wil1
-          cmp int1
+          cmp int1		; filter out 2nd home to avoid screen window clearance
           beq winloop
-wil1      cmp #13
+	; fall through to print it
+wil1      cmp #13	; CR / enter
           beq wil2
+	; reset home flag
           sta int1
+	; print
           jsr wout
+	; continue loop
           jmp winloop
 wil2      sta sma
+	; enter was pressed, read value
           lda #19             ;"{home}"
-          cmp int1
+          cmp int1		; filter out 2nd home to avoid screen window clearance
           beq wil3
+	; output home to get to start of window
           jsr wout
+	; get the chars from screen and store in iobuf
 wil3      ldy #0
 wil4      jsr wgetscr
           sta iobuf,y
           iny 
-          cpy wza
+          cpy wza		; maximum col
           bne wil4
           dey 
+	; trim end spaces
 wil5      lda iobuf,y
           cmp #" "
           bne wil6
           dey 
           bpl wil5
+	; zero-terminate iobuf
 wil6      iny 
           lda #0
           sta iobuf,y
+	; save length
           tya 
           pha 
+	; close window
           jsr wclose
+	; go to start of input line again
           ldy #0
           ldx #15
           clc 
           jsr wcursor
+	; write spaces over line, to clear the prompt
           ldy #39
 wil7      lda #" "
           jsr wout
           dey 
           bne wil7
-          pla 
+	; restore len
+          pla
+	; was terminated with Ctrl-C?
           ldx sma
           cpx #3
           bne winlx
           sec 
           lda #enbreak
           rts 
+	; return with x/y the address of the name, a has the length
 winlx     ldx #<iobuf
           ldy #>iobuf
           clc 
           rts 
+	.)
 #endif
           .end 
