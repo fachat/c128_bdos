@@ -12,14 +12,20 @@ The _RUN ME_ program is the standard loader. It checks for the existence of the 
 If the autoload file does not exist, it instead loads and runs the _INSTALL ME_ program that guides you through a few questions
 to create the autoload file.
 
+![Loading BDOS from the boot disk](images/load.png)
+
+![Loading screen](images/loading.png)
+
 ## INSTALL ME
 
-runThe _INSTALL ME_ program ask a few questions about the setup.
+The _INSTALL ME_ program ask a few questions about the setup.
 
 ### Hardware
 
 This screen defines which drives should be used as default. It asks the questions for the PC drives A: and B: as well as for the Commodore disk drive.
 This way you can define your default setup e.g. if you have a VC1571 for PC disks and a VC1541 for Commodore disks.
+
+![Hardware screen](images/hardware.png)
 
 Using the keys "1" to "4" you can switch through the options. A "Y" confirms and gets you to the next page.
 
@@ -28,12 +34,16 @@ Using the keys "1" to "4" you can switch through the options. A "Y" confirms and
 Here you can define your printer. An IEC printer as well as a userport Centronics printer can be used.
 Also there are options for conversions, e.g. if CBM PETSCII should be converted to ASCII or vice versa.
 
+![Printer screen](images/printer.png)
+
 If IEC unit, the program also asks for the IEC address and secondary address (in case needed for printer-specific options).
 You can just press enter to use the defaults resp. if you don't have a printer.
 
 ### Memory Map
 
 This is a very important page. It defines which version of the program should be used, and what memory areas should be used for RAMDISK or BUFFER
+
+![Memory Map screen](images/memorymap.png)
 
 #### Program options
 
@@ -61,6 +71,8 @@ The actual size is printed at the bottom and updated as you change the configura
 
 This defines the fore- and background colours for the menu. The colours are the C64/C128 color memory values (e.g 0 for black and 5 for bright green).
 You can just press enter to use the defaults.
+
+![Colors screen](images/colors.png)
 
 ### Creating autoload file
 

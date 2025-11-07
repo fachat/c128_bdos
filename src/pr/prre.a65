@@ -78,8 +78,8 @@ adr       .word del-1,md-1,rd-1,cr-1,cd-1
           .word copycon-1,pprint-1,pprtdev-1
           .word pecho-1
 
-coprt     .asc 19+128,17,17,"prompt v 2.4  "
-          .asc "24.08.1989 by a.fachat"
+coprt     .asc 19+128,17,17,"prompt v 2.5  "
+          .asc "07.11.2025 by a.fachat"
           .byt 13,10,0
 tpon      .byt 13
           .asc "print on"
@@ -353,11 +353,11 @@ hk54      .asc " cr -> crlf "
 hk55      .asc " lf -> crlf "
 coptxt    
           .asc 19+128        ;"{clr}"
-          .asc "      menu v 2.4 "
+          .asc "      menu v 2.5 "
           .byt 13,13
           .asc "       copyright"
           .byt 13,13
-          .asc "24.08.1989 by a.fachat"
+          .asc "07.11.2025 by a.fachat"
           .byt 13,13
           .asc "    press 'return'    "
           .byt 0
