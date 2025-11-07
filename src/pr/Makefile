@@ -4,9 +4,6 @@ RELOC=~/8bit/xa65/xagit/xa/reloc65
 XA=~/8bit/xa65/xagit/xa/xa
 #XA=xa
 
-#BSS=-bb 4352
-BSS=
-
 TRG=pr_a pr_b pr_c pe_a pe_b pe_c
 
 all: ${TRG} 
@@ -42,7 +39,7 @@ pe_c: pra*.a65 *.a65
 	hexdump -C "$@" > "$@".hex
 
 %: %.o65
-	${RELOC} -v -X ${BSS} -bb 25279 -o "$@" "$<"
+	${RELOC} -v -X -o "$@" "$<"
 	hexdump -C "$@" > "$@".hex
 
 comp: ${TRG}
