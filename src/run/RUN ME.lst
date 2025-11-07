@@ -1,0 +1,21 @@
+
+
+;RUN ME ==0801==
+    0 ifathen110
+   10 if peek(65532)=61 then bank 0
+   11 poke53280,0:poke53281,0:print"{CTRL-B}{lgrn}"chr$(142)
+   15 print"{clr}{down}{down}
+   20 print" bbbbb   ddddd    oooo    sssss   ++
+   30 print" bb  bb  dd  dd  oo  oo  ss       ++
+   40 print" bbbbb   dd  dd  oo  oo   ssss  ++++++
+   50 print" bb  bb  dd  dd  oo  oo      ss ++++++
+   60 print" bb  bb  dd  dd  oo  oo      ss   ++
+   70 print" bbbbb   ddddd    oooo   sssss    ++
+   71 print"{down}           pc  --  d i s k s          {$a0}{$a0}
+   75 print"{down}     now on your commodore 64/128
+   80 print"{down}     please wait, i am loading...
+  110 ifa=0thena=1:load"loader",8,1
+  120 ifa=1thena=2:sys32768
+  130 ifa=2thena=3:load"install?me",8
+
+

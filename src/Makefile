@@ -2,6 +2,8 @@
 D64=bdos.d64
 
 DISTFILES=\
+	run/run_me \
+	run/run_mich \
 	install/install_me \
 	install/install_mich \
 	load/loader \
@@ -21,7 +23,7 @@ DISTFILES=\
 	s-floprw/s-floprw \
 	s-rwabs/s-rwabs
 
-DIRS=bd  cb  cd  install  load  pr  prg1  prg2  s-floprw  s-rwabs  vb  vd
+DIRS=bd  cb  cd  install  run load  pr  prg1  prg2  s-floprw  s-rwabs  vb  vd
 
 all:
 	for i in ${DIRS}; do make -C $$i || return 1; done
