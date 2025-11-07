@@ -25,6 +25,8 @@ The _INSTALL ME_ program ask a few questions about the setup.
 This screen defines which drives should be used as default. It asks the questions for the PC drives A: and B: as well as for the Commodore disk drive.
 This way you can define your default setup e.g. if you have a VC1571 for PC disks and a VC1541 for Commodore disks.
 
+Note that drive C: always is the RAMDISK.
+
 ![Hardware screen](images/hardware.png)
 
 Using the keys "1" to "4" you can switch through the options. A "Y" confirms and gets you to the next page.
