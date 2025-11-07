@@ -379,8 +379,14 @@ wrie      lda #eneof
           ldy tplen+1
           rts 
          ;*********
-pcopy     sta zei
+	; copy a file from PC disk to PC disk
+pcopy   .(
+	  sta zei
           sty zei+1
+	; scan source filename
+	lda #" "
+	sta qflag
+	; skip leading spaces
           ldx #0
           ldy #<-1
 pcc1      iny 
@@ -388,42 +394,75 @@ pcc1      iny
           beq pcce
           cmp #" "
           beq pcc1
-pcc2      lda (zei),y
-          cmp #" "
-          beq pcc3a
+	cmp #$22	; quote
+	bne pcc2
+	sta qflag
+	iny
+pcc2    ; copy source filename to dbuf
+	  lda (zei),y
+	beq pcc3a
+        cmp qflag
+        beq pcc3b
           sta dbuf,x
-          cmp #0
-          beq pcce
           iny 
           inx 
           bne pcc2
+pcc3b	iny
 pcc3a pcce lda #0
           sta dbuf,x
           dey 
-pcc4      iny 
+	; find 2nd filename
+	lda #" "
+	sta qflag
+pcc4    
+	; skip leading spaces
+	  iny 
           lda (zei),y
           cmp #" "
           beq pcc4
+	cmp #$22	; quote
+	bne pcc4a
+	sta qflag
+	iny
+pcc4a
+	; calculate start of 2nd name to nadr
           tya 
           clc 
           adc zei
+          sta zei
           sta nadr
           lda zei+1
           adc #0
+          sta zei+1
           sta nadr+1
+	; find end of 2nd filename and terminate
+	ldy #0
+pcc4a1	lda (zei),y
+	beq pcc4a2
+	cmp qflag
+	beq pcc4a2
+	iny
+	bne pcc4a1
+pcc4a2	lda #0
+	sta (zei),y
+
+	; ask for source and target disks
           jsr gsoutar
           bne pcc3
           lda #enbreak
           rts 
+	; open source file
 pcc3      lda #<dbuf
           ldy #>dbuf
           jsr rwopen
           bne pcerr1a
+	; create target file
           lda nadr
           ldy nadr+1
           ldx #$20
           jsr dcreate
 pcerr1a   bne pcerr1b
+	; open target file
           lda nadr
           ldy nadr+1
           jsr dopen
@@ -456,6 +495,7 @@ pcread    lda fadr
           ldy #fpbank
           lda #prgbank
           sta (zei),y
+	; read a block from the source file
           ldx handle
           jsr dread
           sta st1
@@ -521,6 +561,7 @@ pcerr1    pha
           jsr dclose
           pla 
           rts 
+	.)
          ;**********
 	; save a PC file to a CBM disk
 psave   .(
