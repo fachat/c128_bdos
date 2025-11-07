@@ -265,7 +265,7 @@ m34aa     lda status
 m34y      lda #eneof
           rts 
          ;******** (cbmcatalog)
-	; catalog the CBM disk
+	; prepare the directory open filename ($0mask)
 ismcbm  .(
 	; output to enter search mask  
 	; use search mask to create
@@ -321,11 +321,12 @@ ismc2     lda #"$"
           rts 
          ;****
 	.)
+	.(
 m31err    jmp m31i1
          ;****
 	; read in a CBM directory, display it
 	; and let the user select a file
-gtcbmdir  .(
+&gtcbmdir 
 	; enter search mask and prepare open filename for directory
 	; in iobuf.
 	  jsr ismcbm
@@ -664,7 +665,9 @@ iml11   ; are we done yet?
           rts
 	.) 
          ;********
-mpm31     jsr gtcbmdir
+	; read a directory and display it
+catalog .(
+	  jsr gtcbmdir
           beq mpm31x
           rts 
 mpm31x  ; print the iobuf with volume and bytes free on the bottom
@@ -675,12 +678,19 @@ mpm31x  ; print the iobuf with volume and bytes free on the bottom
           lda lanz
           bne mpm31y
           rts 
-mpm31y  ; output "stop, = to choose, ret to end"  
+mpm31y  ; output "stop, ret to end"  
 	  lda #10
           jsr prntcmd
 	
           lda #0
-mpdirin   sta mpdf
+	; jmp mpdirin
+	.)
+	; fall-through
+	;
+	; read directory, display it, and optionally
+	; allow selecting one or multiple files
+mpdirin .(
+	  sta mpdf
 	; page for the dir listing (page with crsr left/right)
           lda #0
           sta lseit
@@ -702,7 +712,9 @@ mp31al    cmp #29          ;"{rght}"
           beq mp31aa
           cmp #17             ;"{down}"
           bne mp31b
-mp31aa    lda lseit
+
+mp31aa  ; next page (exit with right or down)
+	  lda lseit
           sta int1
           inc int1
           lda #0
@@ -716,25 +728,32 @@ mp31aa    lda lseit
           bcs mp31a
           inc lseit
           bne mp31a1
+
 mp31b     cmp #29+128    ;"{left}"
           beq mp31ba
           cmp #17+128       ;"{up}"
           bne mp31c
-mp31ba    lda lseit
+mp31ba  ; previous page (exit with up or left)
+	  lda lseit
           beq mp31a
           dec lseit
           jmp mp31a1
-mp31c     cmp #"="
+
+	; test further chars
+mp31c     cmp #"="	; select
           beq mp31d
-          cmp #"#"
+          cmp #"#"	; select
           beq mp31d
-          cmp #3
+          cmp #3	; Ctrl-C / STOP
           beq mp31e
-          cmp #13
-          bne mp31a
-          bit mpdf
+          cmp #13	; CR
+          bne mp31a	; back to loop
+	; mpdirin option
+          bit mpdf	; if bit 6 is set, select/CR goes to execute
           bvs mp31xx
-mp31e     pha 
+
+mp31e   ; end of directory
+	  pha 
           jsr wclose
           jsr wclrerr
           pla 
@@ -744,9 +763,14 @@ mp31e     pha
           rts 
 mp31ea    lda #enbreak
           rts 
-mp31d     lda mpdf
-          bpl mp31e
+
+mp31d   ; select a file
+	  lda mpdf
+          bpl mp31e	; if positive, select ends
+
+	; store selected	
           sty sma
+	; multiply page with entries per page
           lda lseit
           sta int1
           lda #0
@@ -754,15 +778,18 @@ mp31d     lda mpdf
           lda #mdiranz
           ldx #0
           jsr mult
+	; add entry in page
           clc 
           adc sma
           sta int1
           bcc mp31f
           inx 
-mp31f     stx int1+1
+mp31f   ; multiply with size of list entry
+	  stx int1+1
           lda #dirlistentrylen
           ldx #0
           jsr mult
+	; add base address and store as pointer to file
           clc 
           adc #<liste
           sta lzei
@@ -771,21 +798,26 @@ mp31f     stx int1+1
           sta lzei+1
           ldy #18
           lda (lzei),y
-          eor #$80
+          eor #$80		; mark as selected / deselected
           sta (lzei),y
+	; make entry in menu list
           ldy #2
           lda (lmzei),y
           eor #$1e
           sta (lmzei),y
+	; check option
           bit mpdf
           bvc mp31xx
-          lda #0
-          beq mp31e
+	; if set, end directory at first selected
+          lda #0		
+          beq mp31e		; always - end of directory
 mp31xx    
           lda #17             ;"{down}"
-          jsr wexloop
+          jsr wexloop		; execute "down" command (smdown)
           jmp mp31al
+	.)
          ;********
+
 mpm33     jsr gtcbmdir
           beq mpm33x
           rts 

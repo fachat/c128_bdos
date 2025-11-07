@@ -216,11 +216,11 @@ mpm2a     .word mpm21-1,mpm22-1
           .word mpm23-1,mpmread-1,mpmprint-1
           .word mpm24-1,mpm25-1,mpm26-1
           .word mrename-1,mpm27-1,mpm28-1
-mpm3a     .word mpm31-1,mpm32-1
+mpm3a     .word catalog-1,mpm32-1
           .word mpcread-1,mpcprint-1
           .word mpm33-1,mpm34-1
 mpm4a     .word mpm41-1,mpm42-1
-          .word mpm43-1,0,mpm45-1
+          .word load-1,0,mpm45-1
           .word mpm46-1,mpm47-1
 mpm5a     .word 0
 #if rs232
@@ -441,7 +441,7 @@ ptt10     .asc "<run/stop>,<ret>=end "
           .byt 0
 ptt11     .asc "<ret> change unit or drive"
           .byt 0
-ptt12     .asc "input target drive and path"
+ptt12     .asc "input target drive and directory"
           .byt 0
 ptt13     .asc "press a key"
           .byt 0
