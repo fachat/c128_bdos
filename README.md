@@ -23,6 +23,8 @@ Note that with the x128 emulator at this time,
 the VC1571 emulation does not handle MFM (PC) disk images. So all testing with 
 PC disks is restricted to the RAM disk on the emulator.
 
+Some more information on BDOS and how I resurrected is on [YouTube](https://youtu.be/64XbtP1S5v8)
+
 ## Folders
 
 The folders in this repository have the following content:
