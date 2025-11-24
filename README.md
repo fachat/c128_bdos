@@ -33,4 +33,11 @@ The folders in this repository have the following content:
 - origsrc: the unpacked CPK files, the un-archiver, and the unpacked source files. Note that filenames that contain slashes (/) have the slash replaced with an underscore (\_)
 - recreation: source files adapted and with Makefiles that build the original binaries; "bd" is the kernel, "pr" is the prompt = menu/cli.
 - src: a newly formatted version of the source files, ready for xa and continued development
+
+## Gallery
+
+![Loading](images/loading.png)
+
+![PC Menu](images/pc_menu.png)
+
  
